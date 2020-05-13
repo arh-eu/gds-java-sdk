@@ -1,3 +1,24 @@
+## Installation
+
+With [JitPack](https://jitpack.io/), you can easily add this project as a maven dependency:
+
+```XML
+<repositories>
+    <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.arh-eu</groupId>
+        <artifactId>gds-java-messages</artifactId>
+        <version>master-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
 ## Examples
 
 ### Create the Message object
