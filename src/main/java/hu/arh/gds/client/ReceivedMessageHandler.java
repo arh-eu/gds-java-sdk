@@ -8,5 +8,5 @@ public abstract class ReceivedMessageHandler {
 
     boolean isMessageSendingProcessEnd = false;
 
-    abstract void messageReceived(byte[] message) throws IOException;
+    protected abstract void messageReceived(byte[] message) throws IOException;
 }
