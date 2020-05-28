@@ -15,6 +15,7 @@ import hu.arh.gds.message.util.WriteException;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 public class GDSWebSocketClient {
     private WebSocketClient webSocketClient;
@@ -26,14 +27,14 @@ public class GDSWebSocketClient {
     private final String userName;
     private final String password;
 
-    private Log log;
-
     private AtomicBoolean connectionAckMessageReceived = new AtomicBoolean(false);
 
-    public GDSWebSocketClient(String url, String userName, String password, Log log) {
-        this.log = log;
+    private final Logger logger;
+
+    public GDSWebSocketClient(String url, String userName, String password, Logger logger) {
+        this.logger = logger;
         try {
-            this.webSocketClient = new WebSocketClient(url, log);
+            this.webSocketClient = new WebSocketClient(url, logger);
             this.webSocketClient.setBinaryMessageListener(new BinaryMessageListener() {
                 @Override
                 public void onMessageReceived(byte[] message) {
@@ -50,7 +51,7 @@ public class GDSWebSocketClient {
                 }
             });
         } catch (Throwable throwable) {
-            log.error("An error occured while creating client simulator: " + throwable.getMessage());
+            logger.severe("An error occured while creating client simulator: " + throwable.getMessage());
         }
         this.userName = userName;
         this.password = password;
@@ -89,11 +90,11 @@ public class GDSWebSocketClient {
     public void sendMessage(byte[] message) {
         try {
             if (webSocketClient != null) {
-                log.info("GDSWebSocketClient sending message");
+                logger.info("GDSWebSocketClient sending message");
                 webSocketClient.send(message);
             }
         } catch (Throwable throwable) {
-            log.error("An error occurred while sending message: " + throwable.getMessage());
+            logger.severe("An error occurred while sending message: " + throwable.getMessage());
         }
     }
 
@@ -134,7 +135,7 @@ public class GDSWebSocketClient {
                 webSocketClient.connect();
             }
         } catch (Throwable throwable) {
-            log.error("An error occurred while connecting to server: " + throwable.getMessage());
+            logger.severe("An error occurred while connecting to server: " + throwable.getMessage());
         }
     }
 
@@ -153,7 +154,7 @@ public class GDSWebSocketClient {
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            log.error("An error occurred while closing connection: " + throwable.getMessage());
+            logger.severe("An error occurred while closing connection: " + throwable.getMessage());
         }
     }
 
@@ -174,7 +175,7 @@ public class GDSWebSocketClient {
                     return;
                 }
             }
-            log.info("GDSWebSocketClient received message");
+            logger.info("GDSWebSocketClient received message");
             if (binaryMessageListener != null) {
                 binaryMessageListener.onMessageReceived(message);
             }
@@ -185,7 +186,7 @@ public class GDSWebSocketClient {
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            log.error("An error occurred while handling response message: " + throwable.getMessage());
+            logger.severe("An error occurred while handling response message: " + throwable.getMessage());
         }
     }
 }

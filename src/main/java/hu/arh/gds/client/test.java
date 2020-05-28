@@ -26,18 +26,7 @@ public class test {
                 "ws://127.0.0.1:8080/gate",
                 "user",
                 null,
-                new Log() {
-                    @Override
-                    public void info(String msg) {
-                        logger.info(msg);
-                    }
-
-                    @Override
-                    public void error(String msg) {
-                        logger.severe(msg);
-                    }
-                }
-        );
+                logger);
 
         client.setConnectionStateListener(new ConnectionStateListener() {
             @Override

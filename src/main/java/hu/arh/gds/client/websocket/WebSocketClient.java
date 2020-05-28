@@ -1,6 +1,5 @@
 package hu.arh.gds.client.websocket;
 
-import hu.arh.gds.client.Log;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -19,6 +18,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.logging.Logger;
 
 public class WebSocketClient {
     private final URI URI;
@@ -31,11 +31,11 @@ public class WebSocketClient {
     private ConnectionStateListener connectionStateListener;
     private BinaryMessageListener binaryMessageListener;
 
-    private final Log log;
+    private final Logger logger;
 
-    public WebSocketClient(String url, Log log)
+    public WebSocketClient(String url, Logger logger)
             throws SSLException, URISyntaxException {
-        this.log = log;
+        this.logger = logger;
         this.URI = new URI(url);
         String scheme = URI.getScheme() == null ? "ws" : URI.getScheme();
         host = URI.getHost() == null ? "127.0.0.1" : URI.getHost();
@@ -52,7 +52,7 @@ public class WebSocketClient {
         }
 
         if (!"ws".equalsIgnoreCase(scheme) && !"wss".equalsIgnoreCase(scheme)) {
-            log.error("Only WS(S) is supported");
+            logger.severe("Only WS(S) is supported");
             return;
         }
 
@@ -83,7 +83,7 @@ public class WebSocketClient {
                 WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
                         WebSocketClientHandshakerFactory.newHandshaker(
                                 URI, WebSocketVersion.V13, null, true,
-                                new DefaultHttpHeaders()), connectionStateListener, binaryMessageListener, log);
+                                new DefaultHttpHeaders()), connectionStateListener, binaryMessageListener, logger);
                 Bootstrap bootstrap = new Bootstrap();
                 bootstrap.group(group)
                         .channel(NioSocketChannel.class)
@@ -101,7 +101,7 @@ public class WebSocketClient {
                                         webSocketClientHandler);
                             }
                         });
-                log.info("WebSocketClient connecting to server...");
+                logger.info("WebSocketClient connecting to server...");
                 ch = bootstrap.connect(URI.getHost(), port).sync().channel();
                 webSocketClientHandler.handshakeFuture().sync();
             } catch (Throwable throwable) {
@@ -116,13 +116,13 @@ public class WebSocketClient {
             connect();
         }
         WebSocketFrame frame = new BinaryWebSocketFrame(Unpooled.wrappedBuffer(msg));
-        log.info("WebSocketClient sending BinaryWebSocketFrame...");
+        logger.info("WebSocketClient sending BinaryWebSocketFrame...");
         ch.writeAndFlush(frame);
     }
 
     public void close() throws InterruptedException {
         if (isOpen()) {
-            log.info("WebSocketClient closing channel...");
+            logger.info("WebSocketClient closing channel...");
             ch.writeAndFlush(new CloseWebSocketFrame());
             ch.closeFuture().sync();
             group.shutdownGracefully();
