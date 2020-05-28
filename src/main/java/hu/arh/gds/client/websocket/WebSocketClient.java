@@ -1,5 +1,6 @@
 package hu.arh.gds.client.websocket;
 
+import hu.arh.gds.client.Log;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -19,8 +20,6 @@ import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static hu.arh.gds.client.Client.logger;
-
 public class WebSocketClient {
     private final URI URI;
     private SslContext sslCtx;
@@ -29,10 +28,14 @@ public class WebSocketClient {
     private EventLoopGroup group = new NioEventLoopGroup();
     private Channel ch;
 
-    private ResponseHandler responseHandler;
+    private ConnectionStateListener connectionStateListener;
+    private BinaryMessageListener binaryMessageListener;
 
-    public WebSocketClient(String url, ResponseHandler responseHandler) throws SSLException, URISyntaxException {
-        this.responseHandler = responseHandler;
+    private final Log log;
+
+    public WebSocketClient(String url, Log log)
+            throws SSLException, URISyntaxException {
+        this.log = log;
         this.URI = new URI(url);
         String scheme = URI.getScheme() == null ? "ws" : URI.getScheme();
         host = URI.getHost() == null ? "127.0.0.1" : URI.getHost();
@@ -49,7 +52,7 @@ public class WebSocketClient {
         }
 
         if (!"ws".equalsIgnoreCase(scheme) && !"wss".equalsIgnoreCase(scheme)) {
-            System.err.println("Only WS(S) is supported.");
+            log.error("Only WS(S) is supported");
             return;
         }
 
@@ -62,18 +65,25 @@ public class WebSocketClient {
         }
     }
 
+    public void setConnectionStateListener(ConnectionStateListener connectionStateListener) {
+        this.connectionStateListener = connectionStateListener;
+    }
+
+    public void setBinaryMessageListener(BinaryMessageListener binaryMessageListener) {
+        this.binaryMessageListener = binaryMessageListener;
+    }
+
     public void connect() throws Throwable {
         if (!isActive()) {
-            if(isOpen()) {
+            if (isOpen()) {
                 close();
             }
-
             try {
                 group = new NioEventLoopGroup();
                 WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
                         WebSocketClientHandshakerFactory.newHandshaker(
                                 URI, WebSocketVersion.V13, null, true,
-                                new DefaultHttpHeaders()), responseHandler);
+                                new DefaultHttpHeaders()), connectionStateListener, binaryMessageListener, log);
                 Bootstrap bootstrap = new Bootstrap();
                 bootstrap.group(group)
                         .channel(NioSocketChannel.class)
@@ -91,7 +101,7 @@ public class WebSocketClient {
                                         webSocketClientHandler);
                             }
                         });
-                logger.info("WebSocket Client connecting to server...");
+                log.info("WebSocketClient connecting to server...");
                 ch = bootstrap.connect(URI.getHost(), port).sync().channel();
                 webSocketClientHandler.handshakeFuture().sync();
             } catch (Throwable throwable) {
@@ -106,33 +116,25 @@ public class WebSocketClient {
             connect();
         }
         WebSocketFrame frame = new BinaryWebSocketFrame(Unpooled.wrappedBuffer(msg));
-        logger.info("WebSocket Client sending BinaryWebSocketFrame...");
+        log.info("WebSocketClient sending BinaryWebSocketFrame...");
         ch.writeAndFlush(frame);
     }
 
     public void close() throws InterruptedException {
-        if(isOpen()) {
-            logger.info("WebSocket Client closing channel...");
+        if (isOpen()) {
+            log.info("WebSocketClient closing channel...");
             ch.writeAndFlush(new CloseWebSocketFrame());
             ch.closeFuture().sync();
             group.shutdownGracefully();
         }
     }
 
-    private boolean isActive() {
-        if(ch == null) {
-            return false;
-        } else {
-            return ch.isActive();
-        }
+    public boolean isActive() {
+        return ch == null ? false : ch.isActive();
     }
 
-    private boolean isOpen() {
-        if(ch == null) {
-            return false;
-        } else {
-            return ch.isOpen();
-        }
+    public boolean isOpen() {
+        return ch == null ? false : ch.isOpen();
     }
 }
 

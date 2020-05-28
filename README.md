@@ -51,72 +51,104 @@ A message can be sent as follows.
 
 First, we create the client object and connect to the GDS.
 ```java
-Client client = new Client("ws://127.0.0.1:8080/gate", new ReceivedMessageHandler() {
-	@Override
-    public void messageReceived(byte[] message) throws IOException {
-		try {
-			MessageHeader header = MessageManager.getMessageHeaderFromBinaryMessage(message);
-            MessageData data = MessageManager.getMessageData(message);
-            //do something with the header and data...
-        } catch (Throwable throwable) {
-			throwable.printStackTrace();
+final Logger logger = Logger.getLogger("logging");
+
+final GDSWebSocketClient client = new GDSWebSocketClient(
+        "ws://127.0.0.1:8080/gate",
+        "user",
+        null,
+        new Log() {
+            @Override
+            public void info(String msg) {
+                logger.info(msg);
+            }
+            @Override
+            public void error(String msg) {
+                logger.severe(msg);
+            }
         }
+);
+```
+
+If you would like to be notified of changes in the connection status, you can subscribe to the following listener.
+
+```java
+client.setConnectionStateListener(new ConnectionStateListener() {
+    @Override
+    public void onConnected() {
+        System.out.println("Client connected!");
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
+        System.out.println("Client disconnected!");
+        // ...
+    }
+});
+```
+
+Messages sent to the client can also be accessed via a listener. There are two types of listeren for this.
+One to access the serialized message objects and the other to access the binary representation of the message.
+
+```java
+client.setMessageListener(new MessageListener() {
+    @Override
+    public void onMessageReceived(MessageHeader header, MessageData data) {
+        System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
+        // ...
     }
 });
 ```
 
 ```java
+client.setBinaryMessageListener(new BinaryMessageListener() {
+    @Override
+    public void onMessageReceived(byte[] message) {
+        System.out.println("message received");
+        // ...
+    }
+});
+```
+
+Connecting to the GDS.
+
+```java
 client.connect();
 ```
 
-Before sending any message to gds, it is also necessary to send a connection type message. So we will send such a message first. 
-This message can be created in the same way as any other (see [How to create messages](##How-to-create-messages)).
+(During the connection, a connection type message is also sent after the websocket connection. If a positive acknowledgment message arrives, the connected() method returns true.)
 
-An example for creating a connection type message.
+
+After you connected, you can send messages to the GDS. You can do that with the sendMessage() methods.
+
+Let's see an event message for example. 
 ```java
-MessageHeader connectionMessageHeader = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.CONNECTION_0);
-MessageData connectionMessageData = MessageManager.createMessageData0Connection(false, 1, false, null, "pass");
-byte[] connectionMessage = MessageManager.createMessage(connectionMessageHeader, connectionMessageData);
-```
-
-Now, we can send this message to the GDS through the previously created client object.
-```java
-client.sendMessage(connectionMessage);
-```
-
-Once we have received the response, we can process it as follows, for example.
-
-```java
-...
-@Override
-public void messageReceived(byte[] message) throws IOException {
-	try {
-		MessageHeader header = MessageManager.getMessageHeaderFromBinaryMessage(message);
-        MessageData data = MessageManager.getMessageData(message);
-        if(data.getTypeHelper().isConnectionAckMessageData1()) {
-			MessageData1ConnectionAck connectionAckMessageData = data.getTypeHelper().asConnectionAckMessageData1();
-            //do something woth the connection ack message data
-        }
-    } catch (Throwable throwable) {
-			throwable.printStackTrace();
-    }
-}
-...		
-```
-
-After you received a positive acknowledgement for the connection message, you can send any message type. Let's see an event message for example. 
-```java
-MessageHeader eventMessageHeader = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.CONNECTION_0);
-
 List<String> operationsStringBlock = new ArrayList<String>();
 operationsStringBlock.add("INSERT INTO events (id, some_field, images) VALUES('EVNT202001010000000000', 'some_field', array('ATID202001010000000000'));INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
 Map<String, byte[]> binaryContentsMapping = new HashMap<>();
 binaryContentsMapping.put("62696e6172795f69645f6578616d706c65", new byte[] { 1, 2, 3 });
-MessageData eventMessageData = MessageManager.createMessageData2Event(operationsStringBlock, binaryContentsMapping, new ArrayList<PriorityLevelHolder>());
+MessageData data = MessageManager.createMessageData2Event(operationsStringBlock, binaryContentsMapping, new ArrayList<PriorityLevelHolder>());
 
-byte[] eventMessage = MessageManager.createMessage(eventMessageHeader, eventMessageData);
+client.sendMessage(data);
+```
 
-client.sendMessage(eventMessage);
+Or if you want to define the header part explicitly.
+```java
+MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.EVENT_2);
+
+client.sendMessage(header, data);
+```
+
+The response is available through the subscribed listener.
+```java
+client.setMessageListener(new MessageListener() {
+    @Override
+    public void onMessageReceived(MessageHeader header, MessageData data) {
+        if(data.getTypeHelper().isEventAckMessageData3()) {
+            // do something with the message...
+        }
+    }
+});
 ```
 
 At the end, we close the websocket connection as well.

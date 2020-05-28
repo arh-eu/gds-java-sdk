@@ -1,22 +1,31 @@
 package hu.arh.gds.client.websocket;
 
+import hu.arh.gds.client.Log;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.CharsetUtil;
 
-import static hu.arh.gds.client.Client.logger;
-
 class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
     private final WebSocketClientHandshaker handshaker;
     private ChannelPromise handshakeFuture;
-    private ResponseHandler responseHandler;
+
+    private final ConnectionStateListener connectionStateListener;
+    private final BinaryMessageListener binaryMessageListener;
+
+    private Log log;
 
     public WebSocketClientHandler(WebSocketClientHandshaker handshaker,
-                                  ResponseHandler responseHandler) {
+                                  ConnectionStateListener connectionStateListener,
+                                  BinaryMessageListener binaryMessageListener,
+                                  Log log) {
+        this.log = log;
         this.handshaker = handshaker;
-        this.responseHandler = responseHandler;
+        this.connectionStateListener = connectionStateListener;
+        this.binaryMessageListener = binaryMessageListener;
     }
+
+
 
     public ChannelFuture handshakeFuture() {
         return handshakeFuture;
@@ -34,7 +43,10 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        logger.info("WebSocket Client disconnected!");
+        if(connectionStateListener != null) {
+            connectionStateListener.onDisconnected();
+        }
+        log.info("WebSocketClient disconnected");
     }
 
     @Override
@@ -43,10 +55,13 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
         if (!handshaker.isHandshakeComplete()) {
             try {
                 handshaker.finishHandshake(ch, (FullHttpResponse) msg);
-                logger.info("WebSocket Client connected!");
+                log.info("WebSocketClient connected");
+                if(connectionStateListener != null) {
+                    connectionStateListener.onConnected();
+                }
                 handshakeFuture.setSuccess();
             } catch (WebSocketHandshakeException e) {
-                logger.info("WebSocket Client failed to connect");
+                log.info("WebSocketClient failed to connect");
                 handshakeFuture.setFailure(e);
             }
             return;
@@ -61,26 +76,27 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
 
         WebSocketFrame frame = (WebSocketFrame) msg;
         if(frame instanceof BinaryWebSocketFrame) {
-            logger.info("WebSocket Client received BinaryWebSocketFrame");
+            log.info("WebSocketClient received BinaryWebSocketFrame");
             byte[] binaryFrame = new byte[frame.content().readableBytes()];
             frame.content().readBytes(binaryFrame);
-            responseHandler.handleResponse(binaryFrame);
+            if(binaryMessageListener != null) {
+                binaryMessageListener.onMessageReceived(binaryFrame);
+            }
         } else if (frame instanceof TextWebSocketFrame) {
-            logger.info("WebSocket Client received TextWebSocketFrame");
-            responseHandler.handleResponse(((TextWebSocketFrame) frame).text().getBytes());
+            log.info("WebSocketClient received TextWebSocketFrame");
         } else if (frame instanceof PongWebSocketFrame) {
-            logger.info("WebSocket Client received pong");
+            log.info("WebSocketClient received pong");
         } else if (frame instanceof CloseWebSocketFrame) {
-            logger.info("WebSocket Client received closing");
+            log.info("WebSocketClient received closing");
             ch.close();
         } else {
-            logger.info("unsupported frame type: " + frame.getClass().getName());
+            log.info("Unsupported frame type: " + frame.getClass().getName());
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        log.error(cause.getMessage());
         if (!handshakeFuture.isDone()) {
             handshakeFuture.setFailure(cause);
         }
