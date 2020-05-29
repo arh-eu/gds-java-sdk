@@ -61,41 +61,45 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
 );
 ```
 
+The messages sent to the client and the changes of the connection status can be accessed via listeners.
+There are two types of listener for this. One to access the serialized message objects and the other to access the binary representation of the message.
+
 If you would like to be notified of changes in the connection status, you can subscribe to the following listener.
-
-```java
-client.setConnectionStateListener(new ConnectionStateListener() {
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-        // ...
-    }
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-        // ...
-    }
-});
-```
-
-Messages sent to the client can also be accessed via a listener. There are two types of listeren for this.
+There are two type of listener for this.
 One to access the serialized message objects and the other to access the binary representation of the message.
 
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
+        // ...
+    }
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
         // ...
     }
 });
 ```
 
+If you use the BinaryMessageListener, you have to create the message objects from the binary representation of the message.
+You can create these objects through the hu.arh.gds.message.util.MessageManager class.
+
 ```java
 client.setBinaryMessageListener(new BinaryMessageListener() {
     @Override
     public void onMessageReceived(byte[] message) {
-        System.out.println("message received");
+        // ...
+    }
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
         // ...
     }
 });

@@ -32,17 +32,34 @@ public class test {
         client.setMessageListener(new MessageListener() {
             @Override
             public void onMessageReceived(MessageHeader header, MessageData data) {
-                System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
+                // ...
             }
 
             @Override
             public void onConnected() {
-                System.out.println("Connected");
+                // ...
             }
 
             @Override
             public void onDisconnected() {
-                System.out.println("Disconnected");
+                // ...
+            }
+        });
+
+        client.setBinaryMessageListener(new BinaryMessageListener() {
+            @Override
+            public void onMessageReceived(byte[] message) {
+                // ...
+            }
+
+            @Override
+            public void onConnected() {
+                // ...
+            }
+
+            @Override
+            public void onDisconnected() {
+                // ...
             }
         });
 
