@@ -11,18 +11,15 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
     private final WebSocketClientHandshaker handshaker;
     private ChannelPromise handshakeFuture;
 
-    private final ConnectionStateListener connectionStateListener;
     private final BinaryMessageListener binaryMessageListener;
 
     private final Logger logger;
 
     public WebSocketClientHandler(WebSocketClientHandshaker handshaker,
-                                  ConnectionStateListener connectionStateListener,
                                   BinaryMessageListener binaryMessageListener,
                                   Logger logger) {
         this.logger = logger;
         this.handshaker = handshaker;
-        this.connectionStateListener = connectionStateListener;
         this.binaryMessageListener = binaryMessageListener;
     }
 
@@ -44,8 +41,8 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        if(connectionStateListener != null) {
-            connectionStateListener.onDisconnected();
+        if(binaryMessageListener != null) {
+            binaryMessageListener.onDisconnected();
         }
         logger.info("WebSocketClient disconnected");
     }
@@ -57,8 +54,8 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
             try {
                 handshaker.finishHandshake(ch, (FullHttpResponse) msg);
                 logger.info("WebSocketClient connected");
-                if(connectionStateListener != null) {
-                    connectionStateListener.onConnected();
+                if(binaryMessageListener != null) {
+                    binaryMessageListener.onConnected();
                 }
                 handshakeFuture.setSuccess();
             } catch (WebSocketHandshakeException e) {

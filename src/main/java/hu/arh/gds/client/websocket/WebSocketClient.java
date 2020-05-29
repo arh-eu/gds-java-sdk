@@ -28,7 +28,6 @@ public class WebSocketClient {
     private EventLoopGroup group = new NioEventLoopGroup();
     private Channel ch;
 
-    private ConnectionStateListener connectionStateListener;
     private BinaryMessageListener binaryMessageListener;
 
     private final Logger logger;
@@ -65,10 +64,6 @@ public class WebSocketClient {
         }
     }
 
-    public void setConnectionStateListener(ConnectionStateListener connectionStateListener) {
-        this.connectionStateListener = connectionStateListener;
-    }
-
     public void setBinaryMessageListener(BinaryMessageListener binaryMessageListener) {
         this.binaryMessageListener = binaryMessageListener;
     }
@@ -83,7 +78,7 @@ public class WebSocketClient {
                 WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
                         WebSocketClientHandshakerFactory.newHandshaker(
                                 URI, WebSocketVersion.V13, null, true,
-                                new DefaultHttpHeaders()), connectionStateListener, binaryMessageListener, logger);
+                                new DefaultHttpHeaders()), binaryMessageListener, logger);
                 Bootstrap bootstrap = new Bootstrap();
                 bootstrap.group(group)
                         .channel(NioSocketChannel.class)

@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 public class test {
 
-    public static void main(String[] args) throws ValidationException, IOException, WriteException {
+    public static void main(String[] args) throws ValidationException, IOException, WriteException, AlreadySubscribedException {
         final Logger logger = Logger.getLogger("logging");
 
         final GDSWebSocketClient client = new GDSWebSocketClient(
@@ -29,34 +29,20 @@ public class test {
                 logger
         );
 
-        client.setConnectionStateListener(new ConnectionStateListener() {
+        client.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessageReceived(MessageHeader header, MessageData data) {
+                System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
+            }
+
             @Override
             public void onConnected() {
-                System.out.println("Client connected!");
-                // ...
+                System.out.println("Connected");
             }
 
             @Override
             public void onDisconnected() {
-                System.out.println("Client disconnected!");
-                // ...
-            }
-        });
-
-        client.setMessageListener(new MessageListener() {
-            @Override
-            public void onMessageReceived(MessageHeader header, MessageData data) {
-                if(data.getTypeHelper().isEventAckMessageData3()) {
-                    // do something with the message...
-                }
-            }
-        });
-
-        client.setBinaryMessageListener(new BinaryMessageListener() {
-            @Override
-            public void onMessageReceived(byte[] message) {
-                System.out.println("message received");
-                // ...
+                System.out.println("Disconnected");
             }
         });
 
@@ -67,7 +53,7 @@ public class test {
         List<String> operationsStringBlock = new ArrayList<String>();
         operationsStringBlock.add("INSERT INTO events (id, some_field, images) VALUES('EVNT202001010000000000', 'some_field', array('ATID202001010000000000'));INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
         Map<String, byte[]> binaryContentsMapping = new HashMap<>();
-        binaryContentsMapping.put("62696e6172795f69645f6578616d706c65", new byte[] { 1, 2, 3 });
+        binaryContentsMapping.put("62696e6172795f69645f6578616d706c65", new byte[]{1, 2, 3});
         MessageData data = MessageManager.createMessageData2Event(operationsStringBlock, binaryContentsMapping, new ArrayList<PriorityLevelHolder>());
 
         //byte[] eventMessage = MessageManager.createMessage(eventMessageHeader, eventMessageData);

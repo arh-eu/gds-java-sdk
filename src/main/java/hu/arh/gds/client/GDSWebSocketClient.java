@@ -1,7 +1,6 @@
 package hu.arh.gds.client;
 
 import hu.arh.gds.client.websocket.BinaryMessageListener;
-import hu.arh.gds.client.websocket.ConnectionStateListener;
 import hu.arh.gds.client.websocket.WebSocketClient;
 import hu.arh.gds.message.data.MessageData;
 import hu.arh.gds.message.data.MessageData1ConnectionAck;
@@ -22,7 +21,6 @@ public class GDSWebSocketClient {
 
     private BinaryMessageListener binaryMessageListener;
     private MessageListener messageListener;
-    private ConnectionStateListener connectionStateListener;
 
     private final String userName;
     private final String password;
@@ -40,10 +38,10 @@ public class GDSWebSocketClient {
                 public void onMessageReceived(byte[] message) {
                     GDSWebSocketClient.this.onMessageReceived(message);
                 }
-            });
-            this.webSocketClient.setConnectionStateListener(new ConnectionStateListener() {
+
                 @Override
-                public void onConnected() { }
+                public void onConnected() {
+                }
 
                 @Override
                 public void onDisconnected() {
@@ -57,16 +55,18 @@ public class GDSWebSocketClient {
         this.password = password;
     }
 
-    public void setBinaryMessageListener(BinaryMessageListener binaryMessageListener) {
+    public void setBinaryMessageListener(BinaryMessageListener binaryMessageListener) throws AlreadySubscribedException {
+        if(messageListener != null) {
+            throw new AlreadySubscribedException("Already subscribed with the MessageListener!");
+        }
         this.binaryMessageListener = binaryMessageListener;
     }
 
-    public void setMessageListener(MessageListener messageListener) {
+    public void setMessageListener(MessageListener messageListener) throws AlreadySubscribedException {
+        if(binaryMessageListener != null) {
+            throw new AlreadySubscribedException("Already subscribed with the BinaryMessageListener!");
+        }
         this.messageListener = messageListener;
-    }
-
-    public void setConnectionStateListener(ConnectionStateListener connectionStateListener) {
-        this.connectionStateListener = connectionStateListener;
     }
 
     public void connect() throws WriteException, IOException, ValidationException {
@@ -160,7 +160,11 @@ public class GDSWebSocketClient {
 
     private void onWebSocketDisconnected() {
         connectionAckMessageReceived.set(false);
-        connectionStateListener.onDisconnected();
+        if(messageListener != null) {
+            messageListener.onDisconnected();
+        } else if(binaryMessageListener != null) {
+            binaryMessageListener.onDisconnected();
+        }
     }
 
     private void onMessageReceived(byte[] message) {
@@ -170,7 +174,11 @@ public class GDSWebSocketClient {
                     MessageData1ConnectionAck ackData = MessageManager.getMessageData(message).getTypeHelper().asConnectionAckMessageData1();
                     if (ackData.getGlobalStatus().equals(AckStatus.OK)) {
                         connectionAckMessageReceived.set(true);
-                        connectionStateListener.onConnected();
+                        if(messageListener != null) {
+                            messageListener.onConnected();
+                        } else if(binaryMessageListener != null) {
+                            binaryMessageListener.onDisconnected();
+                        }
                     }
                     return;
                 }
@@ -178,8 +186,7 @@ public class GDSWebSocketClient {
             logger.info("GDSWebSocketClient received message");
             if (binaryMessageListener != null) {
                 binaryMessageListener.onMessageReceived(message);
-            }
-            if(messageListener != null) {
+            } else if(messageListener != null) {
                 messageListener.onMessageReceived(
                         MessageManager.getMessageHeaderFromBinaryMessage(message),
                         MessageManager.getMessageData(message));
