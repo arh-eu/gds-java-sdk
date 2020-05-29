@@ -26,7 +26,8 @@ public class test {
                 "ws://127.0.0.1:8080/gate",
                 "user",
                 null,
-                logger);
+                logger
+        );
 
         client.setConnectionStateListener(new ConnectionStateListener() {
             @Override
