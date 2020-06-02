@@ -137,12 +137,14 @@ client.sendMessage(header, data);
 The response is available through the subscribed listener.
 ```java
 client.setMessageListener(new MessageListener() {
+	...
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
         if(data.getTypeHelper().isEventAckMessageData3()) {
             // do something with the message...
         }
     }
+	...
 });
 ```
 
