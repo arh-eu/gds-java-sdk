@@ -116,35 +116,173 @@ client.connect();
 
 After you connected, you can send messages to the GDS. You can do that with the sendMessage() methods.
 
-Let's see an event message for example. 
-```java
-List<String> operationsStringBlock = new ArrayList<String>();
-operationsStringBlock.add("INSERT INTO events (id, some_field, images) VALUES('EVNT202001010000000000', 'some_field', array('ATID202001010000000000'));INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
-Map<String, byte[]> binaryContentsMapping = new HashMap<>();
-binaryContentsMapping.put("62696e6172795f69645f6578616d706c65", new byte[] { 1, 2, 3 });
-MessageData data = MessageManager.createMessageData2Event(operationsStringBlock, binaryContentsMapping, new ArrayList<PriorityLevelHolder>());
+- [INSERT](#Insert)
+- [UPDATE](#Update)
+- [MERGE](#Merge)
+- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
 
-client.sendMessage(data);
+### INSERT
+```java
+try {
+    MessageData data = MessageManager.createMessageData2Event(
+            new ArrayList<String>() {{
+                add("INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT202001010000000000', 'ABC123', 90, array('ATID202001010000000000'))");
+                add("INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
+            }},
+            new HashMap<String, byte[]>() {{
+                put("62696e6172795f69645f6578616d706c65", new byte[]{127, 127, 0, 0});
+            }},
+            new ArrayList<>());
+    client.sendMessage(data);
+} catch (Throwable throwable) {}
 ```
 
-Or if you want to define the header part explicitly.
+You can define the header part explicitly as well.
 ```java
 MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.EVENT_2);
 
 client.sendMessage(header, data);
 ```
 
-The response is available through the subscribed listener.
+The ack for this message is available through the subscribed listener.
 ```java
 client.setMessageListener(new MessageListener() {
-	...
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        if(data.getTypeHelper().isEventAckMessageData3()) {
-            // do something with the message...
-        }
+       switch (data.getTypeHelper().getMessageDataType()) {
+           case EVENT_ACK_3:
+               MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
+               // ...
+               break;
+           //...
+       }
     }
-	...
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
+        // ...
+    }
+});
+```
+
+### UPDATE
+```java
+try {
+    MessageData data = MessageManager.createMessageData2Event(
+            new ArrayList<String>() {{
+                add("UPDATE events SET speed = 100 WHERE id = 'EVNT202001010000000000'");
+            }},
+            new HashMap<>(),
+            new ArrayList<>());
+    client.sendMessage(data);
+} catch (Throwable throwable) {}
+```
+
+You can define the header part explicitly as well.
+```java
+MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.EVENT_2);
+
+client.sendMessage(header, data);
+```
+
+The ack for this message is available through the subscribed listener.
+```java
+client.setMessageListener(new MessageListener() {
+    @Override
+    public void onMessageReceived(MessageHeader header, MessageData data) {
+       switch (data.getTypeHelper().getMessageDataType()) {
+           case EVENT_ACK_3:
+               MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
+               // ...
+               break;
+           //...
+       }
+    }
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
+        // ...
+    }
+});
+```
+
+### MERGE
+```java
+try {
+    MessageData data = MessageManager.createMessageData2Event(
+            new ArrayList<String>() {{
+                add("MERGE INTO events USING (SELECT 'EVNT202001010000000000' as id, 'ABC123' as numberplate, 100 as speed) I " +
+                        "ON (events.id = I.id) " +
+                        "WHEN MATCHED THEN UPDATE SET events.speed = I.speed " +
+                        "WHEN NOT MATCHED THEN INSERT (id, numberplate) VALUES (I.id, I.numberplate)");
+            }},
+            new HashMap<>(),
+            new ArrayList<>());
+    client.sendMessage(data);
+} catch (Throwable throwable) {}
+```
+
+You can define the header part explicitly as well.
+```java
+MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.EVENT_2);
+
+client.sendMessage(header, data);
+```
+
+The ack for this message is available through the subscribed listener.
+```java
+client.setMessageListener(new MessageListener() {
+    @Override
+    public void onMessageReceived(MessageHeader header, MessageData data) {
+       switch (data.getTypeHelper().getMessageDataType()) {
+           case EVENT_ACK_3:
+               MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
+               // ...
+               break;
+           //...
+       }
+    }
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
+        // ...
+    }
+});
+```
+
+### AUTOMATIC PUSHING 
+
+```java
+client.setMessageListener(new MessageListener() {
+    @Override
+    public void onMessageReceived(MessageHeader header, MessageData data) {
+       switch (data.getTypeHelper().getMessageDataType()) {
+           case ATTACHMENT_RESPONSE_6:
+               // ...
+               break;
+           case EVENT_DOCUMENT_8:
+               // ...
+               break;
+           //...
+       }
+    }
+    @Override
+    public void onConnected() {
+        // ...
+    }
+    @Override
+    public void onDisconnected() {
+        // ...
+    }
 });
 ```
 
