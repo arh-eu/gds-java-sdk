@@ -30,15 +30,13 @@ public class test {
         client.setMessageListener(new MessageListener() {
             @Override
             public void onMessageReceived(MessageHeader header, MessageData data) {
-               switch (data.getTypeHelper().getMessageDataType()) {
-                   case ATTACHMENT_RESPONSE_6:
-                       // ...
-                       break;
-                   case EVENT_DOCUMENT_8:
-                       // ...
-                       break;
-                   //...
-               }
+                switch (data.getTypeHelper().getMessageDataType()) {
+                    case EVENT_ACK_3:
+                        MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
+                        // ...
+                        break;
+                    //...
+                }
             }
 
             @Override
@@ -51,8 +49,6 @@ public class test {
                 // ...
             }
         });
-
-        client.connect();
     }
 
     private static void insert() {
@@ -63,7 +59,7 @@ public class test {
                         add("INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
                     }},
                     new HashMap<String, byte[]>() {{
-                        put("62696e6172795f69645f6578616d706c65", new byte[]{127, 127, 0, 0});
+                        put("62696e6172795f69645f6578616d706c65", new byte[] {127, 127, 0, 0});
                     }},
                     new ArrayList<>());
             client.sendMessage(data);
@@ -93,6 +89,14 @@ public class test {
                     }},
                     new HashMap<>(),
                     new ArrayList<>());
+            client.sendMessage(data);
+        } catch (Throwable throwable) {}
+    }
+
+    private static void select() {
+        try {
+            MessageData data = MessageManager.createMessageData4AttachmentRequest(
+                    "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
             client.sendMessage(data);
         } catch (Throwable throwable) {}
     }

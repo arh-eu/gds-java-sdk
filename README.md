@@ -119,6 +119,9 @@ After you connected, you can send messages to the GDS. You can do that with the 
 - [INSERT](#Insert)
 - [UPDATE](#Update)
 - [MERGE](#Merge)
+- [SELECT](#Select)
+	- [Query](#Query)
+	- [Attachment request](#Attachment-request)
 - [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
 
 ### INSERT
@@ -257,6 +260,19 @@ client.setMessageListener(new MessageListener() {
         // ...
     }
 });
+```
+
+### SELECT
+
+#### Query
+
+#### Attachment request
+```java
+try {
+	MessageData data = MessageManager.createMessageData4AttachmentRequest(
+			"SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+    client.sendMessage(data);
+    } catch (Throwable throwable) {}
 ```
 
 ### AUTOMATIC PUSHING 
