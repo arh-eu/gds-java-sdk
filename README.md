@@ -320,16 +320,16 @@ client.setMessageListener(new MessageListener() {
                 }
                 break;
             case ATTACHMENT_RESPONSE_6:
-			    //if you requested the binary attachment earlier and it was not included in the ack message you received for it
+		//if you requested the binary attachment earlier and it was not included in the ack message you received for it
                 MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
                 try {
                     byte[] attachment = attachmentResponseData.getBinary();
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
-				//TODO: send an ack for this message
+		//TODO: send an ack for this message
                 break;
-			//...	
+		//...	
         }
     }
     @Override
