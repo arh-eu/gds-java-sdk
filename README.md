@@ -21,35 +21,29 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 (The library was made by [this](https://github.com/msgpack/msgpack-java) messagepack java implementation)
 
-## How to create messages
-
-A message consists of two parts, a header and a hata. You can create these objects through the hu.arh.gds.message.util.MessageManager class.
-
-The following example shows the process of creating messages by creating an attachment request type message.
-
-First, we create the header part.
-```java
-MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.CONNECTION_0);
-```
-
-After that, we create the data part.
-```java
-MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
-```
-
-Once we have a header and a data, we can create the binary message.
-```java
-byte[] message = MessageManager.createMessage(header, data);
-```
-
-## How to send and receive messages
+## Usage
 
 Messages can be sent to the GDS via WebSocket protocol. The SDK contains a WebSocket client with basic functionalities, so you can use this to send and receive messages.
-You can also find a GDS Server Simulator written in Java here. With this simulator you can test your client code without a real GDS instance.
+You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client code without a real GDS instance.
 
-A message can be sent as follows.
+- [Creating the client](#Creating-the-client)
+- [Subscribing to listeners](#Subscribing-to-listeners)
+- [Connecting to the GDS](#Connecting-to-the-GDS)
+- [Create messages](#Create-messages)
+- [Send and receive messages](#Send-and-receive-messages)
+	- [INSERT](#Insert)
+	- [UPDATE](#Update)
+	- [MERGE](#Merge)
+	- [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
+	- [SELECT](#Select)
+		- [QUERY](#Query)
+		- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
+	- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+- [Working with custom messages](#Working-with-custom-messages)
 
-First, we create the client object and connect to the GDS.
+### Creating the client
+
+First, we create the client object.
 ```java
 final Logger logger = Logger.getLogger("logging");
 
@@ -61,13 +55,12 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
 );
 ```
 
+### Subscribing to listeners
+
 The messages sent to the client and the changes of the connection status can be accessed via listeners.
 There are two types of listener for this. One to access the serialized message objects and the other to access the binary representation of the message.
 
-If you would like to be notified of changes in the connection status, you can subscribe to the following listener.
-There are two type of listener for this.
-One to access the serialized message objects and the other to access the binary representation of the message.
-
+High-level (this is the recommended)
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
@@ -86,9 +79,10 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
+Low-level
+
 If you use the BinaryMessageListener, you have to create the message objects from the binary representation of the message.
 You can create these objects through the hu.arh.gds.message.util.MessageManager class.
-
 ```java
 client.setBinaryMessageListener(new BinaryMessageListener() {
     @Override
@@ -97,7 +91,7 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
             MessageHeader header = MessageManager.getMessageHeaderFromBinaryMessage(message);
             MessageData data = MessageManager.getMessageData(message);
             System.out.println(data.getTypeHelper().getMessageDataType() + " message received!");
-            // do something with the message...
+            //do something with the message...
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -113,26 +107,30 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
 });
 ```
 
-Connecting to the GDS.
+### Connecting to the GDS
 
 ```java
 client.connect();
 ```
 
-(During the connection, a connection type message is also sent after the websocket connection. If a positive acknowledgment message arrives, the connected() method returns true.)
+(During the connection, a connection type message is also sent after the websocket connection. If a positive ack message arrives, the connected() method returns true.)
 
+### Create messages
+
+A message consists of two parts, a header and a data.
+It is usually enough to create only the data part, because the header part is created automatically when the message is sent.
+Of course, you can also customize the header part, see [Working with custom messages](#Working-with-custom-messages) for the details.
+
+Let's see how to create a message data.
+
+```java
+MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+```
+
+
+### Send and receive messages
 
 After you connected, you can send messages to the GDS. You can do that with the sendMessage() methods.
-
-Send message with the binary representation of the message.
-```java
-void sendMessage(byte[] message)
-```
-
-Send message with the header and data part.
-```java
-void sendMessage(MessageHeader header, MessageData data)
-```
 
 Send message with the data part. The header part is completed automatically with the default values.
 ```java
@@ -144,15 +142,9 @@ Send message with the data part (the header part is completed automatically with
 void sendMessage(MessageData data, String messageId)
 ```
 
-In the examples, we will use the method in which the header part is generated automatically, but you can define the header part explicit at any time. 
-```java
-MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.EVENT_2);
-```
+To see how to send a message by specifying the header part too, go to the [Working with custom messages](#Working-with-custom-messages) section.
 
-And then you can send the message like this:
-```java
-client.SendMessage(header, data);
-```
+In the following, take a look at what sending and receiving messages look like for different message types.
 
 - [INSERT](#Insert)
 - [UPDATE](#Update)
@@ -163,7 +155,7 @@ client.SendMessage(header, data);
 	- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 - [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
 
-### INSERT
+#### INSERT
 ```java
 try {
     MessageData data = MessageManager.createMessageData2Event(
@@ -181,7 +173,7 @@ try {
 }
 ```
 
-### UPDATE
+#### UPDATE
 ```java
 try {
     MessageData data = MessageManager.createMessageData2Event(
@@ -196,7 +188,7 @@ try {
 }
 ```
 
-### MERGE
+#### MERGE
 ```java
 try {
     MessageData data = MessageManager.createMessageData2Event(
@@ -214,7 +206,7 @@ try {
 }
 ```
 
-### ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE
+#### ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE
 
 The ack for these messages is available through the subscribed listener.
 ```java
@@ -241,15 +233,15 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
-### SELECT
+#### SELECT
 
-#### QUERY
+##### QUERY
 
 ```java
 try {
     MessageData data = MessageManager.createMessageData10QueryRequest(
             "SELECT * FROM events",
-            ConsistencyType.NONE,
+            ConsistencyType.PAGES,
             60_000L);
     client.sendMessage(data);
 } catch (Throwable e) {
@@ -267,11 +259,13 @@ client.setMessageListener(new MessageListener() {
                 MessageData11QueryRequestAck queryAckData = data.getTypeHelper().asQueryRequestAckMessageData11();
                 System.out.println("Query request ack message received with '" + queryAckData.getGlobalStatus() + "' status code");
                 //do something with the message...
+                //...
+                //send a 'next query page' type message
                 try {
                     MessageData12NextQueryPage nextQueryPageData = MessageManager.createMessageData12NextQueryPage(
                             queryAckData.getQueryResponseHolder().getQueryContextHolder(),
                             60_000L);
-                    client.sendMessage(nextQueryPageData);
+                    client.sendMessage(nextQueryPageData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
@@ -290,7 +284,7 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
-#### ATTACHMENT REQUEST
+##### ATTACHMENT REQUEST
 ```java
 try {
     MessageData data = MessageManager.createMessageData4AttachmentRequest(
@@ -303,7 +297,7 @@ try {
 
 The ack for this message is available through the subscribed listener.
 The ack may contain the attachment if you also requested the binary attachment.
-If not and you requested the binary, the attachment is not yet available and will be sent as an 'attachment response' type message at a later time.
+If not contains and you requested the binary, the attachment is not yet available and will be sent as an 'attachment response' type message at a later time.
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
@@ -312,24 +306,43 @@ client.setMessageListener(new MessageListener() {
             case ATTACHMENT_REQUEST_ACK_5:
                 MessageData5AttachmentRequestAck attachmentRequestAckData = data.getTypeHelper().asAttachmentRequestAckMessageData5();
                 System.out.println("Attachment request ack message received with '" + attachmentRequestAckData.getGlobalStatus() + "' status code");
-                if(attachmentRequestAckData.getData() != null) {
+                if (attachmentRequestAckData.getData() != null) {
                     byte[] attachment = attachmentRequestAckData.getData().getResult().getAttachment();
-                    if(attachment == null) {
-                        //the attachment will be sent as an 'attachment response' type message at a later time if you requested the binary
+                    if (attachment == null) {
+                        //if you requested the binary the attachment will be sent as an 'attachment response' type message at a later time
                     }
                 }
                 break;
             case ATTACHMENT_RESPONSE_6:
-		//if you requested the binary attachment earlier and it was not included in the ack message you received for it
+                //if you requested the binary attachment earlier and it was not included in the ack message you received for it
                 MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
                 try {
                     byte[] attachment = attachmentResponseData.getBinary();
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
-		//TODO: send an ack for this message
+                //do something with the message...
+                //...
+                //send an ack message for the attachment response
+                try {
+                    MessageData7AttachmentResponseAck attachmentResponseAckData = MessageManager.createMessageData7AttachmentResponseAck(
+                            AckStatus.OK,
+                            new AttachmentResponseAckResultHolderImpl(
+                                    AckStatus.CREATED,
+                                    new AttachmentResultHolderImpl(
+                                            attachmentResponseData.getResult().getRequestIds(),
+                                            attachmentResponseData.getResult().getOwnerTable(),
+                                            attachmentResponseData.getResult().getAttachmentId()
+                                    )
+                            ),
+                            null
+                    );
+                    client.sendMessage(attachmentResponseAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
                 break;
-		//...	
+            //...
         }
     }
     @Override
@@ -343,29 +356,73 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
-### AUTOMATIC PUSHING 
+Note: the GDS may also send an attachment request to the client.
+
+
+#### AUTOMATIC PUSHING 
 
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-       switch (data.getTypeHelper().getMessageDataType()) {
-           case ATTACHMENT_RESPONSE_6:
-               // ...
-               break;
-           case EVENT_DOCUMENT_8:
-               // ...
-               break;
-           //...
-       }
+        switch (data.getTypeHelper().getMessageDataType()) {
+            case ATTACHMENT_RESPONSE_6:
+                MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
+                System.out.println("Attachment response message received");
+                //do something with the message...
+                //...
+                //send an ack message for the attachment response
+                try {
+                    MessageData7AttachmentResponseAck attachmentResponseAckData = MessageManager.createMessageData7AttachmentResponseAck(
+                            AckStatus.OK,
+                            new AttachmentResponseAckResultHolderImpl(
+                                    AckStatus.CREATED,
+                                    new AttachmentResultHolderImpl(
+                                            attachmentResponseData.getResult().getRequestIds(),
+                                            attachmentResponseData.getResult().getOwnerTable(),
+                                            attachmentResponseData.getResult().getAttachmentId()
+                                    )
+                            ),
+                            null
+                    );
+                    client.sendMessage(attachmentResponseAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                break;
+            case EVENT_DOCUMENT_8:
+                MessageData8EventDocument eventDocumentData = data.getTypeHelper().asEventDocumentMessageData8();
+                System.out.println("Event document message received");
+                //do something with the message...
+                //...
+                //send an ack message for the event document message
+                try {
+                    MessageData9EventDocumentAck eventDocumentAckData = MessageManager.createMessageMessageData9EventDocumentAck(
+                            AckStatus.OK,
+                            new ArrayList<EventDocumentResultHolder>(){{
+                                add(new EventDocumentResultHolderImpl(
+                                   AckStatus.CREATED,
+                                   null,
+                                   new HashMap<>()
+                                ));
+                            }},
+                            null
+                    );
+                    client.sendMessage(eventDocumentAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                break;
+            //...
+        }
     }
     @Override
     public void onConnected() {
-        // ...
+        System.out.println("Client connected!");
     }
     @Override
     public void onDisconnected() {
-        // ...
+        System.out.println("Client disconnected!");
     }
 });
 ```
@@ -373,4 +430,51 @@ client.setMessageListener(new MessageListener() {
 At the end, we close the websocket connection as well.
 ```java
 client.close();
+```
+
+### Working with custom messages
+
+A message consists of two parts, a header and a data. 
+It is usually enough to create only the data part because the header part is created automatically when the message is sent using the ```sendMessage(MessageData data)``` method.
+But it is also possible to explicitly define the header part with customized values.
+
+So first, we create the header part.
+
+```java
+MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
+```
+
+After that, we create the data part.
+```java
+MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+```
+
+Once we have a header and a data, we can use the following methods to send the message.
+
+
+Send message with the header and data part.
+```java
+void sendMessage(MessageHeader header, MessageData data)
+```
+
+```java
+try {
+    client.sendMessage(header, data);
+} catch (Throwable e) {
+    e.printStackTrace();
+}
+```
+
+Send message with the binary representation of the message.
+```java
+void sendMessage(byte[] message)
+```
+
+```java
+try {
+    byte[] message = MessageManager.createMessage(header, data);
+    client.sendMessage(message);
+} catch (Throwable e) {
+    e.printStackTrace();
+}
 ```
