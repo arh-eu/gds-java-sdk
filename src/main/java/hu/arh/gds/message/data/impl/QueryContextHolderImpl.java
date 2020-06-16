@@ -220,4 +220,19 @@ public class QueryContextHolderImpl implements QueryContextHolder {
         result = 31 * result + (partitionNames != null ? partitionNames.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "QueryContextHolderImpl{" +
+                "scrollId='" + scrollId + '\'' +
+                ", query='" + query + '\'' +
+                ", deliveredNumberOfHits=" + deliveredNumberOfHits +
+                ", queryStartTime=" + queryStartTime +
+                ", consistencyType=" + consistencyType +
+                ", lastBucketId='" + lastBucketId + '\'' +
+                ", gdsHolder=" + gdsHolder +
+                ", fieldValues=" + fieldValues +
+                ", partitionNames=" + partitionNames +
+                '}';
+    }
 }

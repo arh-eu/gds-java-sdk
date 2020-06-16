@@ -89,4 +89,12 @@ public class GDSHolderImpl implements GDSHolder {
         result = 31 * result + (gdsNodeName != null ? gdsNodeName.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "GDSHolderImpl{" +
+                "clusterName='" + clusterName + '\'' +
+                ", gdsNodeName='" + gdsNodeName + '\'' +
+                '}';
+    }
 }

@@ -100,4 +100,11 @@ public class PriorityLevelHolderImpl implements PriorityLevelHolder {
     public int hashCode() {
         return Objects.hash(operations);
     }
+
+    @Override
+    public String toString() {
+        return "PriorityLevelHolderImpl{" +
+                "operations=" + operations +
+                '}';
+    }
 }

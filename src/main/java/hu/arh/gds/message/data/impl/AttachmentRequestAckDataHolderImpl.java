@@ -100,4 +100,13 @@ public class AttachmentRequestAckDataHolderImpl implements AttachmentRequestAckD
     public int hashCode() {
         return Objects.hash(status, result, remainedWaitTimeMillis);
     }
+
+    @Override
+    public String toString() {
+        return "AttachmentRequestAckDataHolderImpl{" +
+                "status=" + status +
+                ", result=" + result +
+                ", remainedWaitTimeMillis=" + remainedWaitTimeMillis +
+                '}';
+    }
 }

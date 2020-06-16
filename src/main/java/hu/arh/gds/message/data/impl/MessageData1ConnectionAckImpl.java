@@ -310,4 +310,14 @@ public class MessageData1ConnectionAckImpl extends MessageData1ConnectionAck {
         result = 31 * result + (globalException != null ? globalException.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData1ConnectionAckImpl{" +
+                "ackDataOk=" + ackDataOk +
+                ", ackDataUnauthorizedItems=" + ackDataUnauthorizedItems +
+                ", globalStatus=" + globalStatus +
+                ", globalException='" + globalException + '\'' +
+                '}';
+    }
 }

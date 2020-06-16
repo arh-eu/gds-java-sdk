@@ -290,4 +290,16 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
     public int hashCode() {
         return Objects.hash(serveOnTheSameConnection, clusterName, protocolVersionNumber, fragmentationSupported, fragmentTransmissionUnit, password);
     }
+
+    @Override
+    public String toString() {
+        return "MessageData0ConnectionImpl{" +
+                "serveOnTheSameConnection=" + serveOnTheSameConnection +
+                ", clusterName='" + clusterName + '\'' +
+                ", protocolVersionNumber=" + protocolVersionNumber +
+                ", fragmentationSupported=" + fragmentationSupported +
+                ", fragmentTransmissionUnit=" + fragmentTransmissionUnit +
+                ", password='" + password + '\'' +
+                '}';
+    }
 }

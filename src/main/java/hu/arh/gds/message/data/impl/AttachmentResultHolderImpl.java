@@ -300,4 +300,18 @@ public class AttachmentResultHolderImpl implements AttachmentResultHolder {
         result = 31 * result + Arrays.hashCode(attachment);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "AttachmentResultHolderImpl{" +
+                "requestIds=" + requestIds +
+                ", ownerTable='" + ownerTable + '\'' +
+                ", attachmentId='" + attachmentId + '\'' +
+                ", ownerIds=" + ownerIds +
+                ", meta='" + meta + '\'' +
+                ", ttl=" + ttl +
+                ", toValid=" + toValid +
+                ", attachment=" + (attachment == null ? "null" : ("[length=" + String.valueOf(attachment.length))) + "]" +
+                '}';
+    }
 }

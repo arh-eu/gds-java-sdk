@@ -150,6 +150,11 @@ public class EventResultHolderImpl implements EventResultHolder {
 
     @Override
     public String toString() {
-        return String.format("EventResultHolderImpl{status=%1$s}", status);
+        return "EventResultHolderImpl{" +
+                "status=" + status +
+                ", notification='" + notification + '\'' +
+                ", fieldHolders=" + fieldHolders +
+                ", fieldValues=" + fieldValues +
+                '}';
     }
 }

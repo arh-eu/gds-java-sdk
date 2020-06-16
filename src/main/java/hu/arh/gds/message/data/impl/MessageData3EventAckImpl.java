@@ -141,4 +141,13 @@ public class MessageData3EventAckImpl extends MessageData3EventAck {
         result = 31 * result + (globalException != null ? globalException.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData3EventAckImpl{" +
+                "eventResults=" + eventResults +
+                ", globalStatus=" + globalStatus +
+                ", globalException='" + globalException + '\'' +
+                '}';
+    }
 }

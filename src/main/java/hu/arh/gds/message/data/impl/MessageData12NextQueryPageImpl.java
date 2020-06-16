@@ -158,4 +158,13 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
         result = 31 * result + (timeout != null ? timeout.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData12NextQueryPageImpl{" +
+                "queryContextHolderSerializable=" + queryContextHolderSerializable +
+                ", queryContextDescriptor=" + queryContextDescriptor +
+                ", timeout=" + timeout +
+                '}';
+    }
 }

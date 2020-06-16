@@ -112,4 +112,13 @@ public class EventDocumentResultHolderImpl implements EventDocumentResultHolder 
     public int hashCode() {
         return Objects.hash(status, notification, returnValues);
     }
+
+    @Override
+    public String toString() {
+        return "EventDocumentResultHolderImpl{" +
+                "status=" + status +
+                ", notification='" + notification + '\'' +
+                ", returnValues=" + returnValues +
+                '}';
+    }
 }

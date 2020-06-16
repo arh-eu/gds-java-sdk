@@ -128,4 +128,13 @@ public class MessageData7AttachmentResponseAckImpl extends MessageData7Attachmen
     public int hashCode() {
         return Objects.hash(globalStatus, data, globalException);
     }
+
+    @Override
+    public String toString() {
+        return "MessageData7AttachmentResponseAckImpl{" +
+                "globalStatus=" + globalStatus +
+                ", data=" + data +
+                ", globalException='" + globalException + '\'' +
+                '}';
+    }
 }

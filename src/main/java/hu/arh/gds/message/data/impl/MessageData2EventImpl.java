@@ -239,4 +239,13 @@ public class MessageData2EventImpl extends MessageData2Event {
     public int hashCode() {
         return Objects.hash(operations, binaryContents, priorityLevels);
     }
+
+    @Override
+    public String toString() {
+        return "MessageData2EventImpl{" +
+                "operations='" + operations + '\'' +
+                ", binaryContents=" + binaryContents +
+                ", priorityLevels=" + priorityLevels +
+                '}';
+    }
 }

@@ -157,12 +157,6 @@ public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
     }
 
     @Override
-    public String toString() {
-        return "MessageData10QueryRequestImpl{" +
-                "" + "query=" + query + ", consistencyType=" + consistencyType + ", timeout=" + timeout + ", pageSize=" + pageSize + ", queryType=" + queryType + '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -182,5 +176,16 @@ public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
         result = 31 * result + (pageSize != null ? pageSize.hashCode() : 0);
         result = 31 * result + (queryType != null ? queryType.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageData10QueryRequestImpl{" +
+                "query='" + query + '\'' +
+                ", consistencyType=" + consistencyType +
+                ", timeout=" + timeout +
+                ", pageSize=" + pageSize +
+                ", queryType=" + queryType +
+                '}';
     }
 }

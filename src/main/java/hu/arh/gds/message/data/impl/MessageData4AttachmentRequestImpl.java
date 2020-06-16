@@ -82,13 +82,6 @@ public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentReq
     }
 
     @Override
-    public String toString() {
-        return "MessageData4AttachmentRequestImpl{" +
-                "request='" + request + '\'' +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -99,5 +92,12 @@ public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentReq
     @Override
     public int hashCode() {
         return request != null ? request.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageData4AttachmentRequestImpl{" +
+                "request='" + request + '\'' +
+                '}';
     }
 }

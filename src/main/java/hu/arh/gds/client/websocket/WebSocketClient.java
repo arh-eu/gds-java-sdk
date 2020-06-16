@@ -119,7 +119,8 @@ public class WebSocketClient {
         if (isOpen()) {
             logger.info("WebSocketClient closing channel...");
             ch.writeAndFlush(new CloseWebSocketFrame());
-            ch.closeFuture().sync();
+            //ch.closeFuture().sync();
+            ch.closeFuture();
             group.shutdownGracefully();
         }
     }

@@ -84,4 +84,12 @@ public class AttachmentResponseAckResultHolderImpl implements AttachmentResponse
     public int hashCode() {
         return Objects.hash(status, result);
     }
+
+    @Override
+    public String toString() {
+        return "AttachmentResponseAckResultHolderImpl{" +
+                "status=" + status +
+                ", result=" + result +
+                '}';
+    }
 }

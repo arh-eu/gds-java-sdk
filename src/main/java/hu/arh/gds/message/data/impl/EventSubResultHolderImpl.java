@@ -140,4 +140,16 @@ public class EventSubResultHolderImpl implements EventSubResultHolder {
     public int hashCode() {
         return Objects.hash(subStatus, id, tableName, created, version, recordValues);
     }
+
+    @Override
+    public String toString() {
+        return "EventSubResultHolderImpl{" +
+                "subStatus=" + subStatus +
+                ", id='" + id + '\'' +
+                ", tableName='" + tableName + '\'' +
+                ", created=" + created +
+                ", version=" + version +
+                ", recordValues=" + recordValues +
+                '}';
+    }
 }

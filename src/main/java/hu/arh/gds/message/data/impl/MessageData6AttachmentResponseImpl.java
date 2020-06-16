@@ -115,4 +115,12 @@ public class MessageData6AttachmentResponseImpl extends MessageData6AttachmentRe
     public int hashCode() {
         return Objects.hash(result, eventHolder);
     }
+
+    @Override
+    public String toString() {
+        return "MessageData6AttachmentResponseImpl{" +
+                "result=" + result +
+                ", eventHolder=" + eventHolder +
+                '}';
+    }
 }

@@ -145,4 +145,13 @@ public class MessageData9EventDocumentAckImpl extends MessageData9EventDocumentA
         result1 = 31 * result1 + (globalException != null ? globalException.hashCode() : 0);
         return result1;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData9EventDocumentAckImpl{" +
+                "globalStatus=" + globalStatus +
+                ", result=" + result +
+                ", globalException='" + globalException + '\'' +
+                '}';
+    }
 }

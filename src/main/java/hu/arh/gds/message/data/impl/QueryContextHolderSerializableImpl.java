@@ -114,4 +114,20 @@ public class QueryContextHolderSerializableImpl implements QueryContextHolderSer
     public List<String> getPartitionNames() {
         return this.partitionNames;
     }
+
+    @Override
+    public String toString() {
+        return "QueryContextHolderSerializableImpl{" +
+                "scrollId='" + scrollId + '\'' +
+                ", query='" + query + '\'' +
+                ", deliveredNumberOfHits=" + deliveredNumberOfHits +
+                ", queryStartTime=" + queryStartTime +
+                ", consistencyType=" + consistencyType +
+                ", lastBucketId='" + lastBucketId + '\'' +
+                ", clusterName='" + clusterName + '\'' +
+                ", GDSNodeName='" + GDSNodeName + '\'' +
+                ", fieldValues=" + fieldValues +
+                ", partitionNames=" + partitionNames +
+                '}';
+    }
 }

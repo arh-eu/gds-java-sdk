@@ -96,4 +96,12 @@ public class EventHolderImpl implements EventHolder {
         result = 31 * result + (fields != null ? fields.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "EventHolderImpl{" +
+                "tableName='" + tableName + '\'' +
+                ", fields=" + fields +
+                '}';
+    }
 }

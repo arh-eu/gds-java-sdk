@@ -216,4 +216,17 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
         result = 31 * result + (returningOptions != null ? returningOptions.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData8EventDocumentImpl{" +
+                "tableName='" + tableName + '\'' +
+                ", fieldHolders=" + fieldHolders +
+                ", records=" + records +
+                ", recordsObject=" + recordsObject +
+                ", recordsMap=" + recordsMap +
+                ", recordsObjectMap=" + recordsObjectMap +
+                ", returningOptions=" + returningOptions +
+                '}';
+    }
 }

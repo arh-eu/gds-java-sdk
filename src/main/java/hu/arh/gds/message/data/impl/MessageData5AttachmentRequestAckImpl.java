@@ -126,4 +126,13 @@ public class MessageData5AttachmentRequestAckImpl extends MessageData5Attachment
         result = 31 * result + (globalException != null ? globalException.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MessageData5AttachmentRequestAckImpl{" +
+                "globalStatus=" + globalStatus +
+                ", data=" + data +
+                ", globalException='" + globalException + '\'' +
+                '}';
+    }
 }
