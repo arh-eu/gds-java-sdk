@@ -23,11 +23,11 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 # Usage
 
-Messages can be sent to the GDS via WebSocket protocol. The SDK contains a WebSocket client with basic functionalities, so you can use this to send and receive messages.
-You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client code without a real GDS instance.
-The SDK also includes a console client that allows you to send and receive messages without writing any code. 
+Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a messages library with serialization/deserialization funcionalities and with a WebSocket client, so you can use this to send and receive messages.
+The SDK also includes a console client that allows you to send and receive messages without writing any code.
+You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
 
-- [Console client](#Console-client)
+- [Console client (high-level usage)](#Console-client)
 	- [Optional arguments](#Optional-arguments)
 		- [URL](#URL)
 		- [USERNAME](#USERNAME)
@@ -38,7 +38,7 @@ The SDK also includes a console client that allows you to send and receive messa
 		- [ATTACHMENT](#ATTACHMENT)
 		- [QUERY](#QUERY)
 		- [QUERYALL](#QUERYALL)
-- [Library](#Library)
+- [Library (low-level usage)](#Library)
 	- [Creating the client](#Creating-the-client)
 	- [Subscribing to listeners](#Subscribing-to-listeners)
 	- [Connecting to the GDS](#Connecting-to-the-GDS)
@@ -62,7 +62,7 @@ This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-
 The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console.
 
 If you need help about the usage, the syntax can be printed by the --help flag.
-```
+```shell
 java -jar gds-console-client.jar --help
 ```
 
@@ -104,7 +104,7 @@ The timeout value for the response messages in milliseconds. By default 30000 (3
 
 The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
 
-```
+```shell
 java -jar gds-console-client -event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT202001010000000000', 'ABC123', 90, array('ATID202001010000000000')"
 ```
 
@@ -112,7 +112,7 @@ java -jar gds-console-client -event "INSERT INTO events (id, numberplate, speed,
 
 The SELECT statement you would like to use. This will send an attachment request type message.
 
-```
+```shell
 java -jar gds-console-client -attachment "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
 ```
 
@@ -120,7 +120,7 @@ java -jar gds-console-client -attachment "SELECT * FROM \"events-@attachment\" W
 
 The SELECT statement you would like to use. This will send a query type message.
 
-```
+```shell
 java -jar gds-console-client -query "SELECT * FROM events"
 ```
 
@@ -128,7 +128,7 @@ java -jar gds-console-client -query "SELECT * FROM events"
 
 The SELECT statement you would like to use. This will send a query type message and query all pages, not just the first one.
 
-```
+```shell
 java -jar gds-console-client -queryall "SELECT * FROM events"
 ```
 
