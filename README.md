@@ -1,4 +1,4 @@
-## Installation
+# Installation
 
 With [JitPack](https://jitpack.io/), you can easily add this project as a maven dependency:
 
@@ -21,10 +21,118 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 (The library was made by [this](https://github.com/msgpack/msgpack-java) messagepack java implementation)
 
-## Usage
+# Usage
 
 Messages can be sent to the GDS via WebSocket protocol. The SDK contains a WebSocket client with basic functionalities, so you can use this to send and receive messages.
 You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client code without a real GDS instance.
+The SDK also includes a console client that allows you to send and receive messages without writing any code. 
+
+- [Console client](#Console-client)
+	- [Optional arguments](#Optional-arguments)
+		- [URL](#URL)
+		- [USERNAME](#USERNAME)
+		- [PASSWORD](#PASSWORD)
+		- [TIMEOUT](#TIMEOUT)
+	- [Mandatory arguments](#Mandatory-arguments)
+		- [EVENT](#EVENT)
+		- [ATTACHMENT](#ATTACHMENT)
+		- [QUERY](#QUERY)
+		- [QUERYALL](#QUERYALL)
+- [Library](#Library)
+	- [Creating the client](#Creating-the-client)
+	- [Subscribing to listeners](#Subscribing-to-listeners)
+	- [Connecting to the GDS](#Connecting-to-the-GDS)
+	- [Create messages](#Create-messages)
+	- [Send and receive messages](#Send-and-receive-messages)
+		- [INSERT](#Insert)
+		- [UPDATE](#Update)
+		- [MERGE](#Merge)
+		- [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
+		- [SELECT](#Select)
+			- [QUERY](#Query)
+			- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
+		- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+	- [Working with custom messages](#Working-with-custom-messages)
+
+## Console client
+
+The console client is used with an executable jar file. 
+This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-sdk/releases) (or you can build the project with maven).
+
+The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console.
+
+If you need help about the usage, the syntax can be printed by the --help flag.
+```
+java -jar gds-console-client.jar --help
+```
+
+### Arguments
+
+- [Optional arguments](#Optional-arguments)
+	- [URL](#URL)
+	- [USERNAME](#USERNAME)
+	- [PASSWORD](#PASSWORD)
+	- [TIMEOUT](#TIMEOUT)
+- [Mandatory arguments](#Mandatory-arguments)
+	- [EVENT](#EVENT)
+	- [ATTACHMENT](#ATTACHMENT)
+	- [QUERY](#QUERY)
+	- [QUERYALL](#QUERYALL)
+
+
+#### Optional arguments
+
+##### URL
+
+The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8080/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8080).
+
+##### USERNAME
+
+The username you would like to use to login to the GDS. By default, "user" will be used.
+
+##### PASSWORD
+
+The password you would like to use to login into the GDS. By default there is no authentication.
+
+##### TIMEOUT
+
+The timeout value for the response messages in milliseconds. By default 30000 (30 sec) will be used. 
+
+#### Mandatory Arguments
+
+##### EVENT
+
+The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
+
+```
+java -jar gds-console-client -event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT202001010000000000', 'ABC123', 90, array('ATID202001010000000000')"
+```
+
+##### ATTACHMENT
+
+The SELECT statement you would like to use. This will send an attachment request type message.
+
+```
+java -jar gds-console-client -attachment "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
+```
+
+##### QUERY
+
+The SELECT statement you would like to use. This will send a query type message.
+
+```
+java -jar gds-console-client -query "SELECT * FROM events"
+```
+
+##### QUERYALL
+
+The SELECT statement you would like to use. This will send a query type message and query all pages, not just the first one.
+
+```
+java -jar gds-console-client -queryall "SELECT * FROM events"
+```
+
+## Library
 
 - [Creating the client](#Creating-the-client)
 - [Subscribing to listeners](#Subscribing-to-listeners)
@@ -235,6 +343,9 @@ client.setMessageListener(new MessageListener() {
 
 #### SELECT
 
+- [QUERY](#QUERY)
+- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
+
 ##### QUERY
 
 ```java
@@ -432,7 +543,7 @@ At the end, we close the websocket connection as well.
 client.close();
 ```
 
-### Working with custom messages
+#### Working with custom messages
 
 A message consists of two parts, a header and a data. 
 It is usually enough to create only the data part because the header part is created automatically when the message is sent using the ```sendMessage(MessageData data)``` method.
@@ -458,7 +569,7 @@ void sendMessage(MessageHeader header, MessageData data)
 ```
 
 ```java
-try {
+try {	
     client.sendMessage(header, data);
 } catch (Throwable e) {
     e.printStackTrace();
