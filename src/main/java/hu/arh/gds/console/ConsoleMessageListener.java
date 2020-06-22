@@ -8,9 +8,13 @@ import hu.arh.gds.message.util.MessageManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ConsoleMessageListener implements MessageListener {
     private final ConsoleArguments consoleArguments;
     private final GDSWebSocketClient client;
-    private final int timeout;
+    private final Integer timeout;
 
     private CountDownLatch eventAckLatch;
     private CountDownLatch attachmentRequestAckLatch;
@@ -26,6 +30,9 @@ public class ConsoleMessageListener implements MessageListener {
     private CountDownLatch queryAckLatch;
 
     private AtomicBoolean closeConnection = new AtomicBoolean(true);
+
+    private static final String ATTACHMENTS_FOLDER = "attachments";
+    private static final String ATTACHMENT_FILE_NAME = "attachment";
 
     public ConsoleMessageListener(ConsoleArguments consoleArguments, GDSWebSocketClient client) {
         this.consoleArguments = consoleArguments;
@@ -39,7 +46,7 @@ public class ConsoleMessageListener implements MessageListener {
         System.out.println(data.toString());
 
         switch (data.getTypeHelper().getMessageDataType()) {
-            case EVENT_2:
+            case EVENT_ACK_3:
                 handleEventAck(header, data);
                 break;
             case ATTACHMENT_REQUEST_ACK_5:
@@ -60,19 +67,22 @@ public class ConsoleMessageListener implements MessageListener {
     }
 
     @Override
+    public void onConnectionFailed(String reason) {
+        System.out.println("Failed to connecting to the GDS: " + reason);
+    }
+
+    @Override
     public void onConnected() {
         System.out.println("Client connected!");
         switch (consoleArguments.getMessageType()) {
             case EVENT:
                 System.out.println("Sending event message...");
                 try {
-                    client.sendMessage(MessageManager.createMessageData2Event(
-                            new ArrayList<String>() {{
-                                add(consoleArguments.getStatement());
-                            }},
-                            new HashMap<>(),
-                            new ArrayList<>()));
                     eventAckLatch = new CountDownLatch(1);
+                    client.sendMessage(MessageManager.createMessageData2Event(
+                            consoleArguments.getStatement(),
+                            loadAttachments(consoleArguments.getFiles()),
+                            new ArrayList<>()));
                     waitForResponse(
                             eventAckLatch,
                             timeout);
@@ -84,10 +94,10 @@ public class ConsoleMessageListener implements MessageListener {
             case ATTACHMENT:
                 System.out.println("Sending attachment request message...");
                 try {
+                    attachmentRequestAckLatch = new CountDownLatch(1);
                     client.sendMessage(MessageManager.createMessageData4AttachmentRequest(
                             consoleArguments.getStatement()
                     ));
-                    attachmentRequestAckLatch = new CountDownLatch(1);
                     waitForResponse(
                             attachmentRequestAckLatch,
                             timeout
@@ -101,12 +111,12 @@ public class ConsoleMessageListener implements MessageListener {
             case QUERYALL:
                 System.out.println("Sending query message...");
                 try {
+                    queryAckLatch = new CountDownLatch(1);
                     client.sendMessage(MessageManager.createMessageData10QueryRequest(
                             consoleArguments.getStatement(),
                             ConsistencyType.PAGES,
                             60_000L
                     ));
-                    queryAckLatch = new CountDownLatch(1);
                     waitForResponse(
                             queryAckLatch,
                             timeout
@@ -124,16 +134,6 @@ public class ConsoleMessageListener implements MessageListener {
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
-    }
-
-    private void saveAttachment(byte[] attachment) {
-        try {
-            OutputStream os = new FileOutputStream(new File("attachment"));
-            os.write(attachment);
-            os.close();
-        } catch (Throwable e) {
-            System.out.println(e.getMessage());
-        }
     }
 
     private void waitForResponse(CountDownLatch latch, int timeout) {
@@ -215,5 +215,34 @@ public class ConsoleMessageListener implements MessageListener {
         } else {
             countDownLatch(queryAckLatch);
         }
+    }
+
+    private static void saveAttachment(byte[] attachment) {
+        try {
+            File attachmentsFolder = new File(ATTACHMENTS_FOLDER);
+            if(!attachmentsFolder.exists()) {
+                attachmentsFolder.mkdir();
+            }
+            OutputStream os = new FileOutputStream(attachmentsFolder.getPath() + "/" + ATTACHMENT_FILE_NAME);
+            os.write(attachment);
+            os.close();
+        } catch (Throwable e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static Map<String, byte[]> loadAttachments(List<File> files) {
+        Map<String, byte[]> binaries = new HashMap<>();
+        for(File file: files) {
+            if(file.exists()) {
+                try {
+                    byte[] binary = Files.readAllBytes(file.toPath());
+                    binaries.put(file.getName(), binary);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        }
+        return binaries;
     }
 }

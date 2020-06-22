@@ -84,11 +84,11 @@ java -jar gds-console-client.jar --help
 
 ##### URL
 
-The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8080/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8080).
+The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8888/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
 ##### USERNAME
 
-The username you would like to use to login to the GDS. By default, "user" will be used.
+The username you would like to use to login to the GDS. By default, "username" will be used.
 
 ##### PASSWORD
 
@@ -156,8 +156,8 @@ First, we create the client object.
 final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
-        "ws://127.0.0.1:8080/gate",
-        "user",
+        "ws://127.0.0.1:8888/gate",
+        "username",
         null,
         logger
 );
@@ -552,7 +552,7 @@ But it is also possible to explicitly define the header part with customized val
 So first, we create the header part.
 
 ```java
-MessageHeader header = MessageManager.createMessageHeaderBase("user", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
+MessageHeader header = MessageManager.createMessageHeaderBase("username", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
 ```
 
 After that, we create the data part.

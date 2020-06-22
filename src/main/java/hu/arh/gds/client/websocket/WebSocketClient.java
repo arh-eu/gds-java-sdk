@@ -78,7 +78,7 @@ public class WebSocketClient {
                 WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
                         WebSocketClientHandshakerFactory.newHandshaker(
                                 URI, WebSocketVersion.V13, null, true,
-                                new DefaultHttpHeaders()), binaryMessageListener, logger);
+                                new DefaultHttpHeaders()), binaryMessageListener, logger, group);
                 Bootstrap bootstrap = new Bootstrap();
                 bootstrap.group(group)
                         .channel(NioSocketChannel.class)
@@ -100,6 +100,9 @@ public class WebSocketClient {
                 ch = bootstrap.connect(URI.getHost(), port).sync().channel();
                 webSocketClientHandler.handshakeFuture().sync();
             } catch (Throwable throwable) {
+                if (binaryMessageListener != null) {
+                    binaryMessageListener.onConnectionFailed(throwable.getMessage());
+                }
                 group.shutdownGracefully();
                 throw throwable;
             }

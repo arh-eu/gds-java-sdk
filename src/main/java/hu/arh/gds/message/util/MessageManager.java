@@ -370,6 +370,17 @@ public class MessageManager {
                 priorityLevels);
     }
 
+    public static MessageData2Event createMessageData2Event(
+            String operations,
+            Map<String, byte[]> binaryContents,
+            List<PriorityLevelHolder> priorityLevels) throws IOException, ValidationException {
+
+        return new MessageData2EventImpl(false,
+                operations,
+                binaryContents,
+                priorityLevels);
+    }
+
     public static MessageData3EventAck createMessageData3EventAck(
             List<EventResultHolder> eventResults,
             AckStatus globalStatus,

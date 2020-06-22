@@ -10,17 +10,20 @@ import java.util.logging.Logger;
 class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
     private final WebSocketClientHandshaker handshaker;
     private ChannelPromise handshakeFuture;
-
     private final BinaryMessageListener binaryMessageListener;
 
     private final Logger logger;
 
+    private EventLoopGroup eventLoopGroup;
+
     public WebSocketClientHandler(WebSocketClientHandshaker handshaker,
                                   BinaryMessageListener binaryMessageListener,
-                                  Logger logger) {
-        this.logger = logger;
+                                  Logger logger,
+                                  EventLoopGroup eventLoopGroup) {
         this.handshaker = handshaker;
         this.binaryMessageListener = binaryMessageListener;
+        this.logger = logger;
+        this.eventLoopGroup = eventLoopGroup;
     }
 
 
@@ -86,7 +89,8 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
             logger.info("WebSocketClient received pong");
         } else if (frame instanceof CloseWebSocketFrame) {
             logger.info("WebSocketClient received closing");
-            ch.close();
+            ch.closeFuture();
+            eventLoopGroup.shutdownGracefully();
         } else {
             logger.info("Unsupported frame type: " + frame.getClass().getName());
         }

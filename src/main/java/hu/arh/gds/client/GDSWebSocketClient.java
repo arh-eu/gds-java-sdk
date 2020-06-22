@@ -40,7 +40,13 @@ public class GDSWebSocketClient {
                 }
 
                 @Override
-                public void onConnected() {
+                public void onConnected() {}
+
+                @Override
+                public void onConnectionFailed(String reason) {
+                    if(messageListener != null) {
+                        messageListener.onConnectionFailed(reason);
+                    }
                 }
 
                 @Override
@@ -177,7 +183,11 @@ public class GDSWebSocketClient {
                         if(messageListener != null) {
                             messageListener.onConnected();
                         } else if(binaryMessageListener != null) {
-                            binaryMessageListener.onDisconnected();
+                            binaryMessageListener.onConnected();
+                        }
+                    } else {
+                        if(messageListener != null) {
+                            messageListener.onConnectionFailed(ackData.getGlobalException());
                         }
                     }
                     return;
