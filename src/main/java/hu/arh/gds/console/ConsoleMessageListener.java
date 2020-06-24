@@ -43,7 +43,7 @@ public class ConsoleMessageListener implements MessageListener {
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
         System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
-        System.out.println(data.toString());
+        //System.out.println(data.toString());
 
         switch (data.getTypeHelper().getMessageDataType()) {
             case EVENT_ACK_3:
@@ -56,6 +56,7 @@ public class ConsoleMessageListener implements MessageListener {
                 handleAttachmentResponse(header, data);
                 break;
             case QUERY_REQUEST_ACK_11:
+                printQueryReply(data.getTypeHelper().asQueryRequestAckMessageData11());
                 handleQueryAck(header, data);
                 break;
             default:
@@ -64,6 +65,24 @@ public class ConsoleMessageListener implements MessageListener {
                 }
                 break;
         }
+    }
+
+    private void printQueryReply(MessageData11QueryRequestAck data) {
+        StringBuilder sb = new StringBuilder();
+        if (data.getGlobalStatus().isErrorStatus()) {
+            sb.append("The query was unsuccessful!").append(System.lineSeparator());
+            appendErrorCode(sb, data);
+        } else {
+            sb.append("Query was successful! Total of ").append(data.getQueryResponseHolder().getNumberOfHits()).append(" record(s) returned.").append(System.lineSeparator());
+            sb.append("Records: ").append(System.lineSeparator());
+            data.getQueryResponseHolder().getHits().forEach( hit -> sb.append(hit).append(System.lineSeparator()));
+        }
+        System.out.println(sb.toString());
+    }
+
+    private void appendErrorCode(StringBuilder sb, Ack data) {
+        sb.append("Status: ").append(data.getGlobalStatus().name()).append(" (").append(data.getGlobalStatus().getValue()).append(")").append(System.lineSeparator());
+        sb.append("Error message: ").append(data.getGlobalException()).append(System.lineSeparator());
     }
 
     @Override
@@ -141,7 +160,7 @@ public class ConsoleMessageListener implements MessageListener {
             try {
                 latch.await(timeout, TimeUnit.MILLISECONDS);
                 if (client.connected()) {
-                    if(closeConnection.get()) {
+                    if (closeConnection.get()) {
                         client.close();
                     } else {
                         closeConnection.set(true);
@@ -220,7 +239,7 @@ public class ConsoleMessageListener implements MessageListener {
     private static void saveAttachment(byte[] attachment) {
         try {
             File attachmentsFolder = new File(ATTACHMENTS_FOLDER);
-            if(!attachmentsFolder.exists()) {
+            if (!attachmentsFolder.exists()) {
                 attachmentsFolder.mkdir();
             }
             OutputStream os = new FileOutputStream(attachmentsFolder.getPath() + "/" + ATTACHMENT_FILE_NAME);
@@ -233,8 +252,8 @@ public class ConsoleMessageListener implements MessageListener {
 
     private static Map<String, byte[]> loadAttachments(List<File> files) {
         Map<String, byte[]> binaries = new HashMap<>();
-        for(File file: files) {
-            if(file.exists()) {
+        for (File file : files) {
+            if (file.exists()) {
                 try {
                     byte[] binary = Files.readAllBytes(file.toPath());
                     binaries.put(file.getName(), binary);
