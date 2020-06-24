@@ -63,7 +63,7 @@ The console client will send the message you specify, and will await for the cor
 
 If you need help about the usage, the syntax can be printed by the --help flag.
 ```shell
-java -jar gds-console-client.jar --help
+java -jar gds-console-client.jar -help
 ```
 
 ### Arguments
@@ -73,11 +73,11 @@ java -jar gds-console-client.jar --help
 	- [USERNAME](#USERNAME)
 	- [PASSWORD](#PASSWORD)
 	- [TIMEOUT](#TIMEOUT)
-- [Mandatory arguments](#Mandatory-arguments)
+	- [HEX](#HEX)
+- [Commands](#Commands)
 	- [EVENT](#EVENT)
 	- [ATTACHMENT](#ATTACHMENT)
 	- [QUERY](#QUERY)
-	- [QUERYALL](#QUERYALL)
 
 
 #### Optional arguments
@@ -88,7 +88,7 @@ The URL of the GDS instance you would like to connect to. By default, "ws://127.
 
 ##### USERNAME
 
-The username you would like to use to login to the GDS. By default, "username" will be used.
+The username you would like to use to login to the GDS. By default, "user" will be used.
 
 ##### PASSWORD
 
@@ -98,14 +98,18 @@ The password you would like to use to login into the GDS. By default there is no
 
 The timeout value for the response messages in milliseconds. By default 30000 (30 sec) will be used. 
 
-#### Mandatory Arguments
+##### HEX
+
+String to hex separated by semicolon.
+
+#### Commands
 
 ##### EVENT
 
 The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
 
 ```shell
-java -jar gds-console-client -event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT202001010000000000', 'ABC123', 90, array('ATID202001010000000000')"
+java -jar gds-console-client event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT200622000000000000', 'ABC123', 90, array('ATID200622000000000000')"
 ```
 
 ##### ATTACHMENT
@@ -113,7 +117,7 @@ java -jar gds-console-client -event "INSERT INTO events (id, numberplate, speed,
 The SELECT statement you would like to use. This will send an attachment request type message.
 
 ```shell
-java -jar gds-console-client -attachment "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
+java -jar gds-console-client attachment-request "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
 ```
 
 ##### QUERY
@@ -121,15 +125,13 @@ java -jar gds-console-client -attachment "SELECT * FROM \"events-@attachment\" W
 The SELECT statement you would like to use. This will send a query type message.
 
 ```shell
-java -jar gds-console-client -query "SELECT * FROM events"
+java -jar gds-console-client query "SELECT * FROM events"
 ```
 
-##### QUERYALL
-
-The SELECT statement you would like to use. This will send a query type message and query all pages, not just the first one.
+This will send a query type message and query all pages, not just the first one.
 
 ```shell
-java -jar gds-console-client -queryall "SELECT * FROM events"
+java -jar gds-console-client query -all "SELECT * FROM events"
 ```
 
 ## Library
