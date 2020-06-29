@@ -61,7 +61,7 @@ This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-
 
 The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console.
 
-If you need help about the usage, the syntax can be printed by the --help flag.
+If you need help about the usage, the syntax can be printed by the -help flag.
 ```shell
 java -jar gds-console-client.jar -help
 ```
@@ -74,6 +74,7 @@ java -jar gds-console-client.jar -help
 	- [PASSWORD](#PASSWORD)
 	- [TIMEOUT](#TIMEOUT)
 	- [HEX](#HEX)
+	- [EXPORT](#EXPORT)
 - [Commands](#Commands)
 	- [EVENT](#EVENT)
 	- [ATTACHMENT](#ATTACHMENT)
@@ -101,6 +102,8 @@ The timeout value for the response messages in milliseconds. By default 30000 (3
 ##### HEX
 
 String to hex separated by semicolon.
+
+##### EXPORT
 
 #### Commands
 
@@ -474,14 +477,16 @@ Note: the GDS may also send an attachment request to the client.
 
 #### AUTOMATIC PUSHING 
 
+
+
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.getTypeHelper().getMessageDataType()) {
+        switch (data.g n etTypeHelper().getMessageDataType()) {
             case ATTACHMENT_RESPONSE_6:
                 MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
-                System.out.println("Attachment response message received");
+                System.out.println("Attachment response message received"); 
                 //do something with the message...
                 //...
                 //send an ack message for the attachment response
@@ -491,7 +496,7 @@ client.setMessageListener(new MessageListener() {
                             new AttachmentResponseAckResultHolderImpl(
                                     AckStatus.CREATED,
                                     new AttachmentResultHolderImpl(
-                                            attachmentResponseData.getResult().getRequestIds(),
+                                             attachmentResponseData.getResult().getRequestIds(),
                                             attachmentResponseData.getResult().getOwnerTable(),
                                             attachmentResponseData.getResult().getAttachmentId()
                                     )

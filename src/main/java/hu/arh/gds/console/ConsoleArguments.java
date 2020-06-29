@@ -11,6 +11,7 @@ public class ConsoleArguments {
     private String statement;
     private Integer timeout;
     private List<File> files;
+    private boolean export;
 
     public ConsoleArguments(String url,
                             String username,
@@ -18,7 +19,8 @@ public class ConsoleArguments {
                             MessageType messageType,
                             String statement,
                             Integer timeout,
-                            List<File> files) {
+                            List<File> files,
+                            boolean export) {
         this.url = url;
         this.username = username;
         this.password = password;
@@ -26,6 +28,7 @@ public class ConsoleArguments {
         this.statement = statement;
         this.timeout = timeout;
         this.files = files;
+        this.export = export;
     }
 
     public String getUrl() {
@@ -54,5 +57,9 @@ public class ConsoleArguments {
 
     public List<File> getFiles() {
         return files;
+    }
+
+    public boolean getExport() {
+        return this.export;
     }
 }

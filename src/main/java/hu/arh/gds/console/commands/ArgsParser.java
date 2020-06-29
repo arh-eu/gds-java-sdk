@@ -59,7 +59,8 @@ public class ArgsParser {
                 messageType,
                 statement,
                 optionalArgs.timout,
-                eventArgs.files);
+                eventArgs.files,
+                optionalArgs.export);
 
     }
 }

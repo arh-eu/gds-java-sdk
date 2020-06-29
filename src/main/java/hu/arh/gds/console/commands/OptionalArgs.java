@@ -23,4 +23,7 @@ public class OptionalArgs {
 
     @Parameter(names = "-hex", description = "string to hex separated by semicolon", order = 5)
     public List<String> hex;
+
+    @Parameter(names = "-export", description = "export all response messages to json", order = 6)
+    public boolean export = false;
 }
