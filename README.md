@@ -112,7 +112,7 @@ String to hex separated by semicolon.
 The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
 
 ```shell
-java -jar gds-console-client event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT200622000000000000', 'ABC123', 90, array('ATID200622000000000000')"
+java -jar gds-console-client.jar event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT200622000000000000', 'ABC123', 90, array('ATID200622000000000000')"
 ```
 
 ##### ATTACHMENT
@@ -120,7 +120,7 @@ java -jar gds-console-client event "INSERT INTO events (id, numberplate, speed, 
 The SELECT statement you would like to use. This will send an attachment request type message.
 
 ```shell
-java -jar gds-console-client attachment-request "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
+java -jar gds-console-client.jar attachment-request "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
 ```
 
 ##### QUERY
@@ -128,13 +128,13 @@ java -jar gds-console-client attachment-request "SELECT * FROM \"events-@attachm
 The SELECT statement you would like to use. This will send a query type message.
 
 ```shell
-java -jar gds-console-client query "SELECT * FROM events"
+java -jar gds-console-client.jar query "SELECT * FROM events"
 ```
 
 This will send a query type message and query all pages, not just the first one.
 
 ```shell
-java -jar gds-console-client query -all "SELECT * FROM events"
+java -jar gds-console-client.jar query -all "SELECT * FROM events"
 ```
 
 ## Library
