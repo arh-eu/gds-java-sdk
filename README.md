@@ -105,6 +105,9 @@ String to hex separated by semicolon.
 
 ##### EXPORT
 
+Export all response messages in JSON format. The json files will be saved in the 'exports' folder.
+
+
 #### Commands
 
 ##### EVENT
@@ -181,17 +184,20 @@ client.setMessageListener(new MessageListener() {
         System.out.println(data.getTypeHelper().getMessageDataType() + " message received!");
         //do something with the message...
     }
+    
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
+	
     @Override
     public void onConnectionFailed(String s) {
         System.out.println("Connection failed: " + s);
+    }
+	
+    @Override
+    public void onDisconnected() {
+        System.out.println("Client disconnected!");
     }
 });
 ```
@@ -213,17 +219,20 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
             e.printStackTrace();
         }
     }
+    
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
+	
     @Override
     public void onConnectionFailed(String s) {
         System.out.println("Connection failed: " + s);
+    }
+	
+    @Override
+    public void onDisconnected() {
+        System.out.println("Client disconnected!");
     }
 });
 ```
@@ -245,7 +254,7 @@ Of course, you can also customize the header part, see [Working with custom mess
 Let's see how to create a message data.
 
 ```java
-MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
 ```
 
 
@@ -278,14 +287,31 @@ In the following, take a look at what sending and receiving messages look like f
 
 #### INSERT
 ```java
+MessageIdGenerator messageIdGenerator = new MessageIdGenerator("TEST", "yyMMddhhmmssSSS");
+String eventId = messageIdGenerator.nextId();
+String attachmentId = messageIdGenerator.nextId();
+
+int[] binaryData = {
+        0x42, 0x4D, 0x3A, 0x0, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x0, 0x36, 0x0, 0x0, 0x0, 0x28, 0x0,
+        0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0,
+        0x0, 0x0, 0x1, 0x0, 0x18, 0x0, 0x0, 0x0,
+        0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xFF, 0xFF,
+        0xFF, 0x0
+};
+ByteBuffer byteBuffer = ByteBuffer.allocate(binaryData.length * 4);
+byteBuffer.asIntBuffer().put(binaryData);
+
 try {
     MessageData data = MessageManager.createMessageData2Event(
             new ArrayList<String>() {{
-                add("INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT202001010000000000', 'ABC123', 90, array('ATID202001010000000000'))");
-                add("INSERT INTO \"events-@attachment\" (id, meta, data) VALUES('ATID202001010000000000', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
+                add("INSERT INTO multi_event (id, plate, speed, images) VALUES('" + eventId + "', 'ABC123', 90, array('" + attachmentId +"'))");
+                add("INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('" + attachmentId + "', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
             }},
             new HashMap<String, byte[]>() {{
-                put("62696e6172795f69645f6578616d706c65", new byte[]{127, 127, 0, 0});
+                put("binary_id1_example", byteBuffer.array());
             }},
             new ArrayList<>());
     client.sendMessage(data);
@@ -299,7 +325,7 @@ try {
 try {
     MessageData data = MessageManager.createMessageData2Event(
             new ArrayList<String>() {{
-                add("UPDATE events SET speed = 100 WHERE id = 'EVNT202001010000000000'");
+                add("UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'");
             }},
             new HashMap<>(),
             new ArrayList<>());
@@ -314,10 +340,10 @@ try {
 try {
     MessageData data = MessageManager.createMessageData2Event(
             new ArrayList<String>() {{
-                add("MERGE INTO events USING (SELECT 'EVNT202001010000000000' as id, 'ABC123' as numberplate, 100 as speed) I " +
-                        "ON (events.id = I.id) " +
-                        "WHEN MATCHED THEN UPDATE SET events.speed = I.speed " +
-                        "WHEN NOT MATCHED THEN INSERT (id, numberplate) VALUES (I.id, I.numberplate)");
+                add("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
+                        "ON (multi_event.id = I.id) " +
+                        "WHEN MATCHED THEN UPDATE SET multi_event.speed = I.speed " +
+                        "WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)");
             }},
             new HashMap<>(),
             new ArrayList<>());
@@ -337,16 +363,23 @@ client.setMessageListener(new MessageListener() {
         switch (data.getTypeHelper().getMessageDataType()) {
             case EVENT_ACK_3:
                 MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
-                System.out.println("Event ACK message received with '" + eventAckData.getGlobalStatus() + "' status code");
+                System.out.println("Event ACK message received with '" + eventAckData.getGlobalStatus() + "' status code")
                 //do something with the ack message...
                 break;
             //...
         }
     }
+	
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
+	
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
+    }
+	
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
@@ -397,10 +430,17 @@ client.setMessageListener(new MessageListener() {
             //...
         }
     }
+	
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
+	
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
+    }
+	
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
@@ -412,7 +452,7 @@ client.setMessageListener(new MessageListener() {
 ```java
 try {
     MessageData data = MessageManager.createMessageData4AttachmentRequest(
-            "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+            "SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
     client.sendMessage(data);
 } catch (Throwable e) {
     e.printStackTrace();
@@ -469,10 +509,17 @@ client.setMessageListener(new MessageListener() {
             //...
         }
     }
+	
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
+	
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
+    }
+	
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
@@ -485,16 +532,14 @@ Note: the GDS may also send an attachment request to the client.
 
 #### AUTOMATIC PUSHING 
 
-
-
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.g n etTypeHelper().getMessageDataType()) {
+        switch (data.getTypeHelper().getMessageDataType()) {
             case ATTACHMENT_RESPONSE_6:
                 MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
-                System.out.println("Attachment response message received"); 
+                System.out.println("Attachment response message received");
                 //do something with the message...
                 //...
                 //send an ack message for the attachment response
@@ -504,7 +549,7 @@ client.setMessageListener(new MessageListener() {
                             new AttachmentResponseAckResultHolderImpl(
                                     AckStatus.CREATED,
                                     new AttachmentResultHolderImpl(
-                                             attachmentResponseData.getResult().getRequestIds(),
+                                            attachmentResponseData.getResult().getRequestIds(),
                                             attachmentResponseData.getResult().getOwnerTable(),
                                             attachmentResponseData.getResult().getAttachmentId()
                                     )
@@ -527,9 +572,9 @@ client.setMessageListener(new MessageListener() {
                             AckStatus.OK,
                             new ArrayList<EventDocumentResultHolder>(){{
                                 add(new EventDocumentResultHolderImpl(
-                                   AckStatus.CREATED,
-                                   null,
-                                   new HashMap<>()
+                                        AckStatus.CREATED,
+                                        null,
+                                        new HashMap<>()
                                 ));
                             }},
                             null
@@ -542,10 +587,17 @@ client.setMessageListener(new MessageListener() {
             //...
         }
     }
+	
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
     }
+	
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
+    }
+	
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
@@ -567,12 +619,12 @@ But it is also possible to explicitly define the header part with customized val
 So first, we create the header part.
 
 ```java
-MessageHeader header = MessageManager.createMessageHeaderBase("username", "870da92f-7fff-48af-825e-05351ef97acd", System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
+MessageHeader header = MessageManager.createMessageHeaderBase("username", UUID.randomUUID().toString(), System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
 ```
 
 After that, we create the data part.
 ```java
-MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400");
+MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
 ```
 
 Once we have a header and a data, we can use the following methods to send the message.
