@@ -77,7 +77,7 @@ java -jar gds-console-client.jar -help
 	- [EXPORT](#EXPORT)
 - [Commands](#Commands)
 	- [EVENT](#EVENT)
-	- [ATTACHMENT](#ATTACHMENT)
+	- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 	- [QUERY](#QUERY)
 
 
@@ -114,30 +114,34 @@ Export all response messages in JSON format. The json files will be saved in the
 
 The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
 
+The following command assumes that there is a folder named attachments next to the jar file with a file named picture.png.
+
 ```shell
-java -jar gds-console-client.jar event "INSERT INTO events (id, numberplate, speed, images) VALUES('EVNT200622000000000000', 'ABC123', 90, array('ATID200622000000000000')"
+java -jar gds-console-client.jar event "INSERT INTO multi_event (id, plate, speed, images) VALUES('TEST2006301005294810', 'ABC123', 90, array('TEST2006301005294740'));INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('TEST2006301005294740', 'some_meta', 0x706963747572652e706e67)" -attachments "picture.png"
 ```
 
-##### ATTACHMENT
+##### ATTACHMENT REQUEST
 
 The SELECT statement you would like to use. This will send an attachment request type message.
 
 ```shell
-java -jar gds-console-client.jar attachment-request "SELECT * FROM \"events-@attachment\" WHERE id='ATID202001010000000000' and ownerid='EVNT202001010000000000' FOR UPDATE WAIT 86400")"
+java -jar gds-console-client.jar attachment-request "SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400"
 ```
+
+The attachment will be saved in the folder named attachments next to the jar file.
 
 ##### QUERY
 
 The SELECT statement you would like to use. This will send a query type message.
 
 ```shell
-java -jar gds-console-client.jar query "SELECT * FROM events"
+java -jar gds-console-client.jar query "SELECT * FROM multi_event"
 ```
 
 This will send a query type message and query all pages, not just the first one.
 
 ```shell
-java -jar gds-console-client.jar query -all "SELECT * FROM events"
+java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 ```
 
 ## Library
@@ -531,6 +535,10 @@ Note: the GDS may also send an attachment request to the client.
 
 
 #### AUTOMATIC PUSHING 
+
+A user may be interested in data or changes in specific data. 
+The criteria system, based on which data may be of interest to the user, is included in the configuration of the delivered system. 
+This data is sent automatically by the GDS
 
 ```java
 client.setMessageListener(new MessageListener() {
