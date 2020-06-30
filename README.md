@@ -162,7 +162,7 @@ final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
         "ws://127.0.0.1:8888/gate",
-        "username",
+        "user",
         null,
         logger
 );
@@ -188,6 +188,10 @@ client.setMessageListener(new MessageListener() {
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
+    }
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
     }
 });
 ```
@@ -216,6 +220,10 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
     @Override
     public void onDisconnected() {
         System.out.println("Client disconnected!");
+    }
+    @Override
+    public void onConnectionFailed(String s) {
+        System.out.println("Connection failed: " + s);
     }
 });
 ```
