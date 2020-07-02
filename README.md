@@ -193,7 +193,7 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 		- [QUERY](#Query)
 		- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 	- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
-	- [Close the connection](#Close-the-connection)
+- [Close the connection](#Close-the-connection)
 - [Working with custom messages](#Working-with-custom-messages)
 
 ### Creating the client
