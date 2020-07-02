@@ -1,9 +1,11 @@
-package hu.arh.gds.console;
+package hu.arh.gds.console.parser;
+
+import hu.arh.gds.console.MessageType;
 
 import java.io.File;
 import java.util.List;
 
-public class ConsoleArguments {
+public class ArgumentsHolder {
     private String url;
     private String username;
     private String password;
@@ -13,14 +15,14 @@ public class ConsoleArguments {
     private List<File> files;
     private boolean export;
 
-    public ConsoleArguments(String url,
-                            String username,
-                            String password,
-                            MessageType messageType,
-                            String statement,
-                            Integer timeout,
-                            List<File> files,
-                            boolean export) {
+    public ArgumentsHolder(String url,
+                           String username,
+                           String password,
+                           MessageType messageType,
+                           String statement,
+                           Integer timeout,
+                           List<File> files,
+                           boolean export) {
         this.url = url;
         this.username = username;
         this.password = password;

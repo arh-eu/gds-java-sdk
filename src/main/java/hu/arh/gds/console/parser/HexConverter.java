@@ -1,4 +1,4 @@
-package hu.arh.gds.console.commands;
+package hu.arh.gds.console.parser;
 
 import com.beust.jcommander.IStringConverter;
 import hu.arh.gds.message.util.Utils;

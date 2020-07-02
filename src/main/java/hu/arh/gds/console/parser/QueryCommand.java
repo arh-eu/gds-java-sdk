@@ -1,10 +1,10 @@
-package hu.arh.gds.console.commands;
+package hu.arh.gds.console.parser;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 @Parameters(separators = "=", commandDescription = "a request for querying a GDS user table")
-public class QueryArgs {
+public class QueryCommand {
 
     @Parameter(description = "the SELECT statement you would like to use")
     public String query;

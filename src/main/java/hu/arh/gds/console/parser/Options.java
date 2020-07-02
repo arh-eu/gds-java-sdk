@@ -1,10 +1,10 @@
-package hu.arh.gds.console.commands;
+package hu.arh.gds.console.parser;
 
 import com.beust.jcommander.Parameter;
 
 import java.util.List;
 
-public class OptionalArgs {
+public class Options {
 
     @Parameter(names = { "-h", "-help" }, help = true, order = 0)
     public boolean help = false;
@@ -21,9 +21,9 @@ public class OptionalArgs {
     @Parameter(names = { "-t", "-timeout" }, description = "the timeout value for the response messages in milliseconds", order = 4)
     public Integer timout = 30_000;
 
-    @Parameter(names = "-hex", description = "string to hex separated by semicolon", order = 5)
+    @Parameter(names = "-hex", description = "convert strings to hexadecimal, you can enter multiple strings separated by commas", order = 5)
     public List<String> hex;
 
-    @Parameter(names = "-export", description = "export all response messages to json", order = 6)
+    @Parameter(names = "-export", description = "export all response messages to JSON, the JSON files will be saved in the folder named 'exports' next to the jar file", order = 6)
     public boolean export = false;
 }

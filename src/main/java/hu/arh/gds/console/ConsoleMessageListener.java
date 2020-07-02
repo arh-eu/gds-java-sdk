@@ -3,6 +3,7 @@ package hu.arh.gds.console;
 import com.google.gson.*;
 import hu.arh.gds.client.GDSWebSocketClient;
 import hu.arh.gds.client.MessageListener;
+import hu.arh.gds.console.parser.ArgumentsHolder;
 import hu.arh.gds.message.data.*;
 import hu.arh.gds.message.header.MessageHeader;
 import hu.arh.gds.message.header.MessageHeaderTypeHelper;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConsoleMessageListener implements MessageListener {
-    private final ConsoleArguments consoleArguments;
+    private final ArgumentsHolder argumentsHolder;
     private final GDSWebSocketClient client;
     private final Integer timeout;
 
@@ -33,10 +34,10 @@ public class ConsoleMessageListener implements MessageListener {
 
     private static final String ATTACHMENTS_FOLDER = "attachments";
 
-    public ConsoleMessageListener(ConsoleArguments consoleArguments, GDSWebSocketClient client) {
-        this.consoleArguments = consoleArguments;
+    public ConsoleMessageListener(ArgumentsHolder argumentsHolder, GDSWebSocketClient client) {
+        this.argumentsHolder = argumentsHolder;
         this.client = client;
-        this.timeout = consoleArguments.getTimeout();
+        this.timeout = argumentsHolder.getTimeout();
     }
 
     private void closeClient() {
@@ -46,6 +47,13 @@ public class ConsoleMessageListener implements MessageListener {
     }
 
     private void writeToFile(String json, String messageId) {
+        if(json == null || messageId == null) {
+            return;
+        }
+        File exportsFolder = new File("exports");
+        if(!exportsFolder.exists()) {
+            exportsFolder.mkdir();
+        }
         File file = new File("exports" + "/" + messageId);
         try (FileWriter writer = new FileWriter(file.getPath());
              BufferedWriter bw = new BufferedWriter(writer)) {
@@ -57,11 +65,6 @@ public class ConsoleMessageListener implements MessageListener {
     }
 
     private String getPrettyJson(Object obj) {
-        File exportsFolder = new File("exports");
-        if(!exportsFolder.exists()) {
-            exportsFolder.mkdir();
-        }
-
         GsonBuilder gsonBuilder = new GsonBuilder();
 
         JsonSerializer<Value> valueJsonSerializer = (value, type, jsonSerializationContext) ->
@@ -102,13 +105,13 @@ public class ConsoleMessageListener implements MessageListener {
 
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        //System.out.println(data.getTypeHelper().getMessageDataType() + " type message received");
-        //System.out.println(data.toString());
-
         String json = getPrettyJson(new Message(header, data));
+        System.out.println(data.getTypeHelper().getMessageDataType() + " message received.");
+
+        System.out.println("Response message in JSON format:");
         System.out.println(json);
 
-        if(consoleArguments.getExport()) {
+        if(argumentsHolder.getExport()) {
             writeToFile(json, header.getTypeHelper().asBaseMessageHeader().getMessageId());
         }
 
@@ -123,31 +126,12 @@ public class ConsoleMessageListener implements MessageListener {
                 handleAttachmentResponse(header, data);
                 break;
             case QUERY_REQUEST_ACK_11:
-                //printQueryReply(data.getTypeHelper().asQueryRequestAckMessageData11());
                 handleQueryAck(header, data);
                 break;
             default:
                 closeClient();
                 break;
         }
-    }
-
-    private void printQueryReply(MessageData11QueryRequestAck data) {
-        StringBuilder sb = new StringBuilder();
-        if (data.getGlobalStatus().isErrorStatus()) {
-            sb.append("The query was unsuccessful!").append(System.lineSeparator());
-            appendErrorCode(sb, data);
-        } else {
-            sb.append("Query was successful! Total of ").append(data.getQueryResponseHolder().getNumberOfHits()).append(" record(s) returned.").append(System.lineSeparator());
-            sb.append("Records: ").append(System.lineSeparator());
-            data.getQueryResponseHolder().getHits().forEach( hit -> sb.append(hit).append(System.lineSeparator()));
-        }
-        System.out.println(sb.toString());
-    }
-
-    private void appendErrorCode(StringBuilder sb, Ack data) {
-        sb.append("Status: ").append(data.getGlobalStatus().name()).append(" (").append(data.getGlobalStatus().getValue()).append(")").append(System.lineSeparator());
-        sb.append("Error message: ").append(data.getGlobalException()).append(System.lineSeparator());
     }
 
     @Override
@@ -158,15 +142,16 @@ public class ConsoleMessageListener implements MessageListener {
     @Override
     public void onConnected() {
         System.out.println("Client connected!");
-        switch (consoleArguments.getMessageType()) {
+        switch (argumentsHolder.getMessageType()) {
             case EVENT:
                 System.out.println("Sending event message...");
                 try {
                     eventAckLatch = new CountDownLatch(1);
                     client.sendMessage(MessageManager.createMessageData2Event(
-                            consoleArguments.getStatement(),
-                            loadAttachments(consoleArguments.getFiles()),
+                            argumentsHolder.getStatement(),
+                            loadAttachments(argumentsHolder.getFiles()),
                             new ArrayList<>()));
+                    System.out.println("Event message sent.");
                     waitForResponse(
                             eventAckLatch,
                             timeout);
@@ -180,8 +165,9 @@ public class ConsoleMessageListener implements MessageListener {
                 try {
                     attachmentRequestAckLatch = new CountDownLatch(1);
                     client.sendMessage(MessageManager.createMessageData4AttachmentRequest(
-                            consoleArguments.getStatement()
+                            argumentsHolder.getStatement()
                     ));
+                    System.out.println("Attachment request message sent.");
                     waitForResponse(
                             attachmentRequestAckLatch,
                             timeout
@@ -197,10 +183,11 @@ public class ConsoleMessageListener implements MessageListener {
                 try {
                     queryAckLatch = new CountDownLatch(1);
                     client.sendMessage(MessageManager.createMessageData10QueryRequest(
-                            consoleArguments.getStatement(),
+                            argumentsHolder.getStatement(),
                             ConsistencyType.PAGES,
                             60_000L
                     ));
+                    System.out.println("Query message sent.");
                     waitForResponse(
                             queryAckLatch,
                             timeout
@@ -284,7 +271,7 @@ public class ConsoleMessageListener implements MessageListener {
     private void handleQueryAck(MessageHeader header, MessageData data) {
         MessageData11QueryRequestAck queryRequestAck =
                 data.getTypeHelper().asQueryRequestAckMessageData11();
-        if (queryRequestAck.getQueryResponseHolder() != null && queryRequestAck.getQueryResponseHolder().getMorePage() && consoleArguments.getMessageType().equals(MessageType.QUERYALL)) {
+        if (queryRequestAck.getQueryResponseHolder() != null && queryRequestAck.getQueryResponseHolder().getMorePage() && argumentsHolder.getMessageType().equals(MessageType.QUERYALL)) {
             QueryContextHolder queryContextHolder = queryRequestAck.getQueryResponseHolder().getQueryContextHolder();
             try {
                 closeConnection.set(false);

@@ -28,16 +28,19 @@ The SDK also includes a console client that allows you to send and receive messa
 You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
 
 - [Console client (high-level usage)](#Console-client)
-	- [Optional arguments](#Optional-arguments)
-		- [URL](#URL)
-		- [USERNAME](#USERNAME)
-		- [PASSWORD](#PASSWORD)
-		- [TIMEOUT](#TIMEOUT)
-	- [Mandatory arguments](#Mandatory-arguments)
-		- [EVENT](#EVENT)
-		- [ATTACHMENT](#ATTACHMENT)
-		- [QUERY](#QUERY)
-		- [QUERYALL](#QUERYALL)
+	- [Arguments](#Arguments)
+		- [Options](#Options)
+			- [Help](#Help)
+			- [URL](#URL)
+			- [Username](#Username)
+			- [Password](#Password)
+			- [Timeout](#Timeout)
+			- [Hex](#Hex)
+			- [Export](#Export)
+		- [Commands](#Commands)
+			- [EVENT command](#EVENT-command)
+			- [ATTACHMENT-REQUEST command](#ATTACHMENT-REQUEST-command)
+			- [QUERY command](#QUERY-command)
 - [Library (low-level usage)](#Library)
 	- [Creating the client](#Creating-the-client)
 	- [Subscribing to listeners](#Subscribing-to-listeners)
@@ -52,14 +55,17 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
 			- [QUERY](#Query)
 			- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 		- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+	- [Close the connection](#Close-the-connection)	
 	- [Working with custom messages](#Working-with-custom-messages)
 
 ## Console client
 
-The console client is used with an executable jar file. 
-This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-sdk/releases) (or you can build the project with maven).
+The console client is used with the SDK executable jar file. 
+This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-sdk/releases) (of course, this jar file can also be created by building the project).
 
-The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console.
+The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console. 
+You can also export the response messages in JSON format and in case of an attachment request you can save the attachments to your local drive.
+
 
 If you need help about the usage, the syntax can be printed by the -help flag.
 ```shell
@@ -68,59 +74,87 @@ java -jar gds-console-client.jar -help
 
 ### Arguments
 
-- [Optional arguments](#Optional-arguments)
+The syntax is as follows:
+```shell
+java -jar gds-console-client.jar [options] [command] [command options]
+```
+
+- [Options](#Options)
+	- [Help](#Help)
 	- [URL](#URL)
-	- [USERNAME](#USERNAME)
-	- [PASSWORD](#PASSWORD)
-	- [TIMEOUT](#TIMEOUT)
-	- [HEX](#HEX)
-	- [EXPORT](#EXPORT)
+	- [Username](#Username)
+	- [Password](#Password)
+	- [Timeout](#Timeout)
+	- [Hex](#Hex)
+	- [Export](#Export)
 - [Commands](#Commands)
-	- [EVENT](#EVENT)
-	- [ATTACHMENT](#ATTACHMENT)
-	- [QUERY](#QUERY)
+	- [EVENT command](#EVENT-command)
+	- [ATTACHMENT-REQUEST command](#ATTACHMENT-REQUEST-command)
+	- [QUERY command](#QUERY-command)
 
 
-#### Optional arguments
+#### Options
+
+##### Help
+
+Print the usage to your console. 
 
 ##### URL
 
 The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8888/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
-##### USERNAME
+##### Username
 
 The username you would like to use to login to the GDS. By default, "user" will be used.
 
-##### PASSWORD
+##### Password
 
 The password you would like to use to login into the GDS. By default there is no authentication.
 
-##### TIMEOUT
+##### Timeout
 
-The timeout value for the response messages in milliseconds. By default 30000 (30 sec) will be used. 
+The timeout value for the response messages in milliseconds. By default 30000 (30 seconds) will be used. 
 
-##### HEX
+##### Hex
 
-String to hex separated by semicolon.
+Convert strings to hexadecimal. You can enter multiple strings separated by commas.
 
-##### EXPORT
+##### Export
 
-Export all response messages in JSON format. The json files will be saved in the 'exports' folder.
+Export all response messages to JSON. The JSON files will be saved in the folder named 'exports' next to the jar file.
 
 
 #### Commands
 
-##### EVENT
+##### EVENT command
 
-The INSERT/UPDATE/MERGE statement you would like to use. This will send an event type message
+The INSERT/UPDATE/MERGE statement you would like to use.
 
-The following command assumes that there is a folder named attachments next to the jar file with a file named picture.png.
+With the **-attachments** *command option*, you can enter multiple attachments separated by commas. 
+The files must be in the folder named 'attachments' next to the jar file.
+Hexadecimal representations of these file names must be referenced in the SQL statement.
+
+INSERT
+
+The following command assumes that there is a folder named 'attachments' next to the jar file with a file named picture.png. 
 
 ```shell
 java -jar gds-console-client.jar event "INSERT INTO multi_event (id, plate, speed, images) VALUES('TEST2006301005294810', 'ABC123', 90, array('TEST2006301005294740'));INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('TEST2006301005294740', 'some_meta', 0x706963747572652e706e67)" -attachments "picture.png"
 ```
 
-##### ATTACHMENT
+UPDATE
+
+```shell
+java -jar gds-console-client.jar event "UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'"
+```
+
+MERGE
+
+```shell
+java -jar gds-console-client.jar event "MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 110 as speed) I ON (multi_event.id = I.id) WHEN MATCHED THEN UPDATE SET multi_event.speed = I.speed WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)"
+```
+
+##### ATTACHMENT-REQUEST command
 
 The SELECT statement you would like to use. This will send an attachment request type message.
 
@@ -130,7 +164,7 @@ java -jar gds-console-client.jar attachment-request "SELECT * FROM \"multi_event
 
 The attachment will be saved in the folder named attachments next to the jar file.
 
-##### QUERY
+##### QUERY command
 
 The SELECT statement you would like to use. This will send a query type message.
 
@@ -138,7 +172,7 @@ The SELECT statement you would like to use. This will send a query type message.
 java -jar gds-console-client.jar query "SELECT * FROM multi_event"
 ```
 
-This will send a query type message and query all pages, not just the first one.
+With the **-query** *command option* you can query all pages, not just the first one.
 
 ```shell
 java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
@@ -159,6 +193,7 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 		- [QUERY](#Query)
 		- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 	- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+	- [Close the connection](#Close-the-connection)
 - [Working with custom messages](#Working-with-custom-messages)
 
 ### Creating the client
@@ -168,10 +203,10 @@ First, we create the client object.
 final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
-        "ws://127.0.0.1:8888/gate",
-        "user",
-        null,
-        logger
+        "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
+        "user", //the username you would like to use to login to the GDS
+        null, //the password you would like to use to login into the GDS, if null, no authentication will be used
+        logger //the logger object
 );
 ```
 
@@ -180,7 +215,7 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
 The messages sent to the client and the changes of the connection status can be accessed via listeners.
 There are two types of listener for this. One to access the serialized message objects and the other to access the binary representation of the message.
 
-High-level (this is the recommended)
+**High-level** (this is the recommended)
 ```java
 client.setMessageListener(new MessageListener() {
     @Override
@@ -206,7 +241,7 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
-Low-level
+**Low-level**
 
 If you use the BinaryMessageListener, you have to create the message objects from the binary representation of the message.
 You can create these objects through the hu.arh.gds.message.util.MessageManager class.
@@ -247,15 +282,17 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
 client.connect();
 ```
 
-(During the connection, a connection type message is also sent after the websocket connection. If a positive ack message arrives, the connected() method returns true.)
+During the connection, a connection type message is also sent after the websocket connection established. 
+If a positive ack message arrives, the client will in connected state, the onConnected() listener triggers and the client.connected() method returns true.
+After that, you can send any type of messages to the GDS.
 
 ### Create messages
 
 A message consists of two parts, a header and a data.
-It is usually enough to create only the data part, because the header part is created automatically when the message is sent.
+With this SDK , it is usually enough to create only the data part, because the header part is created automatically when the message is sent.
 Of course, you can also customize the header part, see [Working with custom messages](#Working-with-custom-messages) for the details.
 
-Let's see how to create a message data.
+Let's see how to create an attachment request type message data.
 
 ```java
 MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
@@ -264,7 +301,7 @@ MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT *
 
 ### Send and receive messages
 
-After you connected, you can send messages to the GDS. You can do that with the sendMessage() methods.
+After you connected, you can send messages to the GDS. You can do that with the client.sendMessage() methods.
 
 Send message with the data part. The header part is completed automatically with the default values.
 ```java
@@ -275,6 +312,8 @@ Send message with the data part (the header part is completed automatically with
 ```java
 void sendMessage(MessageData data, String messageId)
 ```
+
+(The automatic header part completition means, that there is no fragmentation set, and the user name and the message data type are determined automatically.)
 
 To see how to send a message by specifying the header part too, go to the [Working with custom messages](#Working-with-custom-messages) section.
 
@@ -546,7 +585,7 @@ Note: the GDS may also send an attachment request to the client.
 
 A user may be interested in data or changes in specific data. 
 The criteria system, based on which data may be of interest to the user, is included in the configuration of the delivered system. 
-This data is sent automatically by the GDS
+This data is sent automatically by the GDS.
 
 ```java
 client.setMessageListener(new MessageListener() {
@@ -621,15 +660,16 @@ client.setMessageListener(new MessageListener() {
 });
 ```
 
-At the end, we close the websocket connection as well.
+### Close the connection
+
 ```java
 client.close();
 ```
 
-#### Working with custom messages
+### Working with custom messages
 
 A message consists of two parts, a header and a data. 
-It is usually enough to create only the data part because the header part is created automatically when the message is sent using the ```sendMessage(MessageData data)``` method.
+With this SDK, it is usually enough to create only the data part because the header part is created automatically when the message is sent using the ```sendMessage(MessageData data)``` method.
 But it is also possible to explicitly define the header part with customized values.
 
 So first, we create the header part.
