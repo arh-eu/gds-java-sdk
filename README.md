@@ -32,7 +32,7 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
 		- [Options](#Options)
 			- [Help](#Help)
 			- [URL](#URL)
-			- [Usern	ame](#Username)
+			- [Username](#Username)
 			- [Password](#Password)
 			- [Timeout](#Timeout)
 			- [Hex](#Hex)
