@@ -11,4 +11,12 @@ public class Message {
         this.header = header;
         this.data = data;
     }
+
+    public MessageHeader getHeader() {
+        return this.header;
+    }
+
+    public MessageData getData() {
+        return this.data;
+    }
 }

@@ -32,7 +32,7 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
 		- [Options](#Options)
 			- [Help](#Help)
 			- [URL](#URL)
-			- [Username](#Username)
+			- [Usern	ame](#Username)
 			- [Password](#Password)
 			- [Timeout](#Timeout)
 			- [Hex](#Hex)
@@ -193,7 +193,7 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 		- [QUERY](#Query)
 		- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 	- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
-	- [Close the connection](#Close-the-connection)
+- [Close the connection](#Close-the-connection)
 - [Working with custom messages](#Working-with-custom-messages)
 
 ### Creating the client

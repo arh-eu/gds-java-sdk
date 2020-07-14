@@ -1,21 +1,20 @@
 package hu.arh.gds.console;
 
-import com.google.gson.*;
+import com.googlecode.lanterna.gui2.MultiWindowTextGUI;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.googlecode.lanterna.terminal.swing.*;
 import hu.arh.gds.client.GDSWebSocketClient;
 import hu.arh.gds.client.MessageListener;
 import hu.arh.gds.console.parser.ArgumentsHolder;
 import hu.arh.gds.message.data.*;
 import hu.arh.gds.message.header.MessageHeader;
-import hu.arh.gds.message.header.MessageHeaderTypeHelper;
 import hu.arh.gds.message.util.MessageManager;
-import org.msgpack.value.Value;
 
+import javax.swing.*;
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +31,9 @@ public class ConsoleMessageListener implements MessageListener {
 
     private AtomicBoolean closeConnection = new AtomicBoolean(true);
 
-    private static final String ATTACHMENTS_FOLDER = "attachments";
+    private List<QueryAckHolder> queryAckHolders = new ArrayList<>();
+
+    private int counter = 1;
 
     public ConsoleMessageListener(ArgumentsHolder argumentsHolder, GDSWebSocketClient client) {
         this.argumentsHolder = argumentsHolder;
@@ -41,78 +42,26 @@ public class ConsoleMessageListener implements MessageListener {
     }
 
     private void closeClient() {
-        if(client != null && !client.connected()) {
+        if (client != null && !client.connected()) {
             client.close();
         }
     }
 
-    private void writeToFile(String json, String messageId) {
-        if(json == null || messageId == null) {
-            return;
-        }
-        File exportsFolder = new File("exports");
-        if(!exportsFolder.exists()) {
-            exportsFolder.mkdir();
-        }
-        File file = new File("exports" + "/" + messageId);
-        try (FileWriter writer = new FileWriter(file.getPath());
-             BufferedWriter bw = new BufferedWriter(writer)) {
-            bw.write(json);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            closeClient();
-        }
-    }
-
-    private String getPrettyJson(Object obj) {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-
-        JsonSerializer<Value> valueJsonSerializer = (value, type, jsonSerializationContext) ->
-                new JsonParser().parse(value.toString());
-
-        JsonSerializer<byte[]> binaryJsonSerializer = (value, type, jsonSerializationContext) ->
-                new JsonParser().parse(value == null ? "null" : String.valueOf(value.length) + "bytes");
-
-        gsonBuilder.registerTypeAdapter(Value.class, valueJsonSerializer);
-        gsonBuilder.registerTypeAdapter(byte[].class, binaryJsonSerializer);
-
-        ExclusionStrategy strategy = new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                if(fieldAttributes.getName().equals("cache")
-                        || fieldAttributes.getName().equals("messageSize")
-                        || (fieldAttributes.getName().equals("binary"))) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            @Override
-            public boolean shouldSkipClass(Class<?> aClass) {
-                if(aClass.equals(MessageHeaderTypeHelper.class)
-                        || aClass.equals(MessageDataTypeHelper.class)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        };
-        gsonBuilder.setExclusionStrategies(strategy);
-
-        Gson gson = gsonBuilder.setPrettyPrinting().serializeNulls().create();
-        return gson.toJson(obj);
-    }
-
     @Override
     public void onMessageReceived(MessageHeader header, MessageData data) {
-        String json = getPrettyJson(new Message(header, data));
         System.out.println(data.getTypeHelper().getMessageDataType() + " message received.");
 
+        String json = Utils.getJsonFromMessage(header, data);
         System.out.println("Response message in JSON format:");
         System.out.println(json);
 
-        if(argumentsHolder.getExport()) {
-            writeToFile(json, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+        if (argumentsHolder.getExport()) {
+            try {
+                Utils.exportJson(header.getTypeHelper().asBaseMessageHeader().getMessageId(), json);
+            } catch (IOException e) {
+                e.printStackTrace();
+                closeClient();
+            }
         }
 
         switch (data.getTypeHelper().getMessageDataType()) {
@@ -245,7 +194,11 @@ public class ConsoleMessageListener implements MessageListener {
         if (attachmentRequestAckData.getData() != null) {
             byte[] attachment = attachmentRequestAckData.getData().getResult().getAttachment();
             if (attachment != null) {
-                saveAttachment(attachment, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+                try {
+                    Utils.saveAttachment(header.getTypeHelper().asBaseMessageHeader().getMessageId(), attachment, attachmentRequestAckData.getData().getResult().getMeta());
+                } catch (IOException e) {
+                    closeClient();
+                }
                 countDownLatch(attachmentRequestAckLatch);
             } else {
                 closeConnection.set(false);
@@ -263,7 +216,11 @@ public class ConsoleMessageListener implements MessageListener {
                 data.getTypeHelper().asAttachmentResponseMessageData6();
         byte[] attachment = attachmentResponseData.getResult().getAttachment();
         if (attachment != null) {
-            saveAttachment(attachment, header.getTypeHelper().asBaseMessageHeader().getMessageId());
+            try {
+                Utils.saveAttachment(header.getTypeHelper().asBaseMessageHeader().getMessageId(), attachment, attachmentResponseData.getResult().getMeta());
+            } catch (IOException e) {
+                closeClient();
+            }
         }
         countDownLatch(attachmentResponseLatch);
     }
@@ -271,9 +228,17 @@ public class ConsoleMessageListener implements MessageListener {
     private void handleQueryAck(MessageHeader header, MessageData data) {
         MessageData11QueryRequestAck queryRequestAck =
                 data.getTypeHelper().asQueryRequestAckMessageData11();
-        if (queryRequestAck.getQueryResponseHolder() != null && queryRequestAck.getQueryResponseHolder().getMorePage() && argumentsHolder.getMessageType().equals(MessageType.QUERYALL)) {
+
+        queryAckHolders.add(
+                new QueryAckHolder(header.getTypeHelper().asBaseMessageHeader().getMessageId(),
+                        data.getTypeHelper().asQueryRequestAckMessageData11().getQueryResponseHolder()));
+
+        if (queryRequestAck.getQueryResponseHolder().getMorePage() && argumentsHolder.getMessageType().equals(MessageType.QUERYALL)) {
             QueryContextHolder queryContextHolder = queryRequestAck.getQueryResponseHolder().getQueryContextHolder();
             try {
+                if (!client.connected()) {
+                    client.connect();
+                }
                 closeConnection.set(false);
                 countDownLatch(queryAckLatch);
                 MessageData12NextQueryPage nextQueryPageData = MessageManager.createMessageData12NextQueryPage(
@@ -287,27 +252,50 @@ public class ConsoleMessageListener implements MessageListener {
             }
         } else {
             countDownLatch(queryAckLatch);
-        }
-    }
 
-    private void saveAttachment(byte[] attachment, String messageId) {
-        try {
-            File attachmentsFolder = new File(ATTACHMENTS_FOLDER);
-            if (!attachmentsFolder.exists()) {
-                attachmentsFolder.mkdir();
+            TerminalScreen screen;
+            MultiWindowTextGUI gui;
+
+            try {
+                if (Utils.isWindows()) {
+                    SwingTerminalFrame swingTerminalFrame = new SwingTerminalFrame(
+                            "gds console client",
+                            TerminalEmulatorDeviceConfiguration.getDefault(),
+                            SwingTerminalFontConfiguration.getDefault(),
+                            TerminalEmulatorColorConfiguration.getDefault(),
+                            TerminalEmulatorAutoCloseTrigger.CloseOnExitPrivateMode);
+                    swingTerminalFrame.setDefaultCloseOperation(
+                            WindowConstants.EXIT_ON_CLOSE);
+                    swingTerminalFrame.setVisible(true);
+                    screen = new TerminalScreen(swingTerminalFrame);
+                } else {
+                    screen = new DefaultTerminalFactory().createScreen();
+                }
+
+                gui = new MultiWindowTextGUI(screen);
+                gui.setTheme(new TableWindowThemeDefinition(screen));
+
+                for (QueryAckHolder queryAckHolder : queryAckHolders) {
+                    try {
+                        new TableWindow(
+                                gui, screen,
+                                queryAckHolder.getQueryResponseHolder(),
+                                queryAckHolder.getMessageId(),
+                                counter++)
+                                .show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
-            OutputStream os = new FileOutputStream(attachmentsFolder.getPath() + "/" + messageId);
-            os.write(attachment);
-            os.close();
-        } catch (Throwable e) {
-            System.out.println(e.getMessage());
-            closeClient();
         }
     }
 
     private static Map<String, byte[]> loadAttachments(List<File> files) {
         Map<String, byte[]> binaries = new HashMap<>();
-        if(files == null) {
+        if (files == null) {
             return binaries;
         }
         for (File file : files) {
