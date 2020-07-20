@@ -29,6 +29,11 @@ public class GDSWebSocketClient {
 
     private final Logger logger;
 
+
+    public GDSWebSocketClient(String url, String userName, String password, Logger logger) {
+        this(url, userName, password, null, null, logger);
+    }
+
     public GDSWebSocketClient(String url, String userName, String password, String cert, String secret, Logger logger) {
         this.logger = logger;
         try {
