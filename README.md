@@ -19,11 +19,11 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 </dependencies>
 ```
 
-(The library was made by [this](https://github.com/msgpack/msgpack-java) messagepack java implementation)
+(The library was made by [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation)
 
 # Usage
 
-Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a messages library with serialization/deserialization funcionalities and with a WebSocket client, so you can use this to send and receive messages.
+Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a messages library with serialization/deserialization functionality and with a WebSocket client, so you can use this to send and receive messages.
 The SDK also includes a console client that allows you to send and receive messages without writing any code.
 You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
 
@@ -34,6 +34,8 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
 			- [URL](#URL)
 			- [Username](#Username)
 			- [Password](#Password)
+            - [Cert](#Cert)
+            - [Secret](#Secret)
 			- [Timeout](#Timeout)
 			- [Hex](#Hex)
 			- [Export](#Export)
@@ -84,6 +86,8 @@ java -jar gds-console-client.jar [options] [command] [command options]
 	- [URL](#URL)
 	- [Username](#Username)
 	- [Password](#Password)
+	- [Cert](#Cert)
+	- [Secret](#Secret)
 	- [Timeout](#Timeout)
 	- [Hex](#Hex)
 	- [Export](#Export)
@@ -110,6 +114,14 @@ The username you would like to use to login to the GDS. By default, "user" will 
 ##### Password
 
 The password you would like to use to login into the GDS. By default there is no authentication.
+
+##### Cert
+
+The name of the file containing your private key that should be used for secure (TLS) connection to the GDS.
+
+##### Secret
+
+The password for the [cert](#Cert) file. 
 
 ##### Timeout
 
@@ -206,6 +218,8 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
         "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
         "user", //the username you would like to use to login to the GDS
         null, //the password you would like to use to login into the GDS, if null, no authentication will be used
+        null, //String - the path of the file containing your private key (*.p12). If the url does not start 'wss', value is ignored.
+        null, //String - the password for your private key.
         logger //the logger object
 );
 ```
