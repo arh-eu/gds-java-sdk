@@ -20,7 +20,7 @@ public class ArgumentParser {
                 .addCommand("attachment-request", attachmentRequestCommand)
                 .build();
 
-        if(args == null || (args != null && args.length == 0)) {
+        if(args == null || args.length == 0) {
             jc.usage();
             return null;
         }
@@ -60,6 +60,8 @@ public class ArgumentParser {
                 options.url,
                 options.user,
                 options.password,
+                options.cert,
+                options.secret,
                 messageType,
                 statement,
                 options.timout,

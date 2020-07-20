@@ -9,6 +9,8 @@ public class ArgumentsHolder {
     private String url;
     private String username;
     private String password;
+    private String cert;
+    private String secret;
     private MessageType messageType;
     private String statement;
     private Integer timeout;
@@ -18,6 +20,8 @@ public class ArgumentsHolder {
     public ArgumentsHolder(String url,
                            String username,
                            String password,
+                           String cert,
+                           String secret,
                            MessageType messageType,
                            String statement,
                            Integer timeout,
@@ -26,6 +30,8 @@ public class ArgumentsHolder {
         this.url = url;
         this.username = username;
         this.password = password;
+        this.cert = cert;
+        this.secret = secret;
         this.messageType = messageType;
         this.statement = statement;
         this.timeout = timeout;
@@ -43,6 +49,14 @@ public class ArgumentsHolder {
 
     public String getPassword() {
         return this.password;
+    }
+
+    public String getCert() {
+        return cert;
+    }
+
+    public String getSecret() {
+        return secret;
     }
 
     public MessageType getMessageType() {

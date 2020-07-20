@@ -29,10 +29,10 @@ public class GDSWebSocketClient {
 
     private final Logger logger;
 
-    public GDSWebSocketClient(String url, String userName, String password, Logger logger) {
+    public GDSWebSocketClient(String url, String userName, String password, String cert, String secret, Logger logger) {
         this.logger = logger;
         try {
-            this.webSocketClient = new WebSocketClient(url, logger);
+            this.webSocketClient = new WebSocketClient(url, cert, secret, logger);
             this.webSocketClient.setBinaryMessageListener(new BinaryMessageListener() {
                 @Override
                 public void onMessageReceived(byte[] message) {
@@ -55,7 +55,7 @@ public class GDSWebSocketClient {
                 }
             });
         } catch (Throwable throwable) {
-            logger.severe("An error occured while creating client simulator: " + throwable.getMessage());
+            logger.severe("An error occurred while creating client simulator: " + throwable.getMessage());
         }
         this.userName = userName;
         this.password = password;
