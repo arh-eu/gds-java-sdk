@@ -218,8 +218,22 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
         "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
         "user", //the username you would like to use to login to the GDS
         null, //the password you would like to use to login into the GDS, if null, no authentication will be used
-        null, //String - the path of the file containing your private key (*.p12). If the url does not start 'wss', value is ignored.
-        null, //String - the password for your private key.
+        logger //the logger object
+);
+```
+
+If you want to use encrypted connection, you can also login by using TLS. The `GDSWebSocketClient` has multiple constructors, one specially for TLS usage.
+
+In this case the scheme in the URL should be `wss`. The GDS uses different port (and maybe even entry point) for secured connection, do not forget to change it as well!
+```java
+final Logger logger = Logger.getLogger("logging");
+
+final GDSWebSocketClient client = new GDSWebSocketClient(
+        "wss://127.0.0.1:8443/gate", //the URL of the GDS instance you would like to connect to
+        "user", //the username you would like to use to login to the GDS
+        null, //the password you would like to use to login into the GDS, if null, no authentication will be used
+        "path_to_my_cert_file.p12", //String - the path of the file containing your cert and private key (*.p12). If the url does not start 'wss', this value is ignored.
+        "My_$3CreT_P4s$W0RĐ", //String - the password for your private key.
         logger //the logger object
 );
 ```
