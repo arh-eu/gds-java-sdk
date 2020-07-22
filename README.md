@@ -117,11 +117,11 @@ The password you would like to use to login into the GDS. By default there is no
 
 ##### Cert
 
-The name of the file containing the certificate chain and your your private key that should be used for secure (TLS) connection to the GDS  (PKCS12 format - `*.p12` file).
+The name of the file containing the certificate chain and your private key that should be used for secure (TLS) connection to the GDS  (PKCS12 format - `*.p12` file).
 
 ##### Secret
 
-The password for the [cert](#Cert) file. 
+The password that was used to generate and encrypt the [cert](#Cert) file. 
 
 ##### Timeout
 
