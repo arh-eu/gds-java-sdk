@@ -462,7 +462,7 @@ client.setMessageListener(new MessageListener() {
 ```java
 try {
     MessageData data = MessageManager.createMessageData10QueryRequest(
-            "SELECT * FROM events",
+            "SELECT * FROM multi_event",
             ConsistencyType.PAGES,
             60_000L);
     client.sendMessage(data);
