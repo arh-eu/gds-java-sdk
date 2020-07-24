@@ -27,38 +27,37 @@ Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/We
 The SDK also includes a console client that allows you to send and receive messages without writing any code.
 You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
 
-- [Console client (high-level usage)](#Console-client)
-	- [Arguments](#Arguments)
-		- [Options](#Options)
-			- [Help](#Help)
-			- [URL](#URL)
-			- [Username](#Username)
-			- [Password](#Password)
-            - [Cert](#Cert)
-            - [Secret](#Secret)
-			- [Timeout](#Timeout)
-			- [Hex](#Hex)
-			- [Export](#Export)
-		- [Commands](#Commands)
-			- [EVENT command](#EVENT-command)
-			- [ATTACHMENT-REQUEST command](#ATTACHMENT-REQUEST-command)
-			- [QUERY command](#QUERY-command)
-- [Library (low-level usage)](#Library)
-	- [Creating the client](#Creating-the-client)
-	- [Subscribing to listeners](#Subscribing-to-listeners)
-	- [Connecting to the GDS](#Connecting-to-the-GDS)
-	- [Create messages](#Create-messages)
-	- [Send and receive messages](#Send-and-receive-messages)
-		- [INSERT](#Insert)
-		- [UPDATE](#Update)
-		- [MERGE](#Merge)
-		- [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
-		- [SELECT](#Select)
-			- [QUERY](#Query)
-			- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
-		- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
-	- [Close the connection](#Close-the-connection)	
-	- [Working with custom messages](#Working-with-custom-messages)
+  * [Console client](#console-client)
+    + [Arguments](#arguments)
+      - [Options](#options)
+        * [Help](#help)
+        * [URL](#url)
+        * [Username](#username)
+        * [Password](#password)
+        * [Cert, secret](#cert--secret)
+        * [Timeout](#timeout)
+        * [Hex](#hex)
+        * [Export](#export)
+      - [Commands](#commands)
+        * [EVENT command](#event-command)
+        * [ATTACHMENT-REQUEST command](#attachment-request-command)
+        * [QUERY command](#query-command)
+  * [Library](#library)
+    + [Creating the client](#creating-the-client)
+    + [Subscribing to listeners](#subscribing-to-listeners)
+    + [Connecting to the GDS](#connecting-to-the-gds)
+    + [Create messages](#create-messages)
+    + [Send and receive messages](#send-and-receive-messages)
+      - [INSERT](#insert)
+      - [UPDATE](#update)
+      - [MERGE](#merge)
+      - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert--update-and-merge)
+      - [SELECT](#select)
+        * [QUERY](#query)
+        * [ATTACHMENT REQUEST](#attachment-request)
+      - [AUTOMATIC PUSHING](#automatic-pushing)
+    + [Close the connection](#close-the-connection)
+    + [Working with custom messages](#working-with-custom-messages)
 
 ## Console client
 
@@ -81,60 +80,90 @@ The syntax is as follows:
 java -jar gds-console-client.jar [options] [command] [command options]
 ```
 
-- [Options](#Options)
-	- [Help](#Help)
-	- [URL](#URL)
-	- [Username](#Username)
-	- [Password](#Password)
-	- [Cert](#Cert)
-	- [Secret](#Secret)
-	- [Timeout](#Timeout)
-	- [Hex](#Hex)
-	- [Export](#Export)
-- [Commands](#Commands)
-	- [EVENT command](#EVENT-command)
-	- [ATTACHMENT-REQUEST command](#ATTACHMENT-REQUEST-command)
-	- [QUERY command](#QUERY-command)
+ - [Options](#options)
+    * [Help](#help)
+    * [URL](#url)
+    * [Username](#username)
+    * [Password](#password)
+    * [Cert, secret](#cert--secret)
+    * [Timeout](#timeout)
+    * [Hex](#hex)
+    * [Export](#export)
+  - [Commands](#commands)
+    * [EVENT command](#event-command)
+    * [ATTACHMENT-REQUEST command](#attachment-request-command)
+    * [QUERY command](#query-command)
 
 
 #### Options
 
 ##### Help
 
-Print the usage to your console. 
+Print the usage to your console.
+
+```shell
+$ java -jar gds-console-client.jar -help
+```
 
 ##### URL
 
 The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8888/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
+```shell
+java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate/" query "SELECT * FROM multi_event"
+```
+
 ##### Username
 
 The username you would like to use to login to the GDS. By default, "user" will be used.
 
+```shell
+java -jar gds-console-client.jar -username "some_other_user" query "SELECT * FROM multi_event"
+```
+
 ##### Password
 
-The password you would like to use to login into the GDS. By default there is no authentication.
+The password you would like to use to login into the GDS. By default there is no authentication. Usually you want to specify the username as well!
 
-##### Cert
+```shell
+java -jar gds-console-client.jar -username "some_other_user" -password "userpassword" query "SELECT * FROM multi_event"
+```
 
-The name of the file containing the certificate chain and your private key that should be used for secure (TLS) connection to the GDS  (PKCS12 format - `*.p12` file).
+##### Cert, secret
 
-##### Secret
+The name of the file containing the certificate chain and your private key that should be used for secure (TLS) connection to the GDS should be given by the `-cert` option (it should be in PKCS12 format - a `*.p12` file). TLS will only be used if the scheme in the URL is `wss`, therefore the url should be specified as well (the GDS uses different port (and endpoint) for default and for encrypted connection).
 
-The password that was used to generate and encrypt the [cert](#Cert) file. 
+The password that was used to generate and encrypt the cert file should be given by the `-secret` flag. 
+
+```shell
+java -jar gds-console-client.jar -url "wss://192.168.222.111:8443/gates" -cert "my_cert_file.p12" -secret "password_for_cert" query "SELECT * FROM multi_event"
+```
 
 ##### Timeout
 
-The timeout value for the response messages in milliseconds. By default 30000 (30 seconds) will be used. 
+The timeout value for the response messages in milliseconds. By default 30000 (30 seconds) will be used.
+
+```shell
+java -jar gds-console-client.jar -timeout 10000 query "SELECT * FROM multi_event"
+```
 
 ##### Hex
 
 Convert strings to hexadecimal. You can enter multiple strings separated by commas.
 
+
+```shell
+java -jar gds-console-client.jar -hex "binaryfilename.png"
+```
+
 ##### Export
 
 Export all response messages to JSON. The JSON files will be saved in the folder named 'exports' next to the jar file.
 
+
+```shell
+java -jar gds-console-client.jar -export query "SELECT * FROM multi_event"
+```
 
 #### Commands
 
