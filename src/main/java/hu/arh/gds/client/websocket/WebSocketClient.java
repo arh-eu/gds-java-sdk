@@ -192,11 +192,11 @@ public class WebSocketClient {
     }
 
     public boolean isActive() {
-        return ch == null ? false : ch.isActive();
+        return ch != null && ch.isActive();
     }
 
     public boolean isOpen() {
-        return ch == null ? false : ch.isOpen();
+        return ch != null && ch.isOpen();
     }
 }
 

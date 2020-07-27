@@ -3,20 +3,27 @@
 With [JitPack](https://jitpack.io/), you can easily add this project as a maven dependency:
 
 ```XML
-<repositories>
-    <repository>
-    <id>jitpack.io</id>
-    <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-
-<dependencies>
-    <dependency>
-        <groupId>com.github.arh-eu</groupId>
-        <artifactId>gds-java-messages</artifactId>
-        <version>master-SNAPSHOT</version>
-    </dependency>
-</dependencies>
+<project>
+    <!--
+        any additional info for your maven project.
+        To add this SDK, you have to add the JitPack repository,
+        and the GDS Java messages as dependency.
+    -->
+    <repositories>
+        <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.github.arh-eu</groupId>
+            <artifactId>gds-java-messages</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+</project>
 ```
 
 (The library was made by [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation)
@@ -107,7 +114,7 @@ $ java -jar gds-console-client.jar -help
 
 ##### URL
 
-The URL of the GDS instance you would like to connect to. By default, "ws://127.0.0.1:8888/gate" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
+The URL of the GDS instance you would like to connect to. By default, "`ws://127.0.0.1:8888/gate`" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
 ```shell
 java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate/" query "SELECT * FROM multi_event"
@@ -115,7 +122,7 @@ java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate/" query "S
 
 ##### Username
 
-The username you would like to use to login to the GDS. By default, "user" will be used.
+The username you would like to use to login to the GDS. By default, `"user"` will be used.
 
 ```shell
 java -jar gds-console-client.jar -username "some_other_user" query "SELECT * FROM multi_event"
@@ -149,11 +156,13 @@ java -jar gds-console-client.jar -timeout 10000 query "SELECT * FROM multi_event
 
 ##### Hex
 
-Convert strings to hexadecimal. You can enter multiple strings separated by commas.
+Convert strings to hexadecimal. You can enter multiple strings separated by commas (`,`). The client will print the results without any connection to a GDS.
 
 
 ```shell
-java -jar gds-console-client.jar -hex "binaryfilename.png"
+java -jar gds-console-client.jar -hex "picture1.jpg,image2.png"
+picture1.jpg = 0x70696374757265312e6a7067
+image2.png = 0x696d616765322e706e67
 ```
 
 ##### Export
@@ -171,13 +180,27 @@ java -jar gds-console-client.jar -export query "SELECT * FROM multi_event"
 
 The INSERT/UPDATE/MERGE statement you would like to use.
 
-With the **-attachments** *command option*, you can enter multiple attachments separated by commas. 
-The files must be in the folder named 'attachments' next to the jar file.
+With the **-attachments** *command option*, you can enter multiple attachments separated by commas (`,`). 
+The files must be in the folder named `attachments` next to the jar file.
 Hexadecimal representations of these file names must be referenced in the SQL statement.
+
+About hex:
+
+The attachments you specify are stored in a different table in the GDS than the event's data (to increase performance, and one attachment might be used for multiple events).
+To create a connection between the two we have to reference the attachment ID in your event record. The attachment itself can have multiple fields connected to it (like meta descriptors). The binary part of the attachment usually cannot be inserted into a query easily, therefore a unique ID is used in the SQL string to resolve this issue.
+ This is usually generated from the attachment's filename, but you can use any name you want. Because of how things are stored in the background we have to use hexadecimal format for these IDs (with the `0x` prefix), thus it leads to converting the filename into a hex format (conversion can be done by the `-hex` option, see it [above](#Hex)).
+ 
+ This is the reason our SQL for the attachment part will have these hexes in them.
+ 
+ The binaries themselves are sent with the event data, in a map (associative array), where the keys are these IDs, and the values are the binary data themselves (`Map<String, byte[]>`).
+ 
+ These binaries are generated from the files you specify with the `-attachments` flag by the client itself.
+
+This makes the event statements use two tables, named `multi_event` and `multi_event-@attachment`. The event data will be inserted into the `multi_event`, the binary attachment into the `multi_event-@attachments`.
 
 INSERT
 
-The following command assumes that there is a folder named 'attachments' next to the jar file with a file named picture.png. 
+The following command assumes that there is a folder named 'attachments' next to the jar file with a file named `picture.png`. 
 
 ```shell
 java -jar gds-console-client.jar event "INSERT INTO multi_event (id, plate, speed, images) VALUES('TEST2006301005294810', 'ABC123', 90, array('TEST2006301005294740'));INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('TEST2006301005294740', 'some_meta', 0x706963747572652e706e67)" -attachments "picture.png"
@@ -272,6 +295,10 @@ final GDSWebSocketClient client = new GDSWebSocketClient(
 The messages sent to the client and the changes of the connection status can be accessed via listeners.
 There are two types of listener for this. One to access the serialized message objects and the other to access the binary representation of the message.
 
+You can specify one of the two to use for your application. If you try to set both, an `AlreadySubscribedException` will be thrown, as the client only supports a single listener right now.
+
+The listener you pass will be used and called without any changes by the WebsocketClient after you connect successfully. Since login message is sent automatically when the connection is ready, the `ConnectionACK` message will processed before your `onMessageReceived(..)` handler is called with the data (but it will be called with the login ACK as well).
+
 **High-level** (this is the recommended)
 ```java
 client.setMessageListener(new MessageListener() {
@@ -301,7 +328,7 @@ client.setMessageListener(new MessageListener() {
 **Low-level**
 
 If you use the BinaryMessageListener, you have to create the message objects from the binary representation of the message.
-You can create these objects through the hu.arh.gds.message.util.MessageManager class.
+You can create these objects through the `hu.arh.gds.message.util.MessageManager` class.
 ```java
 client.setBinaryMessageListener(new BinaryMessageListener() {
     @Override
@@ -340,13 +367,13 @@ client.connect();
 ```
 
 During the connection, a connection type message is also sent after the websocket connection established. 
-If a positive ack message arrives, the client will in connected state, the onConnected() listener triggers and the client.connected() method returns true.
+If a positive ack message arrives, the client will in connected state, the `onConnected()` listener triggers and the client.connected() method returns true.
 After that, you can send any type of messages to the GDS.
 
 ### Create messages
 
 A message consists of two parts, a header and a data.
-With this SDK , it is usually enough to create only the data part, because the header part is created automatically when the message is sent.
+With this SDK, it is usually enough to create only the data part, because the header part is created automatically when the message is sent.
 Of course, you can also customize the header part, see [Working with custom messages](#Working-with-custom-messages) for the details.
 
 Let's see how to create an attachment request type message data.
@@ -358,7 +385,7 @@ MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT *
 
 ### Send and receive messages
 
-After you connected, you can send messages to the GDS. You can do that with the client.sendMessage() methods.
+After you connected, you can send messages to the GDS. You can do that with the `client.sendMessage()` methods.
 
 Send message with the data part. The header part is completed automatically with the default values.
 ```java
@@ -370,7 +397,7 @@ Send message with the data part (the header part is completed automatically with
 void sendMessage(MessageData data, String messageId)
 ```
 
-(The automatic header part completition means, that there is no fragmentation set, and the user name and the message data type are determined automatically.)
+(The automatic header part completion means, that there is no fragmentation set, and the user name and the message data type are determined automatically.)
 
 To see how to send a message by specifying the header part too, go to the [Working with custom messages](#Working-with-custom-messages) section.
 
@@ -384,6 +411,11 @@ In the following, take a look at what sending and receiving messages look like f
 	- [QUERY](#Query)
 	- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 - [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+
+
+You might want to read the hex part from the [EVENT command](#event-command) to understand why and how we use these in the attachments.
+
+The hex values for a string can be retrieved via the `hu.arh.gds.message.util.Utils` class, by a `static` method with a signature of `String stringToUTF8Hex(String)`.
 
 #### INSERT
 ```java

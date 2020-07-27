@@ -34,7 +34,7 @@ public class ArgumentParser {
 
         if(options.hex != null) {
             for(String hexValue: options.hex) {
-                System.out.println(hexValue + "=" + "0x" + Utils.stringToUTF8Hex(hexValue));
+                System.out.println(hexValue + " = " + "0x" + Utils.stringToUTF8Hex(hexValue));
             }
             return null;
         }
