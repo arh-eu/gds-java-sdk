@@ -12,9 +12,13 @@ import hu.arh.gds.message.header.MessageHeader;
 import hu.arh.gds.message.util.MessageManager;
 
 import javax.swing.*;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -306,6 +310,8 @@ public class ConsoleMessageListener implements MessageListener {
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                 }
+            } else {
+                throw new IllegalArgumentException("The file named '" + file.getName() + "' does not exist!");
             }
         }
         return binaries;
