@@ -236,7 +236,7 @@ The SELECT statement you would like to use. This will send a query type message.
 java -jar gds-console-client.jar query "SELECT * FROM multi_event"
 ```
 
-With the **-query** *command option* you can query all pages, not just the first one.
+With the **-all** *command option* you can query all pages, not just the first one.
 
 ```shell
 java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
