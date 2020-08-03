@@ -10,6 +10,7 @@ import hu.arh.gds.message.header.MessageHeader;
 import hu.arh.gds.message.util.MessageManager;
 import hu.arh.gds.message.util.ValidationException;
 import hu.arh.gds.message.util.WriteException;
+import io.netty.channel.ChannelFuture;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class GDSWebSocketClient {
 
     private BinaryMessageListener binaryMessageListener;
     private MessageListener messageListener;
+    private ChannelFuture channelFuture;
 
     private final String userName;
     private final String password;
@@ -80,13 +82,14 @@ public class GDSWebSocketClient {
         this.messageListener = messageListener;
     }
 
-    public void connect() throws WriteException, IOException, ValidationException {
+    public ChannelFuture connect() throws WriteException, IOException, ValidationException {
         if(!webSocketClientConnected()) {
             connectWebSocketClient();
         }
         if(!connectionAckMessageReceived.get()) {
             sendConnectionMessage();
         }
+        return getChannelFuture();
     }
 
     public boolean connected() {
@@ -98,22 +101,27 @@ public class GDSWebSocketClient {
         connectionAckMessageReceived.set(false);
     }
 
-    public void sendMessage(byte[] message) {
+    public ChannelFuture getChannelFuture() {
+        return channelFuture;
+    }
+
+    public ChannelFuture sendMessage(byte[] message) {
         try {
             if (webSocketClient != null) {
                 logger.info("GDSWebSocketClient sending message");
-                webSocketClient.send(message);
+                return webSocketClient.send(message);
             }
         } catch (Throwable throwable) {
             logger.severe("An error occurred while sending message: " + throwable.getMessage());
         }
+        return getChannelFuture();
     }
 
-    public void sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException, WriteException {
-        sendMessage(MessageManager.createMessage(header, data));
+    public ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException, WriteException {
+        return sendMessage(MessageManager.createMessage(header, data));
     }
 
-    public void sendMessage(MessageData data, String messageId) throws IOException, ValidationException, WriteException {
+    public ChannelFuture sendMessage(MessageData data, String messageId) throws IOException, ValidationException, WriteException {
         MessageHeader header = MessageManager.createMessageHeaderBase(
                 userName,
                 messageId != null ? messageId : UUID.randomUUID().toString(),
@@ -124,30 +132,31 @@ public class GDSWebSocketClient {
                 null,
                 data.getTypeHelper().getMessageDataType());
         byte[] message = MessageManager.createMessage(header, data);
-        sendMessage(message);
+        return sendMessage(message);
     }
 
     public void sendMessage(MessageData data) throws IOException, ValidationException, WriteException {
         sendMessage(data, null);
     }
 
-    private void sendConnectionMessage() throws IOException, ValidationException, WriteException {
+    private ChannelFuture sendConnectionMessage() throws IOException, ValidationException, WriteException {
         MessageHeader header = MessageManager.createMessageHeaderBase(userName, UUID.randomUUID().toString(),
                 false, null, null, null, null, MessageDataType.CONNECTION_0);
         MessageData data = MessageManager.createMessageData0Connection(true, 1, false,
                 null, password);
         byte[] message = MessageManager.createMessage(header, data);
-        sendMessage(message);
+        return sendMessage(message);
     }
 
-    private void connectWebSocketClient() {
+    private ChannelFuture connectWebSocketClient() {
         try {
             if (webSocketClient != null) {
-                webSocketClient.connect();
+                this.channelFuture = webSocketClient.connect();
             }
         } catch (Throwable throwable) {
             logger.severe("An error occurred while connecting to server: " + throwable.getMessage());
         }
+        return this.channelFuture;
     }
 
     private boolean webSocketClientConnected() {

@@ -299,7 +299,9 @@ You can specify one of the two to use for your application. If you try to set bo
 
 The listener you pass will be used and called without any changes by the WebsocketClient after you connect successfully. Since login message is sent automatically when the connection is ready, the `ConnectionACK` message will processed before your `onMessageReceived(..)` handler is called with the data (but it will be called with the login ACK as well).
 
-The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous. 
+The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous.
+
+The `ChannelFuture` object, that is used by netty can be retrieved by the `getChannelFuture()` method in the `GDSWebSocketClient` class (it is also returned by the `connect()` and the `sendMessage(..)` calls), so you can use it for your own needs if you need the lower level listener for measurement and statistics.
 
 **High-level** (this is the recommended)
 ```java

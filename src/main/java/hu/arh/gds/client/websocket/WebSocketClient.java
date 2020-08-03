@@ -2,10 +2,7 @@ package hu.arh.gds.client.websocket;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -41,6 +38,7 @@ public class WebSocketClient {
     private final int port;
     private EventLoopGroup group = new NioEventLoopGroup();
     private Channel ch;
+    private ChannelFuture channelFuture;
 
     private BinaryMessageListener binaryMessageListener;
 
@@ -129,7 +127,7 @@ public class WebSocketClient {
         this.binaryMessageListener = binaryMessageListener;
     }
 
-    public void connect() throws Throwable {
+    public ChannelFuture connect() throws Throwable {
         if (!isActive()) {
             if (isOpen()) {
                 close();
@@ -159,7 +157,7 @@ public class WebSocketClient {
                         });
                 ch = bootstrap.connect(URI.getHost(), port).sync().channel();
                 logger.info("Awaiting handshake...");
-                webSocketClientHandler.handshakeFuture().sync();
+                this.channelFuture = webSocketClientHandler.handshakeFuture().sync();
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 logger.info(throwable.toString());
@@ -170,15 +168,16 @@ public class WebSocketClient {
                 throw throwable;
             }
         }
+        return channelFuture;
     }
 
-    public void send(byte[] msg) throws Throwable {
+    public ChannelFuture send(byte[] msg) throws Throwable {
         if (!isActive()) {
             connect();
         }
         WebSocketFrame frame = new BinaryWebSocketFrame(Unpooled.wrappedBuffer(msg));
         logger.info("WebSocketClient sending BinaryWebSocketFrame...");
-        ch.writeAndFlush(frame);
+        return ch.writeAndFlush(frame);
     }
 
     public void close() throws InterruptedException {
