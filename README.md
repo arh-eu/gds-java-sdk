@@ -267,7 +267,7 @@ First, we create the client object.
 final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
-        "ws://127.0.0.1:8888/gates", //the URL of the GDS instance you would like to connect to
+        "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
         "user", //the username you would like to use to login to the GDS
         null, //the password you would like to use to login into the GDS, if null, no authentication will be used
         logger //the logger object
@@ -281,7 +281,7 @@ In this case the scheme in the URL should be `wss`. The GDS uses different port 
 final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
-        "wss://127.0.0.1:8443/gate", //the URL of the GDS instance you would like to connect to
+        "wss://127.0.0.1:8443/gates", //the URL of the GDS instance you would like to connect to
         "user", //the username you would like to use to login to the GDS
         null, //if you use TLS, this value is ignored.
         "path_to_my_cert_file.p12", //String - the path of the file containing your cert and private key (*.p12). If the url does not start 'wss', this value is ignored.
