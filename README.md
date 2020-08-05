@@ -267,7 +267,7 @@ First, we create the client object.
 final Logger logger = Logger.getLogger("logging");
 
 final GDSWebSocketClient client = new GDSWebSocketClient(
-        "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
+        "ws://127.0.0.1:8888/gates", //the URL of the GDS instance you would like to connect to
         "user", //the username you would like to use to login to the GDS
         null, //the password you would like to use to login into the GDS, if null, no authentication will be used
         logger //the logger object
