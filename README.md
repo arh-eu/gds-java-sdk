@@ -117,7 +117,7 @@ $ java -jar gds-console-client.jar -help
 The URL of the GDS instance you would like to connect to. By default, "`ws://127.0.0.1:8888/gate`" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
 ```shell
-java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate/" query "SELECT * FROM multi_event"
+java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate" query "SELECT * FROM multi_event"
 ```
 
 ##### Username
