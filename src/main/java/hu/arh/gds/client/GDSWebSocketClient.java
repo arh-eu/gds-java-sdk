@@ -47,11 +47,12 @@ public class GDSWebSocketClient {
                 }
 
                 @Override
-                public void onConnected() {}
+                public void onConnected() {
+                }
 
                 @Override
                 public void onConnectionFailed(String reason) {
-                    if(messageListener != null) {
+                    if (messageListener != null) {
                         messageListener.onConnectionFailed(reason);
                     }
                 }
@@ -69,24 +70,24 @@ public class GDSWebSocketClient {
     }
 
     public void setBinaryMessageListener(BinaryMessageListener binaryMessageListener) throws AlreadySubscribedException {
-        if(messageListener != null) {
+        if (messageListener != null) {
             throw new AlreadySubscribedException("Already subscribed with the MessageListener!");
         }
         this.binaryMessageListener = binaryMessageListener;
     }
 
     public void setMessageListener(MessageListener messageListener) throws AlreadySubscribedException {
-        if(binaryMessageListener != null) {
+        if (binaryMessageListener != null) {
             throw new AlreadySubscribedException("Already subscribed with the BinaryMessageListener!");
         }
         this.messageListener = messageListener;
     }
 
     public ChannelFuture connect() throws WriteException, IOException, ValidationException {
-        if(!webSocketClientConnected()) {
+        if (!webSocketClientConnected()) {
             connectWebSocketClient();
         }
-        if(!connectionAckMessageReceived.get()) {
+        if (!connectionAckMessageReceived.get()) {
             sendConnectionMessage();
         }
         return getChannelFuture();
@@ -142,7 +143,8 @@ public class GDSWebSocketClient {
     private ChannelFuture sendConnectionMessage() throws IOException, ValidationException, WriteException {
         MessageHeader header = MessageManager.createMessageHeaderBase(userName, UUID.randomUUID().toString(),
                 false, null, null, null, null, MessageDataType.CONNECTION_0);
-        MessageData data = MessageManager.createMessageData0Connection(true, 1, false,
+        //Current GDS version is 5.1
+        MessageData data = MessageManager.createMessageData0Connection(true, (5 << 16 | 1), false,
                 null, password);
         byte[] message = MessageManager.createMessage(header, data);
         return sendMessage(message);
@@ -180,27 +182,27 @@ public class GDSWebSocketClient {
 
     private void onWebSocketDisconnected() {
         connectionAckMessageReceived.set(false);
-        if(messageListener != null) {
+        if (messageListener != null) {
             messageListener.onDisconnected();
-        } else if(binaryMessageListener != null) {
+        } else if (binaryMessageListener != null) {
             binaryMessageListener.onDisconnected();
         }
     }
 
     private void onMessageReceived(byte[] message) {
         try {
-            if(!connectionAckMessageReceived.get()) {
+            if (!connectionAckMessageReceived.get()) {
                 if (MessageManager.getMessageDataType(message).equals(MessageDataType.CONNECTION_ACK_1)) {
                     MessageData1ConnectionAck ackData = MessageManager.getMessageData(message).getTypeHelper().asConnectionAckMessageData1();
                     if (ackData.getGlobalStatus().equals(AckStatus.OK)) {
                         connectionAckMessageReceived.set(true);
-                        if(messageListener != null) {
+                        if (messageListener != null) {
                             messageListener.onConnected();
-                        } else if(binaryMessageListener != null) {
+                        } else if (binaryMessageListener != null) {
                             binaryMessageListener.onConnected();
                         }
                     } else {
-                        if(messageListener != null) {
+                        if (messageListener != null) {
                             messageListener.onConnectionFailed(ackData.getGlobalException());
                         }
                     }
@@ -210,7 +212,7 @@ public class GDSWebSocketClient {
             logger.info("GDSWebSocketClient received message");
             if (binaryMessageListener != null) {
                 binaryMessageListener.onMessageReceived(message);
-            } else if(messageListener != null) {
+            } else if (messageListener != null) {
                 messageListener.onMessageReceived(
                         MessageManager.getMessageHeaderFromBinaryMessage(message),
                         MessageManager.getMessageData(message));
