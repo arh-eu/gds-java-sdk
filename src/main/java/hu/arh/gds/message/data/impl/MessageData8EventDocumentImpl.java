@@ -143,7 +143,7 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
 
     @Override
     protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
-        WriterHelper.packArrayHeader(packer, 3);
+        WriterHelper.packArrayHeader(packer, 4);
         WriterHelper.packValue(packer, this.tableName);
         WriterHelper.packPackables(packer, this.fieldHolders);
         WriterHelper.packValueListListValues(packer, this.records);
