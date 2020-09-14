@@ -27,7 +27,6 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
     }
 
 
-
     public ChannelFuture handshakeFuture() {
         return handshakeFuture;
     }
@@ -44,7 +43,7 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        if(binaryMessageListener != null) {
+        if (binaryMessageListener != null) {
             binaryMessageListener.onDisconnected();
         }
         logger.info("WebSocketClient disconnected");
@@ -57,7 +56,7 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
             try {
                 handshaker.finishHandshake(ch, (FullHttpResponse) msg);
                 logger.info("WebSocketClient connected");
-                if(binaryMessageListener != null) {
+                if (binaryMessageListener != null) {
                     binaryMessageListener.onConnected();
                 }
                 handshakeFuture.setSuccess();
@@ -76,15 +75,18 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         WebSocketFrame frame = (WebSocketFrame) msg;
-        if(frame instanceof BinaryWebSocketFrame) {
+        if (frame instanceof BinaryWebSocketFrame) {
             logger.info("WebSocketClient received BinaryWebSocketFrame");
             byte[] binaryFrame = new byte[frame.content().readableBytes()];
             frame.content().readBytes(binaryFrame);
-            if(binaryMessageListener != null) {
+            if (binaryMessageListener != null) {
                 binaryMessageListener.onMessageReceived(binaryFrame);
             }
         } else if (frame instanceof TextWebSocketFrame) {
             logger.info("WebSocketClient received TextWebSocketFrame");
+        } else if (frame instanceof PingWebSocketFrame) {
+            logger.info("WebSocketClient received ping");
+            ch.writeAndFlush(new PongWebSocketFrame());
         } else if (frame instanceof PongWebSocketFrame) {
             logger.info("WebSocketClient received pong");
         } else if (frame instanceof CloseWebSocketFrame) {
