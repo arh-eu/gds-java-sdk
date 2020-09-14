@@ -91,6 +91,8 @@ class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
             logger.info("WebSocketClient received pong");
         } else if (frame instanceof CloseWebSocketFrame) {
             logger.info("WebSocketClient received closing");
+            CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame)frame;
+            logger.info("Close status: " + closeWebSocketFrame.statusCode() + ", reason: " + closeWebSocketFrame.reasonText());
             ch.closeFuture();
             eventLoopGroup.shutdownGracefully();
         } else {
