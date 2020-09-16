@@ -19,7 +19,7 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
     <dependencies>
         <dependency>
             <groupId>com.github.arh-eu</groupId>
-            <artifactId>gds-java-messages</artifactId>
+            <artifactId>gds-java-sdk</artifactId>
             <version>master-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -370,9 +370,11 @@ client.setBinaryMessageListener(new BinaryMessageListener() {
 client.connect();
 ```
 
-During the connection, a connection type message is also sent after the websocket connection established. 
-If a positive ack message arrives, the client will in connected state, the `onConnected()` listener triggers and the client.connected() method returns true.
+During the connection, a login message is automatically sent after the websocket connection is established.
+If a positive ACK message arrives, the client will be in its connected state, the `onConnected()` listener triggers and the `client.connected()` method returns `true`.
 After that, you can send any type of messages to the GDS.
+
+Please keep in mind that you should not send any messages until you have received the (positive) ACK for your login, otherwise the GDS will drop your connection as the authentication and authorization processes did not finish yet but your client is trying to send messages (which is invalid without a login ACK).
 
 ### Create messages
 
