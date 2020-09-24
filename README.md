@@ -109,7 +109,7 @@ java -jar gds-console-client.jar [options] [command] [command options]
 Print the usage to your console.
 
 ```shell
-$ java -jar gds-console-client.jar -help
+java -jar gds-console-client.jar -help
 ```
 
 ##### URL
