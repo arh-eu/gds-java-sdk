@@ -53,6 +53,8 @@ public class ConsoleGUI {
             //content.addComponent(getHotKeysPanel()); //TODO
             content.addComponent(getFieldDetailsPanel());
             dataPanel = getDataPanel();
+            dataPanel.setVisibleRows(12);
+
             content.addComponent(dataPanel);
 
             window.setComponent(content);
