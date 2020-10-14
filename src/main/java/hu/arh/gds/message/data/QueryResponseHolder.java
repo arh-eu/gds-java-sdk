@@ -12,6 +12,6 @@ public interface QueryResponseHolder extends PublicElementCountable, Packable {
     Boolean getMorePage();
     QueryContextHolder getQueryContextHolder();
     QueryContextHolderSerializable getQueryContextHolderSerializable() throws Exception;
-    List<FieldHolder> getfFieldHolders();
+    List<FieldHolder> getFieldHolders();
     List<List<Value>> getHits();
 }

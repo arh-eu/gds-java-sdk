@@ -115,47 +115,22 @@ public class ConsoleClient implements Runnable {
     private void sendQuery() {
         try {
 
-            List<QueryAckHolder> queryAckHolders = new ArrayList<>();
-
+            int counter = 0;
             Pair<MessageHeaderBase, MessageData11QueryRequestAck> queryResponse = syncGDSClient.sendQueryRequest10(MessageManager.createMessageData10QueryRequest(
                     argumentsHolder.getStatement(),
                     ConsistencyType.PAGES,
                     Long.valueOf(argumentsHolder.getTimeout())
             ));
-            exportResult(queryResponse.getFirst(), queryResponse.getSecond());
 
-            if (queryResponse.getSecond().getGlobalStatus() == AckStatus.OK) {
-                queryAckHolders.add(new QueryAckHolder(queryResponse.getFirst().getMessageId(), queryResponse.getSecond().getQueryResponseHolder()));
-            }
+            exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
 
             if (argumentsHolder.getMessageType().equals(MessageType.QUERYALL)) {
                 while (queryResponse.getSecond().getGlobalStatus() == AckStatus.OK &&
                         queryResponse.getSecond().getQueryResponseHolder().getMorePage()) {
                     queryResponse = syncGDSClient.sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(
                             queryResponse.getSecond().getQueryResponseHolder().getQueryContextHolder(), Long.valueOf(argumentsHolder.getTimeout())));
-                    exportResult(queryResponse.getFirst(), queryResponse.getSecond());
 
-                    if (queryResponse.getSecond().getGlobalStatus() == AckStatus.OK) {
-                        queryAckHolders.add(new QueryAckHolder(queryResponse.getFirst().getMessageId(), queryResponse.getSecond().getQueryResponseHolder()));
-                    }
-                }
-            }
-
-            if (!argumentsHolder.withNoGUI()) {
-                try {
-                    int counter = 0;
-                    for (QueryAckHolder queryAckHolder : queryAckHolders) {
-                        try {
-                            ConsoleGUI.display(
-                                    ++counter,
-                                    queryAckHolder.getMessageId(),
-                                    queryAckHolder.getQueryResponseHolder());
-                        } catch (IOException e) {
-                            logger.severe(e.toString());
-                        }
-                    }
-                } catch (Throwable e) {
-                    logger.severe(e.toString());
+                    exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
                 }
             }
 
@@ -164,8 +139,21 @@ public class ConsoleClient implements Runnable {
         }
     }
 
-    @Override
+    private void exportAndDisplayOnGUIifNeeded(int counter, Pair<MessageHeaderBase, MessageData11QueryRequestAck> queryResponse) {
+        exportResult(queryResponse.getFirst(), queryResponse.getSecond());
+        if (!argumentsHolder.withNoGUI() && queryResponse.getSecond().getGlobalStatus() == AckStatus.OK) {
+            try {
+                new ConsoleGUI(
+                        counter,
+                        queryResponse.getFirst().getMessageId(),
+                        queryResponse.getSecond().getQueryResponseHolder()).display();
+            } catch (IOException e) {
+                logger.severe(e.toString());
+            }
+        }
+    }
 
+    @Override
     public void run() {
         try {
             if (syncGDSClient.connect()) {

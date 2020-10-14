@@ -75,7 +75,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         ExceptionHelper.requireNonNullValue(queryResponse.getQueryContextHolder(),
                 queryResponse.getClass().getSimpleName(),
                 "queryContextDescriptor");
-        ExceptionHelper.requireNonNullValue(queryResponse.getfFieldHolders(), queryResponse.getClass().getSimpleName(),
+        ExceptionHelper.requireNonNullValue(queryResponse.getFieldHolders(), queryResponse.getClass().getSimpleName(),
                 "fieldDescriptors");
         ExceptionHelper.requireNonNullValue(queryResponse.getHits(), queryResponse.getClass().getSimpleName(),
                 "hits");
@@ -111,7 +111,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
     }
 
     @Override
-    public List<FieldHolder> getfFieldHolders() {
+    public List<FieldHolder> getFieldHolders() {
         return this.fieldHolders;
     }
 

@@ -179,8 +179,8 @@ public class TableWindowListener implements WindowListener {
     private void updateFieldDetails() {
         updateView();
         if (actualColumn.get() != 0) {
-            fieldType.setText("Field type: " + queryResponseHolder.getfFieldHolders().get(actualColumn.get() - 1).getFieldType());
-            mimeType.setText("Mime type: " + queryResponseHolder.getfFieldHolders().get(actualColumn.get() - 1).getMimeType());
+            fieldType.setText("Field type: " + queryResponseHolder.getFieldHolders().get(actualColumn.get() - 1).getFieldType());
+            mimeType.setText("Mime type: " + queryResponseHolder.getFieldHolders().get(actualColumn.get() - 1).getMimeType());
         } else {
             fieldType.setText("Field type: -");
             mimeType.setText("Mime type: -");

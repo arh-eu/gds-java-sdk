@@ -88,10 +88,10 @@ class TableWindow extends BasicWindow {
     }
 
     private Table<String> getTable() {
-        String[] headers = new String[queryResponseHolder.getfFieldHolders().size() + 1];
+        String[] headers = new String[queryResponseHolder.getFieldHolders().size() + 1];
         headers[0] = "";
         for (int i = 1; i < headers.length; ++i) {
-            headers[i] = queryResponseHolder.getfFieldHolders().get(i - 1).getFieldName();
+            headers[i] = queryResponseHolder.getFieldHolders().get(i - 1).getFieldName();
         }
         Table<String> table = new Table<>(headers);
         int c = 1;
