@@ -47,9 +47,9 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                                    List<List<Value>> hits) throws ValidationException {
         this.queryContextHolderSerializable = queryContextHolderSerializable;
         List<Value> fieldValues = new ArrayList<>();
-        for(Object value: queryContextHolderSerializable.getFieldValues()) {
+        for (Object value : queryContextHolderSerializable.getFieldValues()) {
             try {
-                fieldValues.add(ObjectToValueConverter.convert(value));
+                fieldValues.add(Converters.convertToMessagePackValue(value));
             } catch (Exception e) {
                 throw new ValidationException(e.getMessage() + ". " + value);
             }
@@ -103,7 +103,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
 
     @Override
     public QueryContextHolderSerializable getQueryContextHolderSerializable() throws Exception {
-        if(queryContextHolderSerializable == null) {
+        if (queryContextHolderSerializable == null) {
             queryContextHolderSerializable = Converters
                     .getQueryContextDescriptorSerializable(queryContextHolder);
         }

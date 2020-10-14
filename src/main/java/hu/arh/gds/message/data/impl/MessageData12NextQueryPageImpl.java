@@ -21,7 +21,7 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
     private QueryContextHolderSerializable queryContextHolderSerializable;
     private QueryContextHolder queryContextDescriptor;
     private Long timeout;
-    
+
     public MessageData12NextQueryPageImpl(boolean cache,
                                           QueryContextHolder queryContextDescriptor,
                                           Long timeout) throws IOException, NullPointerException, ValidationException {
@@ -29,7 +29,9 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
         this.timeout = timeout;
         this.cache = cache;
         checkContent();
-        if(cache) { Serialize(); }
+        if (cache) {
+            Serialize();
+        }
     }
 
     public MessageData12NextQueryPageImpl(boolean cache,
@@ -37,9 +39,9 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
                                           Long timeout) throws IOException, NullPointerException, ValidationException {
         this.queryContextHolderSerializable = queryContextDescriptorSerializable;
         List<Value> fieldValues = new ArrayList<>();
-        for(Object value: queryContextDescriptorSerializable.getFieldValues()) {
+        for (Object value : queryContextDescriptorSerializable.getFieldValues()) {
             try {
-                fieldValues.add(ObjectToValueConverter.convert(value));
+                fieldValues.add(Converters.convertToMessagePackValue(value));
             } catch (Exception e) {
                 throw new ValidationException(e.getMessage() + ". " + value);
             }
@@ -53,7 +55,9 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
         this.timeout = timeout;
         this.cache = cache;
         checkContent();
-        if(cache) { Serialize(); }
+        if (cache) {
+            Serialize();
+        }
     }
 
 
@@ -63,7 +67,7 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
         ExceptionHelper.requireNonNullValue(timeout, this.getClass().getSimpleName(),
                 "timeout");
     }
-    
+
     public MessageData12NextQueryPageImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
         super(binary, cache);
     }
@@ -79,10 +83,12 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
             public MessageDataType getMessageDataType() {
                 return MessageDataType.NEXT_QUERY_PAGE_12;
             }
+
             @Override
             public MessageData12NextQueryPageImpl asNextQueryPageMessageData12() {
                 return MessageData12NextQueryPageImpl.this;
             }
+
             @Override
             public boolean isNextQueryPageMessageData12() {
                 return true;
@@ -97,7 +103,7 @@ public class MessageData12NextQueryPageImpl extends MessageData12NextQueryPage {
 
     @Override
     public QueryContextHolderSerializable getQueryContextDescriptorSerializable() throws Exception {
-        if(queryContextHolderSerializable == null) {
+        if (queryContextHolderSerializable == null) {
             queryContextHolderSerializable = Converters
                     .getQueryContextDescriptorSerializable(queryContextDescriptor);
         }

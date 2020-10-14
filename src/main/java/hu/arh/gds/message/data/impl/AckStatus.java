@@ -15,6 +15,7 @@ public enum AckStatus {
     NOT_ACCEPTABLE_406(406, true),
     REQUEST_TIMEOUT(408, true),
     CONFLICT(409, true),
+    GONE(410, true),
     PRECONDITION_FAILED(412, true),
     TOO_MANY_REQUESTS(429, true),
     INTERNAL_SERVER_ERROR(500, true),
@@ -25,7 +26,7 @@ public enum AckStatus {
     private final boolean errorStatus;
     private static final Map<Integer, AckStatus> map = new HashMap<>();
 
-    private AckStatus(int value, boolean errorStatus) {
+    AckStatus(int value, boolean errorStatus) {
         this.value = value;
         this.errorStatus = errorStatus;
     }
@@ -40,7 +41,9 @@ public enum AckStatus {
         return this.value;
     }
 
-    public boolean isErrorStatus() { return errorStatus; }
+    public boolean isErrorStatus() {
+        return errorStatus;
+    }
 
     public static AckStatus valueOf(Integer value) {
         return map.get(value);

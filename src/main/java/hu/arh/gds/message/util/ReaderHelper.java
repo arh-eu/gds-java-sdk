@@ -40,27 +40,6 @@ public class ReaderHelper {
         }
     }
 
-    public static int unpackArrayHeaderStrictly(MessageUnpacker unpacker,
-                                                int expected1,
-                                                int expected2,
-                                                String arrayName,
-                                                String className) throws IOException, ReadException {
-
-        int headerSize = unpacker.unpackArrayHeader();
-        if (headerSize != expected1 && headerSize != expected2) {
-            throw new ReadException(
-                    String.format("%s: Array header size (%s) does not match expected value (%s or %s). Array name: " +
-                                    "%s.",
-                            className,
-                            headerSize,
-                            expected1,
-                            expected2,
-                            arrayName));
-        } else {
-            return headerSize;
-        }
-    }
-
     public static int unpackMapHeader(MessageUnpacker unpacker,
                                       Integer expected,
                                       String mapName,

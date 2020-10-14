@@ -10,19 +10,18 @@ import org.apache.commons.csv.CSVPrinter;
 import org.msgpack.value.Value;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Utils {
     private static final String EXPORTS_FOLDER_NAME = "exports";
     private static final String ATTACHMENTS_FOLDER_NAME = "attachments";
-    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     private static final Gson gson;
 
     private static final Map<String, String> mimeExtensions = new HashMap<>();
+
+    private static final Set<String> skippedAttributes = new HashSet<>();
+    private static final Set<Class<?>> skippedClasses = new HashSet<>();
 
     static {
 
@@ -31,42 +30,36 @@ public class Utils {
         mimeExtensions.put("image/jpg", "jpg");
         mimeExtensions.put("image/jpeg", "jpg");
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.setLenient();
+        skippedAttributes.add("binary");
+        skippedAttributes.add("cache");
+        skippedAttributes.add("messageSize");
+
+        skippedClasses.add(MessageHeaderTypeHelper.class);
+        skippedClasses.add(MessageDataTypeHelper.class);
+
+
+        GsonBuilder gsonBuilder = new GsonBuilder().setLenient();
         JsonSerializer<Value> valueJsonSerializer = (value, type, jsonSerializationContext) ->
                 JsonParser.parseString(value.toJson());
         JsonSerializer<byte[]> binaryJsonSerializer = (value, type, jsonSerializationContext) ->
-                new JsonParser().parse(value == null ? "null" : String.valueOf(value.length) + "bytes");
+                JsonParser.parseString(value == null ? "null" : value.length + " bytes");
+
         gsonBuilder.registerTypeAdapter(Value.class, valueJsonSerializer);
         gsonBuilder.registerTypeAdapter(byte[].class, binaryJsonSerializer);
+
         ExclusionStrategy strategy = new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                if (fieldAttributes.getName().equals("cache")
-                        || fieldAttributes.getName().equals("messageSize")
-                        || (fieldAttributes.getName().equals("binary"))) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return skippedAttributes.contains(fieldAttributes.getName());
             }
 
             @Override
             public boolean shouldSkipClass(Class<?> aClass) {
-                if (aClass.equals(MessageHeaderTypeHelper.class)
-                        || aClass.equals(MessageDataTypeHelper.class)) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return skippedClasses.contains(aClass);
             }
         };
-        gsonBuilder.setExclusionStrategies(strategy);
-        gson = gsonBuilder.setPrettyPrinting().serializeNulls().create();
-    }
 
-    public static boolean isWindows() {
-        return (OS.indexOf("win") >= 0);
+        gson = gsonBuilder.setExclusionStrategies(strategy).setPrettyPrinting().serializeNulls().create();
     }
 
     private static void createFolder(String name) {
@@ -113,11 +106,7 @@ public class Utils {
     public static void saveAttachment(String messageId, byte[] attachment, String meta) throws IOException {
         createAttachmentsFolder();
         String extension;
-        if(mimeExtensions.containsKey(meta)) {
-            extension = mimeExtensions.get(meta);
-        } else {
-            extension = "unknown";
-        }
+        extension = mimeExtensions.getOrDefault(meta, "unknown");
         OutputStream os = new FileOutputStream(ATTACHMENTS_FOLDER_NAME + "/" + messageId + "-attachment." + extension);
         os.write(attachment);
         os.close();

@@ -5,47 +5,8 @@
  */
 package hu.arh.gds.message.util;
 
-import hu.arh.gds.message.data.AttachmentRequestAckDataHolder;
-import hu.arh.gds.message.data.AttachmentResponseAckResultHolder;
-import hu.arh.gds.message.data.AttachmentResultHolder;
-import hu.arh.gds.message.data.ConsistencyType;
-import hu.arh.gds.message.data.EventDocumentResultHolder;
-import hu.arh.gds.message.data.EventHolder;
-import hu.arh.gds.message.data.EventResultHolder;
-import hu.arh.gds.message.data.FieldHolder;
-import hu.arh.gds.message.data.MessageData;
-import hu.arh.gds.message.data.MessageData0Connection;
-import hu.arh.gds.message.data.MessageData0ConnectionDescriptor;
-import hu.arh.gds.message.data.MessageData10QueryRequest;
-import hu.arh.gds.message.data.MessageData11QueryRequestAck;
-import hu.arh.gds.message.data.MessageData12NextQueryPage;
-import hu.arh.gds.message.data.MessageData1ConnectionAck;
-import hu.arh.gds.message.data.MessageData2Event;
-import hu.arh.gds.message.data.MessageData3EventAck;
-import hu.arh.gds.message.data.MessageData4AttachmentRequest;
-import hu.arh.gds.message.data.MessageData5AttachmentRequestAck;
-import hu.arh.gds.message.data.MessageData6AttachmentResponse;
-import hu.arh.gds.message.data.MessageData7AttachmentResponseAck;
-import hu.arh.gds.message.data.MessageData8EventDocument;
-import hu.arh.gds.message.data.MessageData9EventDocumentAck;
-import hu.arh.gds.message.data.PriorityLevelHolder;
-import hu.arh.gds.message.data.QueryContextHolder;
-import hu.arh.gds.message.data.QueryContextHolderSerializable;
-import hu.arh.gds.message.data.QueryResponseHolder;
-import hu.arh.gds.message.data.impl.AckStatus;
-import hu.arh.gds.message.data.impl.MessageData0ConnectionImpl;
-import hu.arh.gds.message.data.impl.MessageData10QueryRequestImpl;
-import hu.arh.gds.message.data.impl.MessageData11QueryRequestAckImpl;
-import hu.arh.gds.message.data.impl.MessageData12NextQueryPageImpl;
-import hu.arh.gds.message.data.impl.MessageData1ConnectionAckImpl;
-import hu.arh.gds.message.data.impl.MessageData2EventImpl;
-import hu.arh.gds.message.data.impl.MessageData3EventAckImpl;
-import hu.arh.gds.message.data.impl.MessageData4AttachmentRequestImpl;
-import hu.arh.gds.message.data.impl.MessageData5AttachmentRequestAckImpl;
-import hu.arh.gds.message.data.impl.MessageData6AttachmentResponseImpl;
-import hu.arh.gds.message.data.impl.MessageData7AttachmentResponseAckImpl;
-import hu.arh.gds.message.data.impl.MessageData8EventDocumentImpl;
-import hu.arh.gds.message.data.impl.MessageData9EventDocumentAckImpl;
+import hu.arh.gds.message.data.*;
+import hu.arh.gds.message.data.impl.*;
 import hu.arh.gds.message.header.MessageDataType;
 import hu.arh.gds.message.header.MessageHeader;
 import hu.arh.gds.message.header.MessageHeaderBase;
@@ -58,12 +19,11 @@ import org.msgpack.value.Value;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
+ * Used to validate the messages that are created to/from the GDS, raising exceptions is any constraint gets violated.
+ *
  * @author oliver.nagy
  */
 public class MessageManager {
@@ -99,6 +59,14 @@ public class MessageManager {
         return arrayHeaderSize;
     }
 
+    /**
+     * Checks the format of a binary message, validating its header.
+     * Header is considered valid if the message can be parsed as an array containing exactly 11 elements.
+     *
+     * @param message the binary message
+     * @return {@link MessageHeaderType#BASE} on successful read
+     * @throws ReadException If the message format is invalid or the array contains more or less than 11 elements.
+     */
     public static MessageHeaderType getMessageHeaderType(byte[] message) throws ReadException {
 
         ExceptionHelper.requireNonNullValue(message, MessageManager.class.getSimpleName(), "message");
@@ -122,6 +90,17 @@ public class MessageManager {
         }
     }
 
+    /**
+     * Checks the contents of the binary message, returning the type specified in the header indicating the type of the
+     * data part.
+     *
+     * @param message the binary array containing the message
+     * @return the {@link MessageDataType} value indicating the type of the message data
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
+     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     *                             is given, {@code first_fragment} cannot be {@code null} and so.)
+     */
     public static MessageDataType getMessageDataType(byte[] message) throws ReadException, IOException, ValidationException {
 
         ExceptionHelper.requireNonNullValue(message, MessageManager.class.getSimpleName(), "message");
@@ -137,7 +116,17 @@ public class MessageManager {
         }
     }
 
-    public static byte[] createMessage(MessageHeader header, MessageData data) throws IOException, WriteException, ValidationException {
+    /**
+     * Packs the given header and data to a full message by MessagePack, returning the raw bytes from the created message.
+     *
+     * @param header The header of the message.
+     * @param data   The data (content) of the message.
+     * @return the binary array containing the message packed by {@code MessagePack}
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     *                             is given, {@code first_fragment} cannot be {@code null} and so.)
+     */
+    public static byte[] createMessage(MessageHeader header, MessageData data) throws IOException, ValidationException {
 
         ExceptionHelper.requireNonNullValue(header, MessageManager.class.getSimpleName(), "header");
         ExceptionHelper.requireNonNullValue(data, MessageManager.class.getSimpleName(), "data");
@@ -150,7 +139,7 @@ public class MessageManager {
                                 Globals.DATA_FIELDS_NUMBER));
                 break;
             default:
-                throw new WriteException(String.format("%s: Unknown message header type (%s)",
+                throw new ValidationException(String.format("%s: Unknown message header type (%s)",
                         MessageManager.class.getSimpleName(),
                         header.getTypeHelper().getMessageHeaderType()));
         }
@@ -161,6 +150,17 @@ public class MessageManager {
         return binary.toByteArray();
     }
 
+    /**
+     * Returns the header part of a message given in binary format.
+     * Validates the contents, raising any exception on invalid message formats.
+     *
+     * @param message the binary message
+     * @return {@link MessageHeaderBase} containing the header information
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
+     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     *                             is given, {@code first_fragment} cannot be {@code null} and so.)
+     */
     public static MessageHeader getMessageHeaderFromBinaryMessage(byte[] message) throws IOException, ReadException, ValidationException {
 
         ExceptionHelper.requireNonNullValue(message, MessageManager.class.getSimpleName(), "message");
@@ -176,20 +176,17 @@ public class MessageManager {
         }
     }
 
-    public static MessageHeader getMessageHeader(byte[] header, MessageHeaderType headerType) throws IOException, ReadException, ValidationException {
-
-        ExceptionHelper.requireNonNullValue(header, MessageManager.class.getSimpleName(), "header");
-
-        switch (headerType) {
-            case BASE:
-                return new MessageHeaderBaseImpl(header, true, false);
-            default:
-                throw new ReadException(String.format("%s: Unknown message header type (%s)",
-                        MessageManager.class.getSimpleName(),
-                        headerType));
-        }
-    }
-
+    /**
+     * Returns the header part of a message given in binary format.
+     * Validates the contents, raising any exception on invalid message formats.
+     *
+     * @param message the binary message
+     * @return {@link MessageData} containing the header information
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
+     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     *                             is given, {@code first_fragment} cannot be {@code null} and so.)
+     */
     public static MessageData getMessageData(byte[] message) throws IOException, ReadException, ValidationException {
 
         ExceptionHelper.requireNonNullValue(message, MessageManager.class.getSimpleName(), "message");
@@ -229,43 +226,84 @@ public class MessageManager {
         }
     }
 
-    public static MessageData getMessageDataFromPartialBinary(byte[] data, MessageDataType dataType) throws IOException, ReadException, ValidationException {
+    /**
+     * Creates a header for a message based on the username, and data type.
+     * The message ID will be randomly generated.
+     * Throws exception if any value(type) is illegal or if the validating fails.
+     *
+     * @param userName the name of the user
+     * @param dataType the type of the message body
+     * @return the created {@link MessageHeaderBase} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (ie. {@code userName} cannot be null)
+     */
+    public static MessageHeaderBase createMessageHeaderBase(
+            String userName,
+            MessageDataType dataType) throws IOException, ValidationException {
 
-        ExceptionHelper.requireNonNullValue(data, MessageManager.class.getSimpleName(), "data");
-
-        switch (dataType) {
-            case CONNECTION_0:
-                return new MessageData0ConnectionImpl(data, false, false);
-            case CONNECTION_ACK_1:
-                return new MessageData1ConnectionAckImpl(data, false, false);
-            case EVENT_2:
-                return new MessageData2EventImpl(data, false, false);
-            case EVENT_ACK_3:
-                return new MessageData3EventAckImpl(data, false, false);
-            case ATTACHMENT_REQUEST_4:
-                return new MessageData4AttachmentRequestImpl(data, false, false);
-            case ATTACHMENT_REQUEST_ACK_5:
-                return new MessageData5AttachmentRequestAckImpl(data, false, false);
-            case ATTACHMENT_RESPONSE_6:
-                return new MessageData6AttachmentResponseImpl(data, false, false);
-            case ATTACHMENT_RESPONSE_ACK_7:
-                return new MessageData7AttachmentResponseAckImpl(data, false, false);
-            case EVENT_DOCUMENT_8:
-                return new MessageData8EventDocumentImpl(data, false, false);
-            case EVENT_DOCUMENT_ACK_9:
-                return new MessageData9EventDocumentAckImpl(data, false, false);
-            case QUERY_REQUEST_10:
-                return new MessageData10QueryRequestImpl(data, false, false);
-            case QUERY_REQUEST_ACK_11:
-                return new MessageData11QueryRequestAckImpl(data, false, false);
-            case NEXT_QUERY_PAGE_12:
-                return new MessageData12NextQueryPageImpl(data, false, false);
-            default:
-                throw new ReadException(String.format("%s: Unknown message data type (%s)",
-                        MessageManager.class.getSimpleName(),
-                        dataType));
-        }
+        return new MessageHeaderBaseImpl(true,
+                userName,
+                UUID.randomUUID().toString(),
+                System.currentTimeMillis(),
+                System.currentTimeMillis(),
+                false,
+                null,
+                null,
+                null,
+                null,
+                dataType);
     }
+
+    /**
+     * Creates a header for a message based on the username, messageID and data type.
+     * Throws exception if any value(type) is illegal or if the validating fails.
+     *
+     * @param userName  the name of the user
+     * @param messageId the messageID used to identify the message
+     * @param dataType  the type of the message body
+     * @return the created {@link MessageHeaderBase} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (ie. {@code userName} cannot be null)
+     */
+    public static MessageHeaderBase createMessageHeaderBase(
+            String userName,
+            String messageId,
+            MessageDataType dataType) throws IOException, ValidationException {
+
+        return new MessageHeaderBaseImpl(true,
+                userName,
+                messageId,
+                System.currentTimeMillis(),
+                System.currentTimeMillis(),
+                false,
+                null,
+                null,
+                null,
+                null,
+                dataType);
+    }
+
+    /**
+     * Creates a message header, based on the field values given.
+     * Validates the format (types and constraints) and throws exception on any error found.
+     *
+     * @param userName      the name of the user
+     * @param messageId     the messageID used to identify the message
+     * @param createTime    the time when the message was created.
+     * @param requestTime   the time when the request was sent
+     * @param isFragmented  whether the message is fragmented or not.
+     * @param firstFragment indicates if this is the first fragment of a fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param lastFragment  indicates if this is the last fragment of a fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param offset        indicates how many bytes were successfully received so far. If {@code isFragmented} is false, should be {@code null}.
+     * @param fullDataSize  indicates the full data size in a  fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param dataType      the type of the message body
+     * @return the created {@link MessageHeaderBase} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (ie. {@code userName} cannot be null)
+     */
 
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -292,6 +330,23 @@ public class MessageManager {
                 dataType);
     }
 
+    /**
+     * Creates a message header, based on the field values given.
+     * Validates the format (types and constraints) and throws exception on any error found.
+     *
+     * @param userName      the name of the user
+     * @param messageId     the messageID used to identify the message
+     * @param isFragmented  whether the message is fragmented or not.
+     * @param firstFragment indicates if this is the first fragment of a fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param lastFragment  indicates if this is the last fragment of a fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param offset        indicates how many bytes were successfully received so far. If {@code isFragmented} is false, should be {@code null}.
+     * @param fullDataSize  indicates the full data size in a  fragmented message. If {@code isFragmented} is false, should be {@code null}.
+     * @param dataType      the type of the message body
+     * @return the created {@link MessageHeaderBase} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (ie. {@code userName} cannot be null)
+     */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
             String messageId,
@@ -315,6 +370,19 @@ public class MessageManager {
                 dataType);
     }
 
+    /**
+     * Creates a connection message with the given values.
+     * Validates the contents, throwing any exception on failure
+     *
+     * @param serveOnTheSameConnection Whether the replies for the requests should be sent on this connection
+     * @param protocolVersionNumber    The protocol used for the communication. The value is not yet checked.
+     * @param fragmentationSupported   Whether the client supports fragmentation on the messages
+     * @param fragmentTransmissionUnit If {@code fragmentationSupported} is true, indicates the maximal chunk size of
+     *                                 the fragmented messages the client can accept.
+     * @return The created {@link MessageData0Connection} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData0Connection createMessageData0Connection(
             Boolean serveOnTheSameConnection,
             Integer protocolVersionNumber,
@@ -330,6 +398,20 @@ public class MessageManager {
                 null);
     }
 
+    /**
+     * Creates a connection message with the given values.
+     * Validates the contents, throwing any exception on failure
+     *
+     * @param serveOnTheSameConnection Whether the replies for the requests should be sent on this connection
+     * @param protocolVersionNumber    The protocol used for the communication. The value is not yet checked.
+     * @param fragmentationSupported   Whether the client supports fragmentation on the messages
+     * @param fragmentTransmissionUnit If {@code fragmentationSupported} is true, indicates the maximal chunk size of
+     *                                 the fragmented messages the client can accept.
+     * @param password                 The password used for password authentication.
+     * @return The created {@link MessageData0Connection} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData0Connection createMessageData0Connection(
             Boolean serveOnTheSameConnection,
             Integer protocolVersionNumber,
@@ -346,6 +428,17 @@ public class MessageManager {
                 password);
     }
 
+    /**
+     * Creates a connection ACK message. This should be only used if the client is a GDS instance that can be connected to.
+     *
+     * @param ackDataOk                the data containing the ACK values if the login is successful.
+     * @param ackDataUnauthorizedItems the map containing the illegal values if the login is unsuccessful
+     * @param globalStatus             the global status code for the ACK message.
+     * @param globalException          the global exception message (in plain, english text) if any errors happened.
+     * @return The created {@link MessageData1ConnectionAck} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData1ConnectionAck createMessageData1ConnectionAck(
             MessageData0ConnectionDescriptor ackDataOk,
             Map<Integer, String> ackDataUnauthorizedItems,
@@ -359,6 +452,18 @@ public class MessageManager {
                 globalException);
     }
 
+    /**
+     * Creates an event message, raising any exception on invalid values.
+     * The Event string should refer to attachments used in them with the {@code '0x'} prefix in hex format.
+     * Keys in the {@code binaryContents} should be the hex IDs used in the operations without the {@code '0x'} prefix.
+     *
+     * @param operations     The list of strings containing the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return The created {@link MessageData2Event} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData2Event createMessageData2Event(
             List<String> operations,
             Map<String, byte[]> binaryContents,
@@ -370,6 +475,19 @@ public class MessageManager {
                 priorityLevels);
     }
 
+
+    /**
+     * Creates an event message, raising any exception on invalid values.
+     * The Event string should refer to attachments used in them with the {@code '0x'} prefix in hex format.
+     * Keys in the {@code binaryContents} should be the hex IDs used in the operations without the {@code '0x'} prefix.
+     *
+     * @param operations     The string of the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return The created {@link MessageData2Event} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData2Event createMessageData2Event(
             String operations,
             Map<String, byte[]> binaryContents,
@@ -381,6 +499,17 @@ public class MessageManager {
                 priorityLevels);
     }
 
+    /**
+     * Creates an ACK with the result of a previous event message. Validates and raises error on any rule violation.
+     * The app. only should send this if it is a GDS instance, as client code never receives events that should be ACKd.
+     *
+     * @param eventResults    the list of the result holders
+     * @param globalStatus    the global code of the ACK
+     * @param globalException the exception (as english text) if any errors were with the events.
+     * @return The created {@link MessageData3EventAck} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData3EventAck createMessageData3EventAck(
             List<EventResultHolder> eventResults,
             AckStatus globalStatus,

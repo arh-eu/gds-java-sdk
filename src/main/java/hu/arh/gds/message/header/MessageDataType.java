@@ -1,19 +1,13 @@
-    /*
-* To change this license header, choose License Headers in Project Properties.
-* To change this template file, choose Tools | Templates
-* and open the template in the editor.
-*/
 package hu.arh.gds.message.header;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * @author oliver.nagy
  */
 public enum MessageDataType {
-    
+
     CONNECTION_0(0),
     CONNECTION_ACK_1(1),
     EVENT_2(2),
@@ -29,25 +23,25 @@ public enum MessageDataType {
     NEXT_QUERY_PAGE_12(12),
     ROUTING_TABLE_UPDATE_13(13),
     TRAFFIC_STATISTICS_14(14);
-    
+
     private int value;
     private static final Map map = new HashMap<>();
-    
-    private MessageDataType(int value) {
+
+    MessageDataType(int value) {
         this.value = value;
     }
-    
+
     static {
         for (MessageDataType messageDataType : MessageDataType.values()) {
             map.put(messageDataType.value, messageDataType);
         }
     }
-    
+
     public int getValue() {
         return this.value;
     }
-    
+
     public static MessageDataType valueOf(Integer value) {
-        return (MessageDataType)map.get(value);
+        return (MessageDataType) map.get(value);
     }
 }

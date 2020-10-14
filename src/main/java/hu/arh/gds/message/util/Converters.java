@@ -1,21 +1,30 @@
 package hu.arh.gds.message.util;
 
-import hu.arh.gds.message.data.*;
+import hu.arh.gds.message.data.QueryContextHolder;
 import hu.arh.gds.message.data.impl.QueryContextHolderSerializableImpl;
 import org.msgpack.value.Value;
+import org.msgpack.value.impl.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Converters {
 
-    public static QueryContextHolderSerializableImpl getQueryContextDescriptorSerializable(QueryContextHolder queryContextHolder) throws Exception {
+    private Converters() {
+    }
+
+    /**
+     * Converts a query context holder which has MessagePack Value types to plain Java values.
+     * The client does not need to invoke this.
+     *
+     * @param queryContextHolder the original context holder.
+     * @return the ContextHolder value containing only POJOs.
+     */
+    public static QueryContextHolderSerializableImpl getQueryContextDescriptorSerializable(QueryContextHolder queryContextHolder) {
         List<Object> fieldValues = new ArrayList<>();
-        for(Value value: queryContextHolder.getFieldValues()) {
-            fieldValues.add(Converters.convertToObject(value));
+        for (Value value : queryContextHolder.getFieldValues()) {
+            fieldValues.add(Converters.convertToJavaObject(value));
         }
         return new QueryContextHolderSerializableImpl(queryContextHolder.getScrollId(),
                 queryContextHolder.getQuery(), queryContextHolder.getDeliveredNumberOfHits(), queryContextHolder.getQueryStartTime(),
@@ -23,12 +32,19 @@ public class Converters {
                 queryContextHolder.getGDSHolder().getGDSNodeName(), fieldValues, queryContextHolder.getPartitionNames());
     }
 
-    public static Object convertToObject(Value messagePackValue) throws Exception {
+    /**
+     * Converts a parameter from MessagePack Value format to plain Java type.
+     *
+     * @param messagePackValue the value in MessagePack Value format
+     * @return the converted Java value.
+     * @throws IllegalArgumentException if the type cannot be resolved
+     */
+    public static Object convertToJavaObject(Value messagePackValue) {
         if (messagePackValue.isArrayValue()) {
             List<Value> list = messagePackValue.asArrayValue().list();
             List<Object> result = new ArrayList<>(list.size());
             for (Value item : list) {
-                result.add(convertToObject(item));
+                result.add(convertToJavaObject(item));
             }
             return result;
         }
@@ -62,8 +78,7 @@ public class Converters {
         }
 
         if (messagePackValue.isNumberValue()) {
-            throw new Exception("NOT FLOAT NOR INTEGER TYPE VALUE");
-            //return hu.vrs.alyxia.value.Value.create(messagePackValue.asNumberValue().toDouble());
+            throw new IllegalArgumentException("NOT FLOAT NOR INTEGER TYPE VALUE");
         }
 
         if (messagePackValue.isStringValue()) {
@@ -74,68 +89,64 @@ public class Converters {
             return messagePackValue.asRawValue().asByteArray();
         }
 
-        throw new Exception("Unknown type");
+        throw new IllegalArgumentException("Unknown type: " + messagePackValue.getValueType().toString());
     }
 
-    public static List<Map<String, Value>> getRecordsToMpack(MessageData data) throws ValueConvertException {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case QUERY_REQUEST_ACK_11:
-                MessageData11QueryRequestAck data11 = data.getTypeHelper().asQueryRequestAckMessageData11();
-                return getRecordsToMpack(data11.getQueryResponseHolder().getfFieldHolders(),
-                        data11.getQueryResponseHolder().getHits());
-            case EVENT_DOCUMENT_8:
-                MessageData8EventDocument data8 = data.getTypeHelper().asEventDocumentMessageData8();
-                return getRecordsToMpack(data8.getFieldHolders(), data8.getRecords());
-            default:
-                throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getTypeHelper().getMessageDataType()));
+
+    /**
+     * Converts a plain Java value ({@link Object}) to a MessagePack formatted {@link Value} instance.
+     *
+     * @param object the Java object to be converted
+     * @return the MessagePack representation of the given object.
+     * @throws IllegalArgumentException if the given object cannot be represented natively by the MessagePack standard
+     */
+    public static Value convertToMessagePackValue(Object object) {
+
+        if (object == null) {
+            return ImmutableNilValueImpl.get();
         }
-    }
 
-    public static List<Map<String, Object>> getRecordsToObject(MessageData data) throws ValueConvertException {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case QUERY_REQUEST_ACK_11:
-                MessageData11QueryRequestAck data11 = data.getTypeHelper().asQueryRequestAckMessageData11();
-                return getRecordsToObject(data11.getQueryResponseHolder().getfFieldHolders(),
-                        data11.getQueryResponseHolder().getHits());
-            case EVENT_DOCUMENT_8:
-                MessageData8EventDocument data8 = data.getTypeHelper().asEventDocumentMessageData8();
-                return getRecordsToObject(data8.getFieldHolders(), data8.getRecords());
-            default:
-                throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getTypeHelper().getMessageDataType()));
-        }
-    }
-
-    private static List<Map<String, Object>> getRecordsToObject(List<FieldHolder> fieldHolders,
-                                                              List<List<Value>> hits) {
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (List<Value> values : hits) {
-            Map<String, Object> record = new HashMap<>();
-            for (int i = 0; i < fieldHolders.size(); i++) {
-                try {
-                    record.put(fieldHolders.get(i).getFieldName(), convertToObject(values.get(i)));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+        if (object instanceof Object[]) {
+            Object[] objects = (Object[]) object;
+            Value[] values = new Value[objects.length];
+            for (int i = 0; i < objects.length; ++i) {
+                values[i] = convertToMessagePackValue(objects[i]);
             }
-            result.add(record);
+            return new ImmutableArrayValueImpl(values);
         }
-        return result;
-    }
 
-    private static List<Map<String, Value>> getRecordsToMpack(List<FieldHolder> fieldHolders,
-                                                              List<List<Value>> hits) {
-        List<Map<String, Value>> result = new ArrayList<>();
-        for (List<Value> values : hits) {
-            Map<String, Value> record = new HashMap<>();
-            for (int i = 0; i < fieldHolders.size(); i++) {
-                try {
-                    record.put(fieldHolders.get(i).getFieldName(), values.get(i));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            result.add(record);
+        if (object instanceof byte[]) {
+            return new ImmutableBinaryValueImpl((byte[]) object);
         }
-        return result;
+
+        if (object instanceof Boolean) {
+            if ((Boolean) object) {
+                return ImmutableBooleanValueImpl.TRUE;
+            } else {
+                return ImmutableBooleanValueImpl.FALSE;
+            }
+        }
+
+        if (object instanceof Float) {
+            return new ImmutableDoubleValueImpl((Float) object);
+        }
+
+        if (object instanceof Double) {
+            return new ImmutableDoubleValueImpl((Double) object);
+        }
+
+        if (object instanceof Integer) {
+            return new ImmutableLongValueImpl((Integer) object);
+        }
+
+        if (object instanceof Long) {
+            return new ImmutableLongValueImpl((Long) object);
+        }
+
+        if (object instanceof String) {
+            return new ImmutableStringValueImpl((String) object);
+        }
+
+        throw new IllegalArgumentException(String.format("Could not convert the type '%1$s'!", object.getClass().getName()));
     }
 }

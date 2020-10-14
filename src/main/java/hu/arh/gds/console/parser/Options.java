@@ -32,4 +32,7 @@ public class Options {
 
     @Parameter(names = "-export", description = "export all response messages to JSON, the JSON files will be saved in the folder named 'exports' next to the jar file", order = 8)
     public boolean export = false;
+
+    @Parameter(names = "-nogui", description = "Disables the GUI on the query response if there is only one page returned.", order = 9)
+    public boolean nogui = false;
 }

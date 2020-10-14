@@ -5,13 +5,15 @@
  */
 package hu.arh.gds.message.header.impl;
 
-import hu.arh.gds.message.*;
-import hu.arh.gds.message.header.*;
+import hu.arh.gds.message.MessagePartType;
+import hu.arh.gds.message.header.MessageDataType;
+import hu.arh.gds.message.header.MessageHeaderBase;
+import hu.arh.gds.message.header.MessageHeaderType;
+import hu.arh.gds.message.header.MessageHeaderTypeHelper;
 import hu.arh.gds.message.util.*;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 
-import java.awt.*;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -77,10 +79,12 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
             public MessageHeaderType getMessageHeaderType() {
                 return MessageHeaderType.BASE;
             }
+
             @Override
             public MessageHeaderBase asBaseMessageHeader() {
                 return MessageHeaderBaseImpl.this;
             }
+
             @Override
             public boolean isBaseMessageHeader() {
                 return true;
@@ -172,8 +176,6 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     @Override
     protected void PackValues(MessageBufferPacker packer) throws IOException {
 
-        //WriterHelper.packArrayHeader(packer, Globals.BASE_HEADER_FIELDS_NUMBER + Globals.DATA_FIELDS_NUMBER);
-
         WriterHelper.packValue(packer, this.getUserName());
         WriterHelper.packValue(packer, this.getMessageId());
         WriterHelper.packValue(packer, this.getCreateTime());
@@ -188,8 +190,6 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
 
     @Override
     protected void UnpackValues(MessageUnpacker unpacker) throws IOException, ReadException {
-
-        //ReaderHelper.unpackArrayHeader(unpacker, null, null, null);
 
         this.userName = (ReaderHelper.unpackStringValue(unpacker, "username",
                 this.getClass().getSimpleName()));
@@ -221,14 +221,14 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
 
         MessageHeaderBaseImpl that = (MessageHeaderBaseImpl) o;
 
-        if (userName != null ? !userName.equals(that.userName) : that.userName != null) return false;
-        if (messageId != null ? !messageId.equals(that.messageId) : that.messageId != null) return false;
-        if (isFragmented != null ? !isFragmented.equals(that.isFragmented) : that.isFragmented != null) return false;
-        if (firstFragment != null ? !firstFragment.equals(that.firstFragment) : that.firstFragment != null)
+        if (!Objects.equals(userName, that.userName)) return false;
+        if (!Objects.equals(messageId, that.messageId)) return false;
+        if (!Objects.equals(isFragmented, that.isFragmented)) return false;
+        if (!Objects.equals(firstFragment, that.firstFragment))
             return false;
-        if (lastFragment != null ? !lastFragment.equals(that.lastFragment) : that.lastFragment != null) return false;
-        if (offset != null ? !offset.equals(that.offset) : that.offset != null) return false;
-        if (fullDataSize != null ? !fullDataSize.equals(that.fullDataSize) : that.fullDataSize != null) return false;
+        if (!Objects.equals(lastFragment, that.lastFragment)) return false;
+        if (!Objects.equals(offset, that.offset)) return false;
+        if (!Objects.equals(fullDataSize, that.fullDataSize)) return false;
         return dataType == that.dataType;
     }
 

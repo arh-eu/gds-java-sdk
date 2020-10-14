@@ -26,7 +26,22 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 </project>
 ```
 
-(The library was made by [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation)
+JitPack gives you a flexible, virtual maven repository which can work with github projects.
+
+The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.3` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+
+However, if you need to use an earlier version, you can specify them as well - see releases for more info.
+
+If you want to download this and install it manually in your local repository without using JitPack, you should use the following dependency after installation:
+```XML
+<dependency>
+    <groupId>com.arh-eu</groupId>
+    <artifactId>gds-java-sdk</artifactId>
+    <version>1.3-SNAPSHOT</version>
+</dependency>
+```
+
+(The library was made using [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation.)
 
 # Usage
 
@@ -51,20 +66,31 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
         * [QUERY command](#query-command)
   * [Library](#library)
     + [Creating the client](#creating-the-client)
-    + [Subscribing to listeners](#subscribing-to-listeners)
+      - [Client Factory](#client-factory)
+      - [Constructor and value restrictions](#constructor-and-value-restrictions)
+    + [Subscribing with the listener](#subscribing-with-the-listener)
     + [Connecting to the GDS](#connecting-to-the-gds)
     + [Create messages](#create-messages)
     + [Send and receive messages](#send-and-receive-messages)
       - [INSERT](#insert)
       - [UPDATE](#update)
       - [MERGE](#merge)
-      - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert--update-and-merge)
+      - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert-update-and-merge)
       - [SELECT](#select)
         * [QUERY](#query)
         * [ATTACHMENT REQUEST](#attachment-request)
       - [AUTOMATIC PUSHING](#automatic-pushing)
     + [Close the connection](#close-the-connection)
+    + [Reusing the client](#reusing-the-client)
+    + [Thread-safety](#thread-safety)
     + [Working with custom messages](#working-with-custom-messages)
+  * [Synchronous Client](#synchronous-client)
+    + [Client creation](#client-creation)
+    + [Methods](#methods)
+    + [Connecting](#connecting)
+    + [Closing](#closing)
+    + [Sending (sync) messages](#sending-sync-messages)
+    + [Full example](#Sync-client-full-example)
 
 ## Console client
 
@@ -245,7 +271,9 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 ## Library
 
 - [Creating the client](#Creating-the-client)
-- [Subscribing to listeners](#Subscribing-to-listeners)
+  - [Client Factory](#Client-factory)
+  - [Constructor and value restrictions](#Constructor-and-value-restrictions)
+- [Subscribing with a listener](#Subscribing-with-a-listener)
 - [Connecting to the GDS](#Connecting-to-the-GDS)
 - [Create messages](#Create-messages)
 - [Send and receive messages](#Send-and-receive-messages)
@@ -262,161 +290,262 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 
 ### Creating the client
 
-First, we create the client object.
-```java
-final Logger logger = Logger.getLogger("logging");
+#### Client Factory
 
-final GDSWebSocketClient client = new GDSWebSocketClient(
-        "ws://127.0.0.1:8888/gate", //the URL of the GDS instance you would like to connect to
-        "user", //the username you would like to use to login to the GDS
-        null, //the password you would like to use to login into the GDS, if null, no authentication will be used
-        logger //the logger object
-);
+First, we create the client object. To make things easier, a `AsyncGDSClientBuilder` class is available as a static class nested in the `AsyncGDSClient` class, making the creation of the client easier.
+
+This (and the listener interface) can be found in the `hu.arh.gds.client` package.
+ 
+ The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you dont have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
+   - `withListener(GDSMessageListener listener)` - sets the callback listener tho the given value.
+   - `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
+   - `withURI(String URI)` - sets the GDS URI.
+   - `withUserName(String userName)` - sets the username used in the GDS communication.
+   - `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
+   - `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this, the value will be set to `3000` (ms).
+   - `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert first parameter be used as a path to a file containing the certification.
+   - `build()` - creates the `AsyncGDSClient` instance.
+ 
+ #### Constructor and value restrictions
+ 
+ If you want to avoid using the builder, you can invoke the constructor directly, which has the following signature:
+ ```java
+public AsyncGDSClient(
+    String URI,
+    String userName,
+    String userPassword,
+    long timeout,
+    Logger log,
+    GDSMessageListener listener,
+    SslContext sslCtx) {
+        //...
+    }
+```
+ 
+ As mentioned above, restrictions to some of these parameters apply:
+ 
+  - `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
+  - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
+  - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
+  - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client drops the connection and login request and raises an exception if it does not arrive (or if the GDS is unavailable).
+  - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used.
+  `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
+  - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
+  The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
+ 
+ 
+```java
+String URI = "ws://127.0.0.1:8888/gate";
+String USERNAME = "user";
+GDSMessageListener listener = new GDSMessageListener();
+
+AsyncGDSClient client = AsyncGDSClient.getBuilder()
+        .withURI(URI)
+        .withUserName(USERNAME)
+        .withListener(listener).build();
 ```
 
-If you want to use encrypted connection, you can also login by using TLS. The `GDSWebSocketClient` has multiple constructors, one specially for TLS usage.
-
-In this case the scheme in the URL should be `wss`. The GDS uses different port (and maybe even entry point) for secured connection, do not forget to change it as well!
-```java
-final Logger logger = Logger.getLogger("logging");
-
-final GDSWebSocketClient client = new GDSWebSocketClient(
-        "wss://127.0.0.1:8443/gates", //the URL of the GDS instance you would like to connect to
-        "user", //the username you would like to use to login to the GDS
-        null, //if you use TLS, this value is ignored.
-        "path_to_my_cert_file.p12", //String - the path of the file containing your cert and private key (*.p12). If the url does not start 'wss', this value is ignored.
-        "My_$3CreT_P4s$W0RĐ", //String - the password for your private key.
-        logger //the logger object
-);
-```
-
-### Subscribing to listeners
+### Subscribing with the listener
 
 The messages sent to the client and the changes of the connection status can be accessed via listeners.
-There are two types of listener for this. One to access the serialized message objects and the other to access the binary representation of the message.
 
-You can specify one of the two to use for your application. If you try to set both, an `AlreadySubscribedException` will be thrown, as the client only supports a single listener right now.
+The listener you pass will be used and called without any changes by the WebSocketClient after you connect successfully. Since login message is sent automatically; when the connection is ready, the `ConnectionACK` message will processed before any of your handler method is called with the data (but it will be called with the login ACK as well).
 
-The listener you pass will be used and called without any changes by the WebsocketClient after you connect successfully. Since login message is sent automatically when the connection is ready, the `ConnectionACK` message will processed before your `onMessageReceived(..)` handler is called with the data (but it will be called with the login ACK as well).
+The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous. The `Channel` object, that is used by netty will be passed in the main methods.
 
-The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous.
+The `GDSMessageListener` interface has methods that do not have to be overridden, and others that _should be_. The signature for these methods can be seen below.
 
-The `ChannelFuture` object, that is used by netty can be retrieved by the `getChannelFuture()` method in the `GDSWebSocketClient` class (it is also returned by the `connect()` and the `sendMessage(..)` calls), so you can use it for your own needs if you need the lower level listener for measurement and statistics.
+ - `onConnectionSuccess(..)` this method is called when the WebSocket connection is established, and the ACK for the login message is received with an OK status (`AckStatus.OK - code 200`). The received header and login body is passed to the method. By default, this method does not do anything, therefore it does not _need_ to be overridden (but it _should be_, as this indicates that your client is ready to be used).
+ - `onConnectionFailure(..)` if the connection or the login fails for any reason (network error, error in the login credentials or timeout) this method will be called. The `Either` class indicates that it is not predetermined which value will be set, so the error can be _either_ a `Throwable` or a `Pair` of header and connection ACK message. the `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value. If you do not override this, the method will throw an `AbstractMethodError` if invoked (otherwise if the connection is established, it will never be called).
+  - `onDisconnect(..)` when your connection to the GDS is closed this handler will be called. If the connection (and login) is not successful, the `onConnectionFailure(..)` method will be invoked, not this. Otherwise, if the GDS or the client closes the connection for any reason, this callback will be used. By default, this does not do anything.
+  
+  The callbacks for the actual messages will always receive the `MessageHeaderBase` and the appropriate `MessageData` sent by the GDS. Since your client might only send (and receive) one kind of message (ie. you're only using your client for querying data, but never insert or update), the listener does not require you to override its methods for every possible type. This can make your client more compact, without having to worry about overriding methods that will never be invoked.
+  
+  However, if you receive any of those but you do not implement your logic for it, the listener will throw an `AbstractMethodError` by default.
 
-**High-level** (this is the recommended)
 ```java
-client.setMessageListener(new MessageListener() {
-    @Override
-    public void onMessageReceived(MessageHeader header, MessageData data) {
-        System.out.println(data.getTypeHelper().getMessageDataType() + " message received!");
-        //do something with the message...
+public interface GDSMessageListener {
+    default void onConnectionSuccess(Channel ch, MessageHeaderBase header, MessageData1ConnectionAck response) {
+
     }
     
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
+    default void onConnectionFailure(Channel channel, Either<Throwable, Pair<MessageHeaderBase, MessageData1ConnectionAck>> reason) {
+            throw new AbstractMethodError();
     }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
+    
+   default void onDisconnect(Channel channel) {
+
     }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
+    
+    default void onEventAck3(MessageHeaderBase header, MessageData3EventAck response) {
+        throw new AbstractMethodError();
     }
-});
+
+    default void onAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request) {
+        throw new AbstractMethodError();
+    }
+
+    default void onAttachmentRequestAck5(MessageHeaderBase header, MessageData5AttachmentRequestAck requestAck) {
+        throw new AbstractMethodError();
+    }
+
+    default void onAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response) {
+        throw new AbstractMethodError();
+    }
+
+    default void onAttachmentResponseAck7(MessageHeaderBase header, MessageData7AttachmentResponseAck responseAck) {
+        throw new AbstractMethodError();
+    }
+    
+    default void onEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument) {
+        throw new AbstractMethodError();
+    }
+
+    default void onEventDocumentAck9(MessageHeaderBase header, MessageData9EventDocumentAck eventDocumentAck) {
+        throw new AbstractMethodError();
+    }
+
+    default void onQueryRequestAck11(MessageHeaderBase header, MessageData11QueryRequestAck response) {
+        throw new AbstractMethodError();
+    }
+}
 ```
 
-**Low-level**
+You probably want to reference the client from the listener, so you can send messages when they arrive (ie. a `NextQueryPage` request). There are multiple ways to do this, one is through a final `AtomicReference`.
 
-If you use the BinaryMessageListener, you have to create the message objects from the binary representation of the message.
-You can create these objects through the `hu.arh.gds.message.util.MessageManager` class.
 ```java
-client.setBinaryMessageListener(new BinaryMessageListener() {
-    @Override
-    public void onMessageReceived(byte[] message) {
-        try {
-            MessageHeader header = MessageManager.getMessageHeaderFromBinaryMessage(message);
-            MessageData data = MessageManager.getMessageData(message);
-            System.out.println(data.getTypeHelper().getMessageDataType() + " message received!");
-            //do something with the message...
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-    
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-    }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
-    }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
-});
+ final AtomicReference<AsyncGDSClient> clientReference = new AtomicReference<>();
+AsyncGDSClient client = AsyncGDSClient.getBuilder()
+    .withURI(URI)
+    .withUserName(USERNAME)
+    .withListener(new GDSMessageListener() {
+
+            @Override
+            public void onQueryRequestAck11(MessageHeaderBase header, MessageData11QueryRequestAck response) {
+                if (response.getQueryResponseHolder().getMorePage()) {
+                    try {
+                        clientReference.get().sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(response.getQueryResponseHolder().getQueryContextHolder(), 10000L));
+                    } catch (IOException | ValidationException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println("Received " + response.getQueryResponseHolder().getHits().size() + " records..");
+                //do whatever else you want with this.
+            }
+        }).build();
+
+clientReference.set(client);
+
+
+client.connect();
+
 ```
 
 ### Connecting to the GDS
+
+Connecting to the GDS after you set up your client is a simple method invocation:
 
 ```java
 client.connect();
 ```
 
-During the connection, a login message is automatically sent after the websocket connection is established.
-If a positive ACK message arrives, the client will be in its connected state, the `onConnected()` listener triggers and the `client.connected()` method returns `true`.
+During the connection, a login message is automatically sent after the websocket connection is established. Please keep in mind that the `connect()` method will not block the current (main) thread. If the given timeout occurs or any error happens during the connection or the login, you will be notified on the listener you specified and not here.
+
+If a positive ACK message arrives, the client will be in connected state, the `onConnectionSuccess(..)` listener triggers and the `client.isConnected()` method will return `true`. The client state can be always checked by the `getState()` method.
+
+The possible status values are:
+```java
+public enum ConnectionState {
+    NOT_CONNECTED, //The client is instantiated but connect() was not yet called.
+    INITIALIZING,  //The connect() was called, the underlying Netty channels are being created
+    CONNECTING, // Netty initialized, trying to establish the TCP/WebSocket Connection
+    CONNECTED, //The connection is established
+    LOGGING_IN, //The login message was successfully sent
+    LOGGED_IN, //The login was successful. Client is ready to use
+    DISCONNECTED, //the connection was closed after a successful login.
+    FAILED //error happened during the initialization. 
+}
+```
+
 After that, you can send any type of messages to the GDS.
 
-Please keep in mind that you should not send any messages until you have received the (positive) ACK for your login, otherwise the GDS will drop your connection as the authentication and authorization processes did not finish yet but your client is trying to send messages (which is invalid without a login ACK).
+Please keep in mind that you should not send any messages until you have received the (positive) ACK for your login, otherwise the GDS will drop your connection as the authentication and authorization processes did not finish yet but your client is trying to send messages (which is invalid without a positive login ACK).
 
 ### Create messages
 
 A message consists of two parts, a header and a data.
 With this SDK, it is usually enough to create only the data part, because the header part is created automatically when the message is sent.
-Of course, you can also customize the header part, see [Working with custom messages](#Working-with-custom-messages) for the details.
 
 Let's see how to create an attachment request type message data.
 
+To create the messages you should use the `MessageManager` class, which provides many overloads for the types you want to create and includes automatic validation for the values you specified.
+
+If any of the values violate the rules of the specified message (ie. if the `isFragmented` flag is set to `false`, the `firstFragment` should be set to `null` and so), the `MessageManager` will throw a (checked) `ValidationException`.
+
+As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is serialized (which is invoked automatically upon construction). Therefore an `IOException` can also raise during creation.
+
 ```java
-MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
+try {
+    MessageData4AttachmentRequest data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
+} catch (ValidationException | IOException e) {
+    //your message could not be created for some reason
+}
 ```
 
+These `try-catch` blocks will not be included in the examples in the rest of this guide to make reading easier.
 
 ### Send and receive messages
 
-After you connected, you can send messages to the GDS. You can do that with the `client.sendMessage()` methods.
+After you connected, you can send your messages to the GDS. The method names used for sending always contain the types of messages you are about to send. For example, sending attachment requests can be done by invoking the `sendAttachmentRequest4(..)` methods. The `4` in the name stands for the type of the message. Also, you can use the `sendMessage(..)` methods with the same signatures.
 
-Send message with the data part. The header part is completed automatically with the default values.
+Methods used for sending always contain 3 types of overload:
+
+ - One for only the appropriate `MessageData`, using default values for the header with a randomly generated message ID.
+ - One with a `String` and the `MessageData`, which sets the message ID to the specified string value.
+ - One with a `MessageHeader` and a `MessageData`, allowing you to fully customise the message you want to send. 
+
+Sending messages through the methods with their name will accept the proper subclass (ie. `MessageData4AttachmentRequest` instead of simply a `MessageData` instance).
+
+
+If any of the values violate the rules of the specified message (ie. if the `isFragmented` flag is set to `false`, the `firstFragment` should be `null`), the `MessageManager`, and therefore the `send..(..)` will throw a (checked) `ValidationException`.
+
+As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is serialized (which is invoked automatically upon construction). Therefore an `IOException` can also raise during creation.
+
+To send the message created above you should invoke the `sendAttachmentRequest4(..)` method.
 ```java
-void sendMessage(MessageData data)
+try{
+    client.sendAttachmentRequest4(data);    
+} catch (ValidationException | IOException e) {
+    //handle error as neccessary.
+}
 ```
 
-Send message with the data part (the header part is completed automatically with the default values), but without automatic generation of message id.
+To send message with the data part mentioned above, but with specified message ID.
 ```java
-void sendMessage(MessageData data, String messageId)
+String messageID = "123e4567-e89b-12d3-a456-426614174000";
+try{
+    client.sendAttachmentRequest4(messageID, data);    
+} catch (ValidationException | IOException e) {
+    //handle error as neccessary.
+}
 ```
 
-(The automatic header part completion means, that there is no fragmentation set, and the user name and the message data type are determined automatically.)
+For the rest of our guides, the `try-catch` blocks around the creation and sending will be omitted so they are easier to read, but you should forget them.
+
+The default header means that there is no fragmentation set, the creation and request times are set to the current system time. The message data type is determined automatically.
 
 To see how to send a message by specifying the header part too, go to the [Working with custom messages](#Working-with-custom-messages) section.
 
 In the following, take a look at what sending and receiving messages look like for different message types.
 
-- [INSERT](#Insert)
-- [UPDATE](#Update)
-- [MERGE](#Merge)
-- [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
+- [INSERT](#INSERT)
+- [UPDATE](#UPDATE)
+- [MERGE](#MERGE)
+- [ACK message for the INSERT, UPDATE and MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
 - [SELECT](#Select)
 	- [QUERY](#Query)
 	- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
-- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
+- [Automatic pushing](#AUTOMATIC-PUSHING)
 
 
 You might want to read the hex part from the [EVENT command](#event-command) to understand why and how we use these in the attachments.
@@ -428,6 +557,11 @@ The hex values for a string can be retrieved via the `hu.arh.gds.message.util.Ut
 MessageIdGenerator messageIdGenerator = new MessageIdGenerator("TEST", "yyMMddhhmmssSSS");
 String eventId = messageIdGenerator.nextId();
 String attachmentId = messageIdGenerator.nextId();
+
+
+// you can create your binary any way you want.
+// this simply uses a series of predetermined bytes / pixels that will result 
+// in a valid 9x9 PNG image
 
 int[] binaryData = {
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
@@ -450,87 +584,61 @@ for (int pixel : binaryData) {
     dos.writeByte(pixel);
 }
 byte[] byteArray = baos.toByteArray();
-try {
-    MessageData data = MessageManager.createMessageData2Event(
-            new ArrayList<String>() {{
-                add("INSERT INTO multi_event (id, plate, speed, images) VALUES('" + eventId + "', 'ABC123', 90, array('" + attachmentId +"'))");
-                add("INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('" + attachmentId + "', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
-            }},
-            new HashMap<String, byte[]>() {{
-                put("binary_id1_example", byteArray);
-            }},
-            new ArrayList<>());
-    client.sendMessage(data);
-} catch (Throwable e) {
-	e.printStackTrace();
-}
+
+MessageData data = MessageManager.createMessageData2Event(
+        new ArrayList<String>() {{
+            add("INSERT INTO multi_event (id, plate, speed, images) VALUES('" + eventId + "', 'ABC123', 90, array('" + attachmentId +"'))");
+            add("INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('" + attachmentId + "', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
+        }},
+        new HashMap<String, byte[]>() {{
+            put("binary_id1_example", byteArray);
+        }},
+        new ArrayList<>());
+client.sendMessage(data);
 ```
 
 #### UPDATE
 ```java
-try {
-    MessageData data = MessageManager.createMessageData2Event(
-            new ArrayList<String>() {{
-                add("UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'");
-            }},
-            new HashMap<>(),
-            new ArrayList<>());
-    client.sendMessage(data);
-} catch (Throwable e) {
-    e.printStackTrace();
-}
+MessageData data = MessageManager.createMessageData2Event(
+        new ArrayList<String>() {{
+            add("UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'");
+        }},
+        new HashMap<>(),
+        new ArrayList<>());
+
+client.sendEvent2(data);
+
 ```
 
 #### MERGE
 ```java
-try {
-    MessageData data = MessageManager.createMessageData2Event(
-            new ArrayList<String>() {{
-                add("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
-                        "ON (multi_event.id = I.id) " +
-                        "WHEN MATCHED THEN UPDATE SET multi_event.speed = I.speed " +
-                        "WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)");
-            }},
-            new HashMap<>(),
-            new ArrayList<>());
-    client.sendMessage(data);
-} catch (Throwable e) {
-    e.printStackTrace();
-}
+MessageData data = MessageManager.createMessageData2Event(
+        new ArrayList<String>() {{
+            add("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
+                    "ON (multi_event.id = I.id) " +
+                    "WHEN MATCHED THEN UPDATE SET multi_event.speed = I.speed " +
+                    "WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)");
+        }},
+        new HashMap<>(),
+        new ArrayList<>());
+
+client.sendEvent2(data);
+    
 ```
 
 #### ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE
 
 The ack for these messages is available through the subscribed listener.
 ```java
-client.setMessageListener(new MessageListener() {
+GDSMessageListener listener = new GDSMessageListener() {
+    
+    // ... rest of the overrides as you want 
+    
     @Override
-    public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case EVENT_ACK_3:
-                MessageData3EventAck eventAckData = data.getTypeHelper().asEventAckMessageData3();
-                System.out.println("Event ACK message received with '" + eventAckData.getGlobalStatus() + "' status code")
-                //do something with the ack message...
-                break;
-            //...
-        }
-    }
-	
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-    }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
-    }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
-});
+    void onEventAck3(MessageHeaderBase header, MessageData3EventAck response) {
+            System.out.println("Event ACK message received with '" + response.getGlobalStatus() + "' status code");
+    }  
+};
 ```
 
 #### SELECT
@@ -541,269 +649,353 @@ client.setMessageListener(new MessageListener() {
 ##### QUERY
 
 ```java
-try {
-    MessageData data = MessageManager.createMessageData10QueryRequest(
-            "SELECT * FROM multi_event",
-            ConsistencyType.PAGES,
-            60_000L);
-    client.sendMessage(data);
-} catch (Throwable e) {
-    e.printStackTrace();
-}
+MessageData10QueryRequest data = MessageManager.createMessageData10QueryRequest(
+        "SELECT * FROM multi_event",
+        ConsistencyType.NONE,
+        60_000L);
+
+client.sendQueryRequest10(data);
 ```
 
-The ack for this message is available through the subscribed listener. After you received the ack, you can send a 'next query page' type message.
+The ack for this message is available through the subscribed listener. After you received the ack, you can send a 'next query page' type message. (To see how the `clientReference`is created or why is it used, check the [Subscribing with a listener](#Subscribing-with-a-listener) part.)
 ```java
-client.setMessageListener(new MessageListener() {
+GDSMessageListener listener = new GDSMessageListener() {
+
+    // ... rest of the overrides as you want
+     
     @Override
-    public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case QUERY_REQUEST_ACK_11:
-                MessageData11QueryRequestAck queryAckData = data.getTypeHelper().asQueryRequestAckMessageData11();
-                System.out.println("Query request ack message received with '" + queryAckData.getGlobalStatus() + "' status code");
-                //do something with the message...
-                //...
-                //send a 'next query page' type message
-                try {
-                    MessageData12NextQueryPage nextQueryPageData = MessageManager.createMessageData12NextQueryPage(
-                            queryAckData.getQueryResponseHolder().getQueryContextHolder(),
-                            60_000L);
-                    client.sendMessage(nextQueryPageData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                break;
-            //...
+    public void onQueryRequestAck11(MessageHeaderBase header, MessageData11QueryRequestAck response) {
+        if (response.getQueryResponseHolder().getMorePage()) {
+            try {
+                clientReference.get().sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(response.getQueryResponseHolder().getQueryContextHolder(), 10000L));
+            } catch (IOException | ValidationException e) {
+                e.printStackTrace();
+            }
         }
+        System.out.println("Received " + response.getQueryResponseHolder().getHits().size() + " records..");
+        //do whatever else you want with this.
     }
-	
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-    }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
-    }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
-});
+};
 ```
 
 ##### ATTACHMENT REQUEST
+
+Sending an attachment request goes the same way as anything else so far. 
+
 ```java
-try {
-    MessageData data = MessageManager.createMessageData4AttachmentRequest(
-            "SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
-    client.sendMessage(data);
-} catch (Throwable e) {
-    e.printStackTrace();
-}
+MessageData4AttachmentRequest data = MessageManager.createMessageData4AttachmentRequest(
+        "SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
+client.sendAttachmentRequest4(data);
 ```
 
 The ack for this message is available through the subscribed listener.
 The ack may contain the attachment if you also requested the binary attachment.
 If not contains and you requested the binary, the attachment is not yet available and will be sent as an 'attachment response' type message at a later time.
+
+You should not forget, that if you receive the attachment in an `AttachmentResponse6` type of message, you're required to send the appropriate ACK back to the GDS, otherwise it will send the attachment again and again unless the ACK arrives for it.
+
 ```java
-client.setMessageListener(new MessageListener() {
+GDSMessageListener listener = new GDSMessageListener() {
+
+    // ... rest of the overrides as you want
+     
+    @Override 
+    public void onAttachmentRequestAck5(MessageHeaderBase header, MessageData5AttachmentRequestAck requestAck) {
+         System.out.println("Attachment request ack message received with '" + requestAck.getGlobalStatus() + "' status code");
+         if (requestAck.getData() != null) {
+             byte[] attachment = requestAck.getData().getResult().getAttachment();
+             if (attachment == null) {
+                 //if you requested the binary, the attachment will be sent as an 'attachment response' type message at a later time
+             }
+         }
+     }
+    
     @Override
-    public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case ATTACHMENT_REQUEST_ACK_5:
-                MessageData5AttachmentRequestAck attachmentRequestAckData = data.getTypeHelper().asAttachmentRequestAckMessageData5();
-                System.out.println("Attachment request ack message received with '" + attachmentRequestAckData.getGlobalStatus() + "' status code");
-                if (attachmentRequestAckData.getData() != null) {
-                    byte[] attachment = attachmentRequestAckData.getData().getResult().getAttachment();
-                    if (attachment == null) {
-                        //if you requested the binary the attachment will be sent as an 'attachment response' type message at a later time
-                    }
-                }
-                break;
-            case ATTACHMENT_RESPONSE_6:
-                //if you requested the binary attachment earlier and it was not included in the ack message you received for it
-                MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
-                try {
-                    byte[] attachment = attachmentResponseData.getBinary();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                //do something with the message...
-                //...
-                //send an ack message for the attachment response
-                try {
-                    MessageData7AttachmentResponseAck attachmentResponseAckData = MessageManager.createMessageData7AttachmentResponseAck(
-                            AckStatus.OK,
-                            new AttachmentResponseAckResultHolderImpl(
-                                    AckStatus.CREATED,
-                                    new AttachmentResultHolderImpl(
-                                            attachmentResponseData.getResult().getRequestIds(),
-                                            attachmentResponseData.getResult().getOwnerTable(),
-                                            attachmentResponseData.getResult().getAttachmentId()
-                                    )
-                            ),
-                            null
-                    );
-                    client.sendMessage(attachmentResponseAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                break;
-            //...
-        }
-    }
-	
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-    }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
-    }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
-});
+    public void onAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response) {
+        String messageID = header.getMessageId();
+         try {
+         byte[] attachment = response.getBinary();
+         clientReference.get().sendAttachmentResponseAck7(messageID, MessageManager.createMessageData7AttachmentResponseAck(
+                 AckStatus.OK,
+                 new AttachmentResponseAckResultHolderImpl(AckStatus.CREATED,
+                         new AttachmentResultHolderImpl(
+                                 response.getResult().getRequestIds(),
+                                 response.getResult().getOwnerTable(),
+                                 response.getResult().getAttachmentId()
+                         )),
+                 null));
+         } catch (IOException | ValidationException e) {
+             //this can happen as well if the getBinary() call on the response fails.
+         }
+     }
+};
 ```
 
-Note: the GDS may also send an attachment request to the client.
+Note: the GDS may also send an attachment request - `onAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request)` - to the client.
 
 
 #### AUTOMATIC PUSHING 
 
 A user may be interested in data or changes in specific data. 
 The criteria system, based on which data may be of interest to the user, is included in the configuration of the delivered system. 
-This data is sent automatically by the GDS.
+This data is sent automatically by the GDS. For these, you should also send an ACK back for the same reason.
 
 ```java
-client.setMessageListener(new MessageListener() {
+GDSMessageListener listener = new GDSMessageListener() {
+
+    // ... rest of the overrides as you want
+    
     @Override
-    public void onMessageReceived(MessageHeader header, MessageData data) {
-        switch (data.getTypeHelper().getMessageDataType()) {
-            case ATTACHMENT_RESPONSE_6:
-                MessageData6AttachmentResponse attachmentResponseData = data.getTypeHelper().asAttachmentResponseMessageData6();
-                System.out.println("Attachment response message received");
-                //do something with the message...
-                //...
-                //send an ack message for the attachment response
-                try {
-                    MessageData7AttachmentResponseAck attachmentResponseAckData = MessageManager.createMessageData7AttachmentResponseAck(
-                            AckStatus.OK,
-                            new AttachmentResponseAckResultHolderImpl(
-                                    AckStatus.CREATED,
-                                    new AttachmentResultHolderImpl(
-                                            attachmentResponseData.getResult().getRequestIds(),
-                                            attachmentResponseData.getResult().getOwnerTable(),
-                                            attachmentResponseData.getResult().getAttachmentId()
-                                    )
-                            ),
-                            null
-                    );
-                    client.sendMessage(attachmentResponseAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                break;
-            case EVENT_DOCUMENT_8:
-                MessageData8EventDocument eventDocumentData = data.getTypeHelper().asEventDocumentMessageData8();
-                System.out.println("Event document message received");
-                //do something with the message...
-                //...
-                //send an ack message for the event document message
-                try {
-                    MessageData9EventDocumentAck eventDocumentAckData = MessageManager.createMessageMessageData9EventDocumentAck(
-                            AckStatus.OK,
-                            new ArrayList<EventDocumentResultHolder>(){{
-                                add(new EventDocumentResultHolderImpl(
-                                        AckStatus.CREATED,
-                                        null,
-                                        new HashMap<>()
-                                ));
-                            }},
-                            null
-                    );
-                    client.sendMessage(eventDocumentAckData, header.getTypeHelper().asBaseMessageHeader().getMessageId());
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-                break;
-            //...
-        }
-    }
-	
-    @Override
-    public void onConnected() {
-        System.out.println("Client connected!");
-    }
-	
-    @Override
-    public void onConnectionFailed(String s) {
-        System.out.println("Connection failed: " + s);
-    }
-	
-    @Override
-    public void onDisconnected() {
-        System.out.println("Client disconnected!");
-    }
-});
+    void onAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response) {
+         //... same as above.
+     }
+     
+     @Override
+     public void onEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument) {
+        try {
+            MessageData9EventDocumentAck eventDocumentAckData = MessageManager.createMessageMessageData9EventDocumentAck(
+                AckStatus.OK,
+                new ArrayList<EventDocumentResultHolder>(){{
+                    add(new EventDocumentResultHolderImpl(
+                            AckStatus.CREATED,
+                            null,
+                            new HashMap<>()
+                    ));
+                }},
+                null
+        );
+        clientReference.get().sendEventDocumentAck9(eventDocumentAckData);
+         } catch (IOException | ValidationException e) {
+             //this should not happen as the message creation only contains valid values above.
+         }
+     }
+};
 ```
 
 ### Close the connection
+
+The client is simply closed by the `close()` method. This should be always called, otherwise the event loop in the background is never stopped and the WebSocket connection might not be closed properly, either.
 
 ```java
 client.close();
 ```
 
+### Reusing the client
+
+The client is not reusable, meaning that if the connection (login) fails or the client is closed, the `connect()` method cannot be invoked again. If you want to use the client again, you have to instantiate it again.
+
+### Thread-safety
+
+The `AsyncGDSClient` is created with a thread-safe approach, meaning you can send messages from multiple threads without having to worry about race conditions or deadlocks. If multiple threads try to invoke the `connect()` method on the client, only the first one will be successful, the client will raise an `IllegalStateException` for the other threads.
+
 ### Working with custom messages
 
 A message consists of two parts, a header and a data. 
-With this SDK, it is usually enough to create only the data part because the header part is created automatically when the message is sent using the ```sendMessage(MessageData data)``` method.
-But it is also possible to explicitly define the header part with customized values.
+With this SDK, it is usually enough to create only the data part because the header part is created automatically when the message is sent using the `sendMessage(MessageData data)` method (see above). However, it is also possible to explicitly define the header part with customized values.
 
-So first, we create the header part.
+To create the header, you should use the `MessageManager` here as well. 
+If you do not want to specify every parameter for the header, these overloads for the `CreateMessageHeaderBase(..)` method might come in handy for you:
 
-```java
-MessageHeader header = MessageManager.createMessageHeaderBase("username", UUID.randomUUID().toString(), System.currentTimeMillis(), System.currentTimeMillis(), false, null, null, null, null, MessageDataType.ATTACHMENT_REQUEST_4);
-```
+ - `CreateMessageHeaderBase(String userName, MessageDataType dataType)`
+ - `CreateMessageHeaderBase(String userName, String messageID, MessageDataType dataType)`
 
-After that, we create the data part.
-```java
-MessageData data  = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
-```
-
-Once we have a header and a data, we can use the following methods to send the message.
-
-
-Send message with the header and data part.
-```java
-void sendMessage(MessageHeader header, MessageData data)
-```
+Both methods can throw `IOException` and `ValidationException`, so you want to use a `try-catch` block around these as well.
 
 ```java
-try {	
-    client.sendMessage(header, data);
-} catch (Throwable e) {
-    e.printStackTrace();
+try{
+    MessageHeader header = MessageManager.createMessageHeaderBase("username", UUID.randomUUID().toString(), MessageDataType.ATTACHMENT_REQUEST_4);
+} catch(IOException | ValidationException e ){
+    // handle error
 }
 ```
 
-Send message with the binary representation of the message.
-```java
-void sendMessage(byte[] message)
-```
+## Synchronous Client
+
+
+Sometimes you do not want to suffer with the problems of the asynchronous world, and want to use your client with _return values_ instead of callbacks and handlers.
+
+For this scenario, a built-in wrapper around the async client specified above is available, by the `SyncGDSClient` class.
+
+This is a wrapper around the async client, making it thread-safe as well. The method calls will block until the reply arrive, then giving the result as their return value.
+
+If you need to, multiple threads can use the same client, as the blocking in the background uses the messageID to await replies. This means that IDs must be unique across the threads (as long as their reply does not arrive), otherwise the synchronous client will throw an `IllegalStateException`.
+
+
+### Client creation
+
+The synchronous client uses a builder with the same methods as the async client (excluding the `setListener(..)`, as it cannot defined here), but its name is `SyncGDSClientBuilder`. It can be invoked with the static `getBuilder()` method as well in the `SyncGDSClient`.
 
 ```java
-try {
-    byte[] message = MessageManager.createMessage(header, data);
-    client.sendMessage(message);
-} catch (Throwable e) {
-    e.printStackTrace();
+final String URI = "ws://127.0.0.1:8888/gate";
+final String USERNAME = "user";
+
+SyncGDSClient client = SyncGDSClient.getBuilder()
+        .withURI(URI)
+        .withUserName(USERNAME)
+        .withTimeout(5_000L) //5 seconds for a request before the timeout occurs
+        .build();
+```
+
+- `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
+- `withURI(String URI)` - sets the GDS URI.
+- `withUserName(String userName)` - sets the username used in the GDS communication.
+- `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
+- `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this, the value will be set to `3000` (ms).
+- `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert first parameter be used as a path to a file containing the certification.
+- `build()` - creates the `SyncGDSClient` instance.
+
+The restrictions for these values are the same as specified in the async client, but here is a reminder:
+
+- `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
+- `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
+- `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
+- `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
+- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used.
+`listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
+- `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
+  The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
+### Methods
+
+Since the synchronous client uses a request-reply scheme, not all type of messages are supported. You can invoke the following methods (send these types):
+
+ - `sendEvent2(..)`
+ - `sendAttachmentRequest4(..)`
+ - `sendEventDocument8(..)`
+ - `sendQueryRequest10(..)`
+ - `sendNextQueryPage12(..)`
+
+
+The parameters (and overloads) for these messages are the same as specified on the async client.
+
+### Connecting
+
+The client's `connect()` method will return a `boolean` value, indicating its success. If it is `false`, the reason can be retrieved with the `hasConnectionFailed()` or the `hasLoginFailed()` methods and the `getConnectionError()` or the `getLoginFailureReason()` which will return a `Throwable` or a `Pair<MessageHeaderBase, MessageData1ConnectionAck>`.
+```java
+ SyncGDSClient client = SyncGDSClient.getBuilder()
+        .withURI(URI)
+        .withUserName(USERNAME)
+        .build();
+
+    if (client.connect()) {
+        // ... client logic
+        
+        client.close();
+        
+    } else {
+        if (client.hasConnectionFailed()) {
+            System.err.println("Could not connect to the GDS! Reason: " + client.getConnectionError());
+        } else if (client.hasLoginFailed()) {
+            System.err.println("Could not log in to the GDS! Reason: " + client.getLoginFailureReason().getSecond());
+        } else {
+            //this should never happen
+        }
+    }
+```
+
+If for any reason you need the login response, the `getLoginResponse()` method will return the appropriate value (`Pair<MessageHeaderBase, MessageData1ConnectionAck>`).
+
+### Closing
+
+Same as in the async version, closing can simply be done with the `close()` method. You should not forget to call this.
+
+```java
+client.close();
+```
+
+### Sending (sync) messages 
+
+
+As mentioned, these methods use return values. To make life easier, a `Pair` is returned with the received `MessageHeaderBase` and proper subclass of the `MessageData`.
+
+Example:
+```java
+Pair<MessageHeaderBase, MessageData11QueryRequestAck> response =
+    client.sendQueryRequest10(
+        MessageManager.createMessageData10QueryRequest(
+            "SELECT * FROM multi_event LIMIT 1000",
+            ConsistencyType.NONE,
+            3_000L
+        )
+    );
+
+System.out.println("Received: " + response.getSecond().getQueryResponseHolder().getNumberOfHits() + " records.");
+```
+
+The only exception to this scheme is the `sendAttachmentRequest4(..)` method.
+
+Since the GDS might not have the attachment stored, it is possible that the first reply will not contain any binaries, and the GDS will send it later in an other message, so the attachment itself will be sent in either a `MessageData5AttachmentRequestAck` or an `MessageData6AttachmentResponse` type of message.
+Since the sync client awaits the binary itself, the type of the returned result will mirror this: the return value is `Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>`.
+
+The `Either` class indicates that it is not predetermined which value will be set, so the result is _either_ a  `MessageData5AttachmentRequestAck` or a `MessageData6AttachmentResponse`. the `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value.
+
+
+```java
+MessageData4AttachmentRequest request = MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
+Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> result = syncGDSClient.sendAttachmentRequest4(request);
+
+Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse> response = result.getSecond();
+if (response.isLeftSet()) {
+    if (response.getLeft().getBinary() == null) {
+        throw new IllegalStateException("Attachment should not be null!!");
+    } else {
+        System.out.println("Attachment is " + response.getLeft().getBinary().length + " bytes.");
+    }
+} else {
+    if (response.getRight().getBinary() == null) {
+        throw new IllegalStateException("Attachment should not be null!!");
+    } else {
+        System.out.println("Attachment is " + response.getRight().getBinary().length + " bytes.");
+    }
 }
+```
+
+### Sync client full example
+
+A full example of a synchronous client can be seen below.
+
+You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator).
+
+```java
+import hu.arh.gds.client.Pair;
+import hu.arh.gds.client.SyncGDSClient;
+import hu.arh.gds.message.data.ConsistencyType;
+import hu.arh.gds.message.data.MessageData11QueryRequestAck;
+import hu.arh.gds.message.header.MessageHeaderBase;
+import hu.arh.gds.message.util.MessageManager;
+
+public class Main {
+    public static void main(String[] args) throws Throwable {
+        SyncGDSClient syncGDSClient = SyncGDSClient.getBuilder()
+                .withURI("ws://127.0.0.1:8888/gate")
+                .withUserName("user")
+                .withTimeout(10_000L)
+                .build();
+
+        try {
+            if (syncGDSClient.connect()) {
+                long timeout = 6_000L;
+                Pair<MessageHeaderBase, MessageData11QueryRequestAck> response =
+                        syncGDSClient.sendQueryRequest10(
+                                MessageManager.createMessageData10QueryRequest(
+                                        "SELECT * FROM multi_event LIMIT", ConsistencyType.NONE, timeout));
+                System.out.println("Received a total of " + response.getSecond().getQueryResponseHolder().getNumberOfHits() + " records.");
+
+                while (response.getSecond().getQueryResponseHolder().getMorePage()) {
+                    response = syncGDSClient.sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(
+                            response.getSecond().getQueryResponseHolder().getQueryContextHolder(), timeout));
+                    System.out.println("Received a total of " + response.getSecond().getQueryResponseHolder().getNumberOfHits() + " records.");
+                }
+            } else {
+                if (syncGDSClient.hasConnectionFailed()) {
+                    System.err.println("Could not connect to the GDS instance! Reason: " + syncGDSClient.getConnectionError());
+                } else if (syncGDSClient.hasLoginFailed()) {
+                    System.err.println("Could not log in to the GDS! Reason: " + syncGDSClient.getLoginResponse().getSecond().getGlobalException());
+                }
+            }
+        } finally {
+            syncGDSClient.close();
+        }
+    }
+}
+
 ```

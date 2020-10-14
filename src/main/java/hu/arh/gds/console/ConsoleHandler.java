@@ -1,10 +1,16 @@
 package hu.arh.gds.console;
 
-import hu.arh.gds.client.AlreadySubscribedException;
-import hu.arh.gds.client.GDSWebSocketClient;
+import hu.arh.gds.client.AsyncGDSClient;
+import hu.arh.gds.client.SyncGDSClient;
 import hu.arh.gds.console.parser.ArgumentParser;
 import hu.arh.gds.console.parser.ArgumentsHolder;
 
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
@@ -19,29 +25,29 @@ public class ConsoleHandler {
         }
 
         final Logger logger = Logger.getLogger("logging");
+        logger.setLevel(Level.SEVERE);
         SimpleFormatter fmt = new SimpleFormatter();
         StreamHandler sh = new StreamHandler(System.err, fmt);
         logger.addHandler(sh);
         logger.setUseParentHandlers(false);
 
-        GDSWebSocketClient client = new GDSWebSocketClient(
-                argumentsHolder.getUrl(),
-                argumentsHolder.getUsername(),
-                argumentsHolder.getPassword(),
-                argumentsHolder.getCert(),
-                argumentsHolder.getSecret(),
-                logger);
-
+        SyncGDSClient client;
         try {
-            client.setMessageListener(new ConsoleMessageListener(argumentsHolder, client));
-        } catch (AlreadySubscribedException e) {
-            System.out.println(e.getMessage());
+            client = new SyncGDSClient(
+                    argumentsHolder.getUrl(),
+                    argumentsHolder.getUsername(),
+                    argumentsHolder.getPassword(),
+                    logger,
+                    argumentsHolder.getTimeout(),
+                    AsyncGDSClient.createSSLContext(
+                            argumentsHolder.getCert(),
+                            argumentsHolder.getSecret())
+            );
+        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException sslExc) {
+            logger.severe(sslExc.toString());
+            return;
         }
 
-        try {
-            client.connect();
-        } catch (Throwable e) {
-            System.out.println(e.getMessage());
-        }
+        new ConsoleClient(argumentsHolder, client, logger).run();
     }
 }

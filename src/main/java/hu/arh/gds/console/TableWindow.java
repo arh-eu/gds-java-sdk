@@ -2,25 +2,19 @@ package hu.arh.gds.console;
 
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
-import com.googlecode.lanterna.gui2.Label;
-import com.googlecode.lanterna.gui2.Panel;
-import com.googlecode.lanterna.gui2.table.*;
+import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.screen.Screen;
-import com.googlecode.lanterna.screen.TerminalScreen;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import com.googlecode.lanterna.terminal.swing.*;
 import hu.arh.gds.message.data.QueryResponseHolder;
 import org.msgpack.value.Value;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class TableWindow extends BasicWindow {
+class TableWindow extends BasicWindow {
     private final QueryResponseHolder queryResponseHolder;
     private final String messageId;
 
@@ -33,9 +27,9 @@ public class TableWindow extends BasicWindow {
 
     private int counter;
 
-    public TableWindow(MultiWindowTextGUI gui, Screen screen, QueryResponseHolder queryResponseHolder,
-                       String messageId,
-                       int counter) throws IOException {
+    TableWindow(MultiWindowTextGUI gui, Screen screen, QueryResponseHolder queryResponseHolder,
+                String messageId,
+                int counter) {
 
         this.queryResponseHolder = queryResponseHolder;
         this.messageId = messageId;
@@ -43,28 +37,9 @@ public class TableWindow extends BasicWindow {
 
         this.textGUI = gui;
         this.screen = screen;
-
-        /*
-        if (Utils.isWindows()) {
-            SwingTerminalFrame swingTerminalFrame = new SwingTerminalFrame(
-                    "gds console client",
-                    TerminalEmulatorDeviceConfiguration.getDefault(),
-                    SwingTerminalFontConfiguration.getDefault(),
-                    TerminalEmulatorColorConfiguration.getDefault(),
-                    TerminalEmulatorAutoCloseTrigger.CloseOnExitPrivateMode);
-            swingTerminalFrame.setDefaultCloseOperation(
-                    WindowConstants.EXIT_ON_CLOSE);
-            swingTerminalFrame.setVisible(true);
-            screen = new TerminalScreen(swingTerminalFrame);
-        } else {
-            screen = new DefaultTerminalFactory().createScreen();
-        }
-
-        textGUI = new MultiWindowTextGUI(screen);
-        textGUI.setTheme(new TableWindowThemeDefinition(screen));
-        */
-
         this.table = getTable();
+
+        table.setPreferredSize(new TerminalSize(screen.getTerminalSize().getColumns(), 16));
 
         Panel panel = new Panel();
         panel.addComponent(getHeaderPanel());
@@ -72,11 +47,12 @@ public class TableWindow extends BasicWindow {
         panel.addComponent(table);
         panel.addComponent(getFooterPanel());
 
-        table.setPreferredSize(new TerminalSize(screen.getTerminalSize().getColumns(), queryResponseHolder.getHits().size() + 2));
-
+//        panel.setPreferredSize
+        setSize
+                (new TerminalSize(panel.getPreferredSize().getColumns(), 36));
 
         this.setComponent(panel);
-        this.setHints(Arrays.asList(Hint.CENTERED));
+        this.setHints(Collections.singletonList(Hint.CENTERED));
     }
 
     private Panel getHeaderPanel() {
@@ -88,6 +64,7 @@ public class TableWindow extends BasicWindow {
         Date date = new Date(queryResponseHolder.getQueryContextHolder().getQueryStartTime());
         panel.addComponent(new Label("query start time: " + sdf.format(date)).withBorder(Borders.singleLine()));
         panel.addComponent(new Label("query: " + queryResponseHolder.getQueryContextHolder().getQuery()).withBorder(Borders.singleLine()));
+        panel.addComponent(new Label("message ID: " + messageId).withBorder(Borders.singleLine()));
         return panel;
     }
 

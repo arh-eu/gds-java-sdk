@@ -16,6 +16,7 @@ public class ArgumentsHolder {
     private Integer timeout;
     private List<File> files;
     private boolean export;
+    private boolean nogui;
 
     public ArgumentsHolder(String url,
                            String username,
@@ -26,7 +27,8 @@ public class ArgumentsHolder {
                            String statement,
                            Integer timeout,
                            List<File> files,
-                           boolean export) {
+                           boolean export,
+                           boolean nogui) {
         this.url = url;
         this.username = username;
         this.password = password;
@@ -37,6 +39,7 @@ public class ArgumentsHolder {
         this.timeout = timeout;
         this.files = files;
         this.export = export;
+        this.nogui = nogui;
     }
 
     public String getUrl() {
@@ -77,5 +80,9 @@ public class ArgumentsHolder {
 
     public boolean getExport() {
         return this.export;
+    }
+
+    public boolean withNoGUI() {
+        return nogui;
     }
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TableWindowListener implements WindowListener {
     private final WindowBasedTextGUI gui;
-    private final Table table;
+    private final Table<String> table;
 
     private final QueryResponseHolder queryResponseHolder;
     private String messageId;
@@ -35,6 +35,7 @@ public class TableWindowListener implements WindowListener {
     private String actualText;
 
     private int counter;
+    private int visibleRows;
 
     public TableWindowListener(WindowBasedTextGUI gui,
                                Table<String> table,
@@ -58,10 +59,16 @@ public class TableWindowListener implements WindowListener {
             actualRow.set(table.getSelectedRow());
             actualColumn.set(table.getSelectedColumn());
         });
+
+        visibleRows = table.getSize().getRows();
     }
 
     @Override
     public void onResized(Window window, TerminalSize terminalSize, TerminalSize terminalSize1) {
+//        visibleRows = (Math.max(terminalSize1.getRows() - 16, 14));
+        table.setPreferredSize(terminalSize1);
+        visibleRows = terminalSize1.getRows();
+        updateView();
     }
 
     @Override
@@ -84,13 +91,19 @@ public class TableWindowListener implements WindowListener {
             case ArrowDown:
                 onArrowDown();
                 break;
+//            case PageUp:
+//                onPageUp();
+//                break;
+//            case PageDown:
+//                onPageDown();
+//                break;
         }
         if (keyStroke.isCtrlDown()) {
             if (keyStroke.getCharacter().equals('f')) {
                 search();
             } else if (keyStroke.getCharacter().equals('e')) {
                 export();
-            } else if(keyStroke.getCharacter().equals('g')) {
+            } else if (keyStroke.getCharacter().equals('g')) {
                 gotoRecord();
             }
         }
@@ -131,7 +144,40 @@ public class TableWindowListener implements WindowListener {
         updateFieldDetails();
     }
 
+
+    private void onPageUp() {
+        actualRow.set(Math.max(0, actualRow.get() - visibleRows));
+        updateFieldDetails();
+    }
+
+    private void onPageDown() {
+        actualRow.set(Math.min(table.getTableModel().getRowCount() - 1, actualRow.get() + visibleRows));
+        updateFieldDetails();
+    }
+
+
+    private int clampBetween(int value, int min, int max) {
+        if (value < min) {
+            return min;
+        } else if (value > max) {
+            return max;
+        }
+        return value;
+    }
+
+    private void updateView() {
+        System.err.println("Actual: " + actualRow.get());
+        System.err.println("ViewTop: " + table.getViewTopRow());
+        System.err.println("Visible: " + visibleRows);
+        if (actualRow.get() - table.getViewTopRow() > visibleRows) {
+            table.setViewTopRow(clampBetween(table.getViewTopRow() + 1, 0, table.getTableModel().getRowCount() - 1));
+        } else if (actualRow.get() < table.getViewTopRow()) {
+            table.setViewTopRow(clampBetween(table.getViewTopRow() - 1, 0, table.getTableModel().getRowCount() - 1));
+        }
+    }
+
     private void updateFieldDetails() {
+        updateView();
         if (actualColumn.get() != 0) {
             fieldType.setText("Field type: " + queryResponseHolder.getfFieldHolders().get(actualColumn.get() - 1).getFieldType());
             mimeType.setText("Mime type: " + queryResponseHolder.getfFieldHolders().get(actualColumn.get() - 1).getMimeType());
@@ -143,9 +189,9 @@ public class TableWindowListener implements WindowListener {
 
     private void gotoRecord() {
         String rowString = TextInputDialog.showDialog(gui, "Goto record", null, "");
-        if(rowString != null) {
-            if(!rowString.equals("")) {
-                Integer row;
+        if (rowString != null) {
+            if (!rowString.equals("")) {
+                int row;
                 try {
                     row = Integer.parseInt(rowString);
                 } catch (NumberFormatException e) {
@@ -169,6 +215,7 @@ public class TableWindowListener implements WindowListener {
 
     private void exit() {
         gui.getActiveWindow().close();
+        //if(true) {
         if (!queryResponseHolder.getMorePage()) {
             try {
                 gui.getScreen().close();
@@ -194,7 +241,7 @@ public class TableWindowListener implements WindowListener {
     private void search() {
         text = TextInputDialog.showDialog(gui, "Search", null, text == null ? "" : text);
         if (text != null) {
-            TableModel tableModel = table.getTableModel();
+            TableModel<String> tableModel = table.getTableModel();
             List<List<String>> rows = tableModel.getRows();
             for (int i = 0; i < rows.size(); ++i) {
                 for (int j = 1; j < rows.get(i).size(); ++j) {
