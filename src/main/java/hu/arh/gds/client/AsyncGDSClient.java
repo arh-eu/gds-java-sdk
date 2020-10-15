@@ -1127,17 +1127,19 @@ public final class AsyncGDSClient {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            gdsClient.log.severe(cause.getMessage());
-            cause.printStackTrace();
+            log.severe(Objects.toString(cause));
             if (!handshakeFuture.isDone()) {
                 handshakeFuture.setFailure(cause);
             }
             client.close();
 
             if (getState() != ConnectionState.FAILED) {
-                gdsClient.state.set(ConnectionState.FAILED);
-                gdsClient.listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
+                if (getState() != ConnectionState.LOGGED_IN) {
+                    gdsClient.state.set(ConnectionState.FAILED);
+                    gdsClient.listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
+                }
             }
+            throw new RuntimeException(cause);
         }
     }
 }
