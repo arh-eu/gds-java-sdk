@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Deprecated
 public class TableWindowListener implements WindowListener {
     private final WindowBasedTextGUI gui;
     private final Table<String> table;

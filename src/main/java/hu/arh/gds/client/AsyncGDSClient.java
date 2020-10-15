@@ -58,8 +58,10 @@ public final class AsyncGDSClient {
 
     public final static class AsyncGDSClientBuilder {
 
+        private NioEventLoopGroup nioEventLoopGroup;
         private GDSMessageListener listener;
         private Logger logger;
+        private boolean shutdownByClose;
         private SslContext sslContext;
         private String URI;
         private String userName;
@@ -67,10 +69,21 @@ public final class AsyncGDSClient {
         private long timeout;
 
         private AsyncGDSClientBuilder() {
+            shutdownByClose = true;
+            timeout = 3000L;
         }
 
         /**
-         * @param listener the messagelistener used for callbacks
+         * @param nioEventLoopGroup the NioEventLoopGroup to be used
+         * @return this builder
+         */
+        public AsyncGDSClientBuilder withNioEventLoopGroup(NioEventLoopGroup nioEventLoopGroup) {
+            this.nioEventLoopGroup = nioEventLoopGroup;
+            return this;
+        }
+
+        /**
+         * @param listener the MessageListener used for callbacks
          * @return this builder
          */
         public AsyncGDSClientBuilder withListener(GDSMessageListener listener) {
@@ -84,6 +97,20 @@ public final class AsyncGDSClient {
          */
         public AsyncGDSClientBuilder withLogger(Logger logger) {
             this.logger = logger;
+            return this;
+        }
+
+        /**
+         * Sets whether the {@link AsyncGDSClientBuilder#nioEventLoopGroup} should be shut down when the client is
+         * closed or not. This parameter is only taken into account if the EventLoopGroup is set, otherwise the value
+         * will always be used as {@code true} regardless of the one specified here.
+         *
+         * @param shutdownByClose whether the group should be shut down when client is closed
+         * @return this builder
+         */
+
+        public AsyncGDSClientBuilder withShutdownByClose(boolean shutdownByClose) {
+            this.shutdownByClose = shutdownByClose;
             return this;
         }
 
@@ -165,7 +192,7 @@ public final class AsyncGDSClient {
         }
 
         public AsyncGDSClient build() {
-            return new AsyncGDSClient(URI, userName, userPassword, (timeout > 0 ? timeout : 3000L), logger, listener, sslContext);
+            return new AsyncGDSClient(URI, userName, userPassword, timeout, logger, listener, sslContext, nioEventLoopGroup, shutdownByClose);
         }
     }
 
@@ -185,8 +212,10 @@ public final class AsyncGDSClient {
 
     private final Object lock = new Object();
 
+    private final NioEventLoopGroup eventLoopGroup;
     private final GDSMessageListener listener;
     private final Logger log;
+    private final boolean shutdownByClose;
     private final SslContext sslCtx;
     private final URI uri;
     private final String userName;
@@ -194,18 +223,25 @@ public final class AsyncGDSClient {
     private final long timeout;
 
     /**
-     * @param uri          The URI of the GDS instance the client will connect to
-     * @param userName     The username used for the login message
-     * @param userPassword The password used for the password authentication
-     * @param timeout      The timeout (in milliseconds) used to indicate when the connection should be considered as failed
-     *                     if not responded within the given time frame
-     * @param log          A {@link Logger} instance for error messages. If null, a default will be created with
-     *                     only {@link Level#SEVERE} logs.
-     * @param listener     The listener which handles the incoming messages (callback on receiving anything). Cannot be null.
+     * Creates a new AsyncGDSClient with the specified parameters.
+     * the {@code shutDownByClose} parameter is only taken into account if the EventLoopGroup is set, otherwise the
+     * value will always be used as {@code true} regardless of the one specified here.
+     *
+     * @param uri             The URI of the GDS instance the client will connect to
+     * @param userName        The username used for the login message
+     * @param userPassword    The password used for the password authentication
+     * @param timeout         The timeout (in milliseconds) used to indicate when the connection should be considered as failed
+     *                        if not responded within the given time frame
+     * @param log             A {@link Logger} instance for error messages. If null, a default will be created with
+     *                        only {@link Level#SEVERE} logs.
+     * @param listener        The listener which handles the incoming messages (callback on receiving anything). Cannot be null.
+     * @param eventLoopGroup  the NioEventLoopGroup to be used by the WebSocket client
+     * @param shutdownByClose whether the EventLoopGroup should be shut down when close() is called.
      * @throws IllegalArgumentException if the URI or the username is null or empty (or the URI is invalid)
      *                                  or the timeout is less, than {@code 1}.
      */
-    public AsyncGDSClient(String uri, String userName, String userPassword, long timeout, Logger log, GDSMessageListener listener, SslContext sslCtx) {
+    public AsyncGDSClient(String uri, String userName, String userPassword, long timeout, Logger log,
+                          GDSMessageListener listener, SslContext sslCtx, NioEventLoopGroup eventLoopGroup, boolean shutdownByClose) {
 
         Objects.requireNonNull(uri, "The URI for the GDS cannot be null!");
         Objects.requireNonNull(userName, "The username for the GDS cannot be null!");
@@ -220,6 +256,14 @@ public final class AsyncGDSClient {
         }
 
         this.listener = listener;
+
+        if (eventLoopGroup == null) {
+            this.eventLoopGroup = new NioEventLoopGroup();
+            this.shutdownByClose = true;
+        } else {
+            this.eventLoopGroup = eventLoopGroup;
+            this.shutdownByClose = shutdownByClose;
+        }
 
         if (log == null) {
             this.log = Logger.getLogger("AsyncGDSClient");
@@ -274,30 +318,28 @@ public final class AsyncGDSClient {
      * When the login is successful, the assigned {@link GDSMessageListener#onConnectionSuccess(Channel, MessageHeaderBase, MessageData1ConnectionAck)} will be called.
      */
     public void connect() {
-        synchronized (lock) {
-            if (state.compareAndSet(ConnectionState.NOT_CONNECTED, ConnectionState.INITIALIZING)) {
-                new Thread(() -> {
-                    client.connect();
-                    try {
-                        if (!countDownLatch.await(timeout, TimeUnit.MILLISECONDS)) {
-                            if (getState() != ConnectionState.FAILED) {
-                                state.set(ConnectionState.FAILED);
-                                listener.onConnectionFailure(client.channel,
-                                        Either.fromLeft(new GDSTimeoutException("The GDS did not respond within " + timeout + "ms!")));
-                            }
-                        }
-                    } catch (InterruptedException ie) {
-                        if (getState() != ConnectionState.FAILED) {
+        if (state.compareAndSet(ConnectionState.NOT_CONNECTED, ConnectionState.INITIALIZING)) {
+            new Thread(() -> {
+                client.connect();
+                try {
+                    if (!countDownLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                        if (getState() != ConnectionState.FAILED || getState() != ConnectionState.DISCONNECTED) {
                             state.set(ConnectionState.FAILED);
                             listener.onConnectionFailure(client.channel,
-                                    Either.fromLeft(new RuntimeException(ie)));
+                                    Either.fromLeft(new GDSTimeoutException("The GDS did not respond within " + timeout + "ms!")));
                         }
                     }
-                }).start();
-            } else {
-                throw new IllegalStateException("Could not initialize connection because the state is not " + ConnectionState.NOT_CONNECTED
-                        + " but " + getState() + "! (The client is already in use.)");
-            }
+                } catch (InterruptedException ie) {
+                    if (getState() != ConnectionState.FAILED || getState() != ConnectionState.DISCONNECTED) {
+                        state.set(ConnectionState.FAILED);
+                        listener.onConnectionFailure(client.channel,
+                                Either.fromLeft(new RuntimeException(ie)));
+                    }
+                }
+            }).start();
+        } else {
+            throw new IllegalStateException("Could not initialize connection because the state is not " + ConnectionState.NOT_CONNECTED
+                    + " but " + getState() + "! (The client is already in use.)");
         }
     }
 
@@ -305,9 +347,8 @@ public final class AsyncGDSClient {
      * closes the connection towards the GDS servers.
      */
     public void close() {
-        synchronized (lock) {
-            client.close();
-        }
+        state.set(ConnectionState.DISCONNECTED);
+        client.close();
     }
 
 
@@ -838,14 +879,22 @@ public final class AsyncGDSClient {
                     MessageData1ConnectionAck connectionAck = body.getTypeHelper().asConnectionAckMessageData1();
                     if (connectionAck.getGlobalStatus() != AckStatus.OK) {
                         if (!state.compareAndSet(ConnectionState.LOGGING_IN, ConnectionState.FAILED)) {
-                            throw new IllegalStateException("Expected state is LOGGING_IN but got: " + getState());
+                            if (getState() != ConnectionState.DISCONNECTED) {
+                                throw new IllegalStateException("Expected state is LOGGING_IN but got: " + getState());
+                            } else {
+                                return;
+                            }
                         }
                         close();
                         this.listener.onConnectionFailure(client.channel, Either.fromRight(new Pair<>(header, connectionAck)));
 
                     } else {
                         if (!state.compareAndSet(ConnectionState.LOGGING_IN, ConnectionState.LOGGED_IN)) {
-                            throw new IllegalStateException("Expected state is LOGGING_IN but got: " + getState());
+                            if (getState() != ConnectionState.DISCONNECTED) {
+                                throw new IllegalStateException("Expected state is LOGGING_IN but got: " + getState());
+                            } else {
+                                return;
+                            }
                         }
                         countDownLatch.countDown();
                         this.listener.onConnectionSuccess(client.channel, header, connectionAck);
@@ -891,15 +940,11 @@ public final class AsyncGDSClient {
         }
 
         Channel channel;
-        ChannelFuture channelFuture;
-        EventLoopGroup group;
 
         void connect() {
-            group = new NioEventLoopGroup();
             try {
-                Bootstrap bootstrap = new Bootstrap();
-                channelFuture = bootstrap
-                        .group(group)
+                new Bootstrap()
+                        .group(eventLoopGroup)
                         .channel(NioSocketChannel.class)
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
@@ -922,7 +967,11 @@ public final class AsyncGDSClient {
                         .connect(uri.getHost(), uri.getPort());
 
                 if (!state.compareAndSet(ConnectionState.INITIALIZING, ConnectionState.CONNECTING)) {
-                    throw new IllegalStateException("Expected state INITIALIZING but got " + getState());
+                    if (getState() != ConnectionState.DISCONNECTED) {
+                        throw new IllegalStateException("Expected state INITIALIZING but got " + getState());
+                    } else {
+                        return;
+                    }
                 }
 
                 log.info("Netty channels initialized!");
@@ -940,13 +989,11 @@ public final class AsyncGDSClient {
 
         void close() {
             if (channel != null) {
-                channel.writeAndFlush(new CloseWebSocketFrame());
-                channel.closeFuture();
+                channel.writeAndFlush(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
                 channel = null;
             }
-            if (group != null) {
-                group.shutdownGracefully();
-                group = null;
+            if (shutdownByClose) {
+                eventLoopGroup.shutdownGracefully();
             }
         }
 
@@ -987,7 +1034,8 @@ public final class AsyncGDSClient {
             GDSMessageListener messageListener = gdsClient.listener;
             if (messageListener != null) {
                 //proper CLOSE after communications
-                if (state.compareAndSet(ConnectionState.LOGGED_IN, ConnectionState.DISCONNECTED)) {
+                if (getState() == ConnectionState.DISCONNECTED ||
+                        state.compareAndSet(ConnectionState.LOGGED_IN, ConnectionState.DISCONNECTED)) {
                     messageListener.onDisconnect(client.channel);
                     //login failed and the connection was closed from the GDS side
                 } else if (getState() != ConnectionState.FAILED) {
@@ -1003,6 +1051,10 @@ public final class AsyncGDSClient {
                 gdsClient.log.info("Incoming message but the client is already in a failed state! (msg: " + msg.toString() + ")");
                 return;
             }
+            if (getState() == ConnectionState.DISCONNECTED) {
+                gdsClient.log.info("Incoming message but the client is already in a disconnected state! (msg: " + msg.toString() + ")");
+                return;
+            }
             Channel ch = ctx.channel();
             if (!handshaker.isHandshakeComplete()) {
                 try {
@@ -1011,15 +1063,19 @@ public final class AsyncGDSClient {
                     gdsClient.client.channel = ch;
                     handshakeFuture.setSuccess();
                     if (!gdsClient.state.compareAndSet(ConnectionState.CONNECTING, ConnectionState.CONNECTED)) {
-                        String exceptionMessage = "Expected CONNECTING but got " + gdsClient.getState();
-                        gdsClient.state.set(ConnectionState.FAILED);
-                        throw new IllegalStateException(exceptionMessage);
+                        if (getState() != ConnectionState.DISCONNECTED) {
+                            String exceptionMessage = "Expected CONNECTING but got " + gdsClient.getState();
+                            gdsClient.state.set(ConnectionState.FAILED);
+                            throw new IllegalStateException(exceptionMessage);
+                        }
                     }
 
                     if (!gdsClient.state.compareAndSet(ConnectionState.CONNECTED, ConnectionState.LOGGING_IN)) {
-                        String exceptionMessage = "Expected CONNECTED but got " + gdsClient.getState();
-                        gdsClient.state.set(ConnectionState.FAILED);
-                        throw new IllegalStateException(exceptionMessage);
+                        if (getState() == ConnectionState.DISCONNECTED) {
+                            String exceptionMessage = "Expected CONNECTED but got " + gdsClient.getState();
+                            gdsClient.state.set(ConnectionState.FAILED);
+                            throw new IllegalStateException(exceptionMessage);
+                        }
                     }
 
                     MessageHeader header = MessageManager.createMessageHeaderBase(userName, MessageDataType.CONNECTION_0);

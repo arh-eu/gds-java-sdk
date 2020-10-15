@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+@Deprecated
 class TableWindow extends BasicWindow {
     private final QueryResponseHolder queryResponseHolder;
     private final String messageId;
