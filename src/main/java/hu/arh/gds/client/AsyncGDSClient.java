@@ -347,7 +347,9 @@ public final class AsyncGDSClient {
      * closes the connection towards the GDS servers.
      */
     public void close() {
-        state.set(ConnectionState.DISCONNECTED);
+        if (getState() != ConnectionState.FAILED) {
+            state.set(ConnectionState.DISCONNECTED);
+        }
         client.close();
     }
 
@@ -876,6 +878,7 @@ public final class AsyncGDSClient {
 
             switch (body.getTypeHelper().getMessageDataType()) {
                 case CONNECTION_ACK_1: {
+                    countDownLatch.countDown();
                     MessageData1ConnectionAck connectionAck = body.getTypeHelper().asConnectionAckMessageData1();
                     if (connectionAck.getGlobalStatus() != AckStatus.OK) {
                         if (!state.compareAndSet(ConnectionState.LOGGING_IN, ConnectionState.FAILED)) {
@@ -896,7 +899,6 @@ public final class AsyncGDSClient {
                                 return;
                             }
                         }
-                        countDownLatch.countDown();
                         this.listener.onConnectionSuccess(client.channel, header, connectionAck);
                     }
                 }
@@ -1119,6 +1121,11 @@ public final class AsyncGDSClient {
                 gdsClient.log.info("WebSocketClient received closing frame..");
                 CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame) frame;
                 gdsClient.log.info("Close status: " + closeWebSocketFrame.statusCode() + ", reason: " + closeWebSocketFrame.reasonText());
+                if (getState() != ConnectionState.LOGGED_IN) {
+                    state.set(ConnectionState.FAILED);
+                    countDownLatch.countDown();
+                    listener.onConnectionFailure(ch, Either.fromLeft(new Exception(closeWebSocketFrame.reasonText())));
+                }
                 close();
             } else {
                 gdsClient.log.info("Unsupported frame type: " + frame.getClass().getName());
