@@ -521,6 +521,17 @@ public class MessageManager {
                 globalException);
     }
 
+
+    /**
+     * Creates an attachment request message, raising any exception on invalid values.
+     * The request should contain the ID of the attachment in the WHERE condition otherwise the GDS will response
+     * with an error message.
+     *
+     * @param request the String containing the request ID.
+     * @return The created {@link MessageData4AttachmentRequest} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData4AttachmentRequest createMessageData4AttachmentRequest(
             String request) throws IOException, ValidationException {
 
@@ -528,10 +539,20 @@ public class MessageManager {
                 request);
     }
 
-    public static MessageData5AttachmentRequestAck createMessageData5AttachmentRequestAck
-            (AckStatus globalStatus,
-             AttachmentRequestAckDataHolder data,
-             String globalException) throws IOException, ValidationException {
+    /**
+     * Creates an attachment request ACK message, raising any exception on invalid values.
+     *
+     * @param globalStatus    the ACK status for the message
+     * @param data            the data containing the ACK message, if no error happened.
+     * @param globalException the String containing any error messages, if something went wrong.
+     * @return The created {@link MessageData5AttachmentRequestAck} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
+    public static MessageData5AttachmentRequestAck createMessageData5AttachmentRequestAck(
+            AckStatus globalStatus,
+            AttachmentRequestAckDataHolder data,
+            String globalException) throws IOException, ValidationException {
 
         return new MessageData5AttachmentRequestAckImpl(false,
                 globalStatus,
@@ -591,10 +612,18 @@ public class MessageManager {
                 globalException);
     }
 
+    /**
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @return The created {@link MessageData10QueryRequest} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData10QueryRequest createMessageData10QueryRequest(
             String query,
             ConsistencyType consistencyType,
-            Long timeout) throws IOException, NullPointerException, ValidationException {
+            Long timeout) throws IOException, ValidationException {
 
         return new MessageData10QueryRequestImpl(false,
                 query,
@@ -602,12 +631,22 @@ public class MessageManager {
                 timeout);
     }
 
+    /**
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @param pageSize        the page size used for the query
+     * @param queryType       the type of the query (scroll/page)
+     * @return The created {@link MessageData10QueryRequest} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData10QueryRequest createMessageData10QueryRequest(
             String query,
             ConsistencyType consistencyType,
             Long timeout,
             Integer pageSize,
-            Integer queryType) throws IOException, NullPointerException, ValidationException {
+            Integer queryType) throws IOException, ValidationException {
 
         return new MessageData10QueryRequestImpl(false,
                 query,
@@ -620,7 +659,7 @@ public class MessageManager {
     public static MessageData11QueryRequestAck createMessageData11QueryRequestAck(
             AckStatus globalStatus,
             QueryResponseHolder queryResponse,
-            String globalException) throws IOException, NullPointerException, ValidationException {
+            String globalException) throws IOException, ValidationException {
 
         return new MessageData11QueryRequestAckImpl(false,
                 globalStatus,
@@ -628,17 +667,31 @@ public class MessageManager {
                 globalException);
     }
 
+    /**
+     * @param queryContextHolder the ContextHolder containing information about the current query status
+     * @param timeout            the timeout used in the GDS for the query
+     * @return The created {@link MessageData12NextQueryPage} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData12NextQueryPage createMessageData12NextQueryPage(
             QueryContextHolder queryContextHolder,
-            Long timeout) throws IOException, NullPointerException, ValidationException {
+            Long timeout) throws IOException, ValidationException {
 
         return new MessageData12NextQueryPageImpl(false,
                 queryContextHolder, timeout);
     }
 
+    /**
+     * @param queryContextHolderSerializable the ContextHolder containing information about the current query status
+     * @param timeout                        the timeout used in the GDS for the query
+     * @return The created {@link MessageData12NextQueryPage} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData12NextQueryPage createMessageData12NextQueryPage(
             QueryContextHolderSerializable queryContextHolderSerializable,
-            Long timeout) throws IOException, NullPointerException, ValidationException {
+            Long timeout) throws IOException, ValidationException {
 
         return new MessageData12NextQueryPageImpl(false,
                 queryContextHolderSerializable, timeout);

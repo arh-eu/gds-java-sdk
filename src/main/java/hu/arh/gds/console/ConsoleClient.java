@@ -10,6 +10,9 @@ import hu.arh.gds.client.Either;
 import hu.arh.gds.client.Pair;
 import hu.arh.gds.client.SyncGDSClient;
 import hu.arh.gds.console.parser.ArgumentsHolder;
+import hu.arh.gds.message.clienttypes.AttachmentResult;
+import hu.arh.gds.message.clienttypes.EventResponse;
+import hu.arh.gds.message.clienttypes.QueryResponse;
 import hu.arh.gds.message.data.*;
 import hu.arh.gds.message.data.impl.AckStatus;
 import hu.arh.gds.message.header.MessageHeaderBase;
@@ -74,12 +77,12 @@ public class ConsoleClient implements Runnable {
 
     private void sendEvent() {
         try {
-            Pair<MessageHeaderBase, MessageData3EventAck> eventResponse = syncGDSClient.sendEvent2(MessageManager.createMessageData2Event(
+            EventResponse eventResponse = syncGDSClient.sendEvent2(MessageManager.createMessageData2Event(
                     argumentsHolder.getStatement(),
                     loadAttachments(argumentsHolder.getFiles()),
                     new ArrayList<>()));
 
-            exportResult(eventResponse.getFirst(), eventResponse.getSecond());
+            exportResult(eventResponse.getHeader(), eventResponse.getData());
 
         } catch (IllegalArgumentException | IOException | ValidationException iae) {
             logger.severe(iae.getMessage());
@@ -89,22 +92,24 @@ public class ConsoleClient implements Runnable {
 
     private void sendAttachmentRequest() {
         try {
-            Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> attachmentResult =
+            AttachmentResult attachmentResult =
                     syncGDSClient.sendAttachmentRequest4(MessageManager.createMessageData4AttachmentRequest(
                             argumentsHolder.getStatement()
                     ));
 
-            Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse> response = attachmentResult.getSecond();
-            if (response.isLeftSet()) {
-                MessageData5AttachmentRequestAck attachmentRequestAck = response.getLeft();
-                exportResult(attachmentResult.getFirst(), attachmentRequestAck);
-                Utils.saveAttachment(attachmentResult.getFirst().getMessageId(), attachmentRequestAck.getBinary(),
+            MessageHeaderBase header = attachmentResult.getHeader();
+            String messageId = header.getMessageId();
+
+            if (attachmentResult.isAttachmentRequestAck()) {
+                MessageData5AttachmentRequestAck attachmentRequestAck = attachmentResult.getDataAsAttachmentRequestAck();
+                exportResult(header, attachmentRequestAck);
+                Utils.saveAttachment(messageId, attachmentRequestAck.getBinary(),
                         attachmentRequestAck.getData().getResult().getMeta());
 
             } else {
-                MessageData6AttachmentResponse attachmentResponse = response.getRight();
-                exportResult(attachmentResult.getFirst(), attachmentResponse);
-                Utils.saveAttachment(attachmentResult.getFirst().getMessageId(), attachmentResponse.getBinary(),
+                MessageData6AttachmentResponse attachmentResponse = attachmentResult.getDataAsAttachmentResponse();
+                exportResult(header, attachmentResponse);
+                Utils.saveAttachment(messageId, attachmentResponse.getBinary(),
                         attachmentResponse.getResult().getMeta());
             }
         } catch (IllegalArgumentException | IOException | ValidationException iae) {
@@ -116,7 +121,7 @@ public class ConsoleClient implements Runnable {
         try {
 
             int counter = 0;
-            Pair<MessageHeaderBase, MessageData11QueryRequestAck> queryResponse = syncGDSClient.sendQueryRequest10(MessageManager.createMessageData10QueryRequest(
+            QueryResponse queryResponse = syncGDSClient.sendQueryRequest10(MessageManager.createMessageData10QueryRequest(
                     argumentsHolder.getStatement(),
                     ConsistencyType.PAGES,
                     Long.valueOf(argumentsHolder.getTimeout())
@@ -125,10 +130,10 @@ public class ConsoleClient implements Runnable {
             exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
 
             if (argumentsHolder.getMessageType().equals(MessageType.QUERYALL)) {
-                while (queryResponse.getSecond().getGlobalStatus() == AckStatus.OK &&
-                        queryResponse.getSecond().getQueryResponseHolder().getMorePage()) {
+                while (queryResponse.getData().getGlobalStatus() == AckStatus.OK &&
+                        queryResponse.getData().getQueryResponseHolder().getMorePage()) {
                     queryResponse = syncGDSClient.sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(
-                            queryResponse.getSecond().getQueryResponseHolder().getQueryContextHolder(), Long.valueOf(argumentsHolder.getTimeout())));
+                            queryResponse.getData().getQueryResponseHolder().getQueryContextHolder(), Long.valueOf(argumentsHolder.getTimeout())));
 
                     exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
                 }
@@ -139,14 +144,16 @@ public class ConsoleClient implements Runnable {
         }
     }
 
-    private void exportAndDisplayOnGUIifNeeded(int counter, Pair<MessageHeaderBase, MessageData11QueryRequestAck> queryResponse) {
-        exportResult(queryResponse.getFirst(), queryResponse.getSecond());
-        if (!argumentsHolder.withNoGUI() && queryResponse.getSecond().getGlobalStatus() == AckStatus.OK) {
+    private void exportAndDisplayOnGUIifNeeded(int counter, QueryResponse queryResponse) {
+        MessageHeaderBase header = queryResponse.getHeader();
+        MessageData11QueryRequestAck data = queryResponse.getData();
+        exportResult(header, data);
+        if (!argumentsHolder.withNoGUI() && data.getGlobalStatus() == AckStatus.OK) {
             try {
                 new ConsoleGUI(
                         counter,
-                        queryResponse.getFirst().getMessageId(),
-                        queryResponse.getSecond().getQueryResponseHolder()).display();
+                        header.getMessageId(),
+                        data.getQueryResponseHolder()).display();
             } catch (IOException e) {
                 logger.severe(e.toString());
             }

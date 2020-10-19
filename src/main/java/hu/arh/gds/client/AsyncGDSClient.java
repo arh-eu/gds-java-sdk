@@ -46,8 +46,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 
 /**
@@ -266,8 +265,7 @@ public final class AsyncGDSClient {
         }
 
         if (log == null) {
-            this.log = Logger.getLogger("AsyncGDSClient");
-            this.log.setLevel(Level.SEVERE);
+            this.log = createDefaultLogger("AsyncGDSClient");
         } else {
             this.log = log;
         }
@@ -291,6 +289,32 @@ public final class AsyncGDSClient {
         this.countDownLatch = new CountDownLatch(1);
         this.state = new AtomicReference<>(ConnectionState.NOT_CONNECTED);
         client = new NettyWebSocketClient();
+    }
+
+    public static Logger createDefaultLogger(String loggerName) {
+        Logger log = Logger.getLogger(loggerName);
+        log.setLevel(Level.SEVERE);
+        log.setUseParentHandlers(false);
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new SimpleFormatter() {
+            private String format = "[%1$tF %1$tT] [%2$s] | %3$s::%4$s | %5$s %n";
+            //calling 'log.info("InfoMessage");' from the constructor would produce:
+            //[2020-10-19 08:15:39] [INFO] | hu.arh.gds.client.AsyncGDSClient::<init> | InfoMessage
+
+            @Override
+            public synchronized String format(LogRecord lr) {
+                return String.format(format,
+                        new Date(lr.getMillis()),
+                        lr.getLevel().getLocalizedName(),
+                        lr.getSourceClassName(),
+                        lr.getSourceMethodName(),
+                        lr.getMessage()
+                );
+            }
+        });
+        log.addHandler(handler);
+
+        return log;
     }
 
     /**
@@ -447,11 +471,48 @@ public final class AsyncGDSClient {
 
     //<editor-fold desc="Method overloads for sending different types of messages to the GDS System">
 
+
+    /**
+     * Sends an event message.
+     *
+     * @param operations     The list of strings containing the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+    public ChannelFuture sendEvent2(String operations,
+                                    Map<String, byte[]> binaryContents,
+                                    List<PriorityLevelHolder> priorityLevels)
+            throws IOException, ValidationException {
+        return sendMessage(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2),
+                MessageManager.createMessageData2Event(operations, binaryContents, priorityLevels));
+    }
+
+    /**
+     * Sends an event message
+     *
+     * @param operations     The list of strings containing the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+    public ChannelFuture sendEvent2(List<String> operations,
+                                    Map<String, byte[]> binaryContents,
+                                    List<PriorityLevelHolder> priorityLevels)
+            throws IOException, ValidationException {
+        return sendMessage(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2),
+                MessageManager.createMessageData2Event(operations, binaryContents, priorityLevels));
+    }
+
     /**
      * Sends an event message
      *
      * @param event the event to be sent to the GDS.
-     * @return the {@link ChannelFuture} instance associated with the current
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -465,6 +526,7 @@ public final class AsyncGDSClient {
      *
      * @param messageID the message ID to be used in the header
      * @param event     the event to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -478,6 +540,7 @@ public final class AsyncGDSClient {
      *
      * @param header the message header
      * @param event  the event to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -486,10 +549,25 @@ public final class AsyncGDSClient {
         return sendMessage(header, event);
     }
 
+
+    /**
+     * Sends an attachment request message
+     *
+     * @param request the attachment request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+    public ChannelFuture sendAttachmentRequest4(String request) throws IOException, ValidationException {
+        return sendMessage(MessageManager.createMessageHeaderBase(userName, MessageDataType.ATTACHMENT_REQUEST_4),
+                MessageManager.createMessageData4AttachmentRequest(request));
+    }
+
     /**
      * Sends an attachment request message
      *
      * @param request the request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -504,6 +582,7 @@ public final class AsyncGDSClient {
      *
      * @param messageID the message ID to be used in the header
      * @param request   the request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -518,6 +597,7 @@ public final class AsyncGDSClient {
      *
      * @param header  the message header
      * @param request the request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -526,6 +606,23 @@ public final class AsyncGDSClient {
         return sendMessage(header, request);
     }
 
+
+    /**
+     * Sends an attachment request ACK message
+     *
+     * @param globalStatus    the ACK status for the message
+     * @param data            the data containing the ACK message, if no error happened.
+     * @param globalException the String containing any error messages, if something went wrong.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
+    public ChannelFuture createMessageData5AttachmentRequestAck(
+            AckStatus globalStatus,
+            AttachmentRequestAckDataHolder data,
+            String globalException) throws IOException, ValidationException {
+        return sendMessage(MessageManager.createMessageData5AttachmentRequestAck(globalStatus, data, globalException));
+    }
 
     /**
      * Sends an attachment request message
@@ -725,6 +822,47 @@ public final class AsyncGDSClient {
 
 
     /**
+     * Sends a query message
+     *
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @return the query ACK with the result.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public ChannelFuture sendQueryRequest10(
+            String query,
+            ConsistencyType consistencyType,
+            Long timeout) throws IOException, ValidationException {
+        return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, MessageDataType.QUERY_REQUEST_10),
+                MessageManager.createMessageData10QueryRequest(query, consistencyType, timeout));
+    }
+
+    /**
+     * Sends a query message
+     *
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @param pageSize        the page size used for the query
+     * @param queryType       the type of the query (scroll/page)
+     * @return the query ACK with the result.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public ChannelFuture sendQueryRequest10(
+            String query,
+            ConsistencyType consistencyType,
+            Long timeout,
+            Integer pageSize,
+            Integer queryType) throws IOException, ValidationException {
+        return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, MessageDataType.QUERY_REQUEST_10),
+                MessageManager.createMessageData10QueryRequest(query, consistencyType, timeout, pageSize, queryType));
+    }
+
+
+    /**
      * Sends a query request
      *
      * @param request the query request to be sent to the GDS.
@@ -765,9 +903,38 @@ public final class AsyncGDSClient {
     }
 
     /**
+     * @param queryContextHolder the ContextHolder containing information about the current query status
+     * @param timeout            the timeout used in the GDS for the query
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public ChannelFuture sendNextQueryPage12(
+            QueryContextHolder queryContextHolder, Long timeout) throws IOException, ValidationException {
+        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
+                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
+    }
+
+    /**
+     * @param queryContextHolder the ContextHolder containing information about the current query status
+     * @param timeout            the timeout used in the GDS for the query
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public ChannelFuture sendNextQueryPage12(
+            QueryContextHolderSerializable queryContextHolder,
+            Long timeout) throws IOException, ValidationException {
+        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
+                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
+    }
+
+
+    /**
      * Sends a next query request
      *
      * @param request the query request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -781,6 +948,7 @@ public final class AsyncGDSClient {
      *
      * @param messageID the message ID to be used in the header
      * @param request   the query request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -795,6 +963,7 @@ public final class AsyncGDSClient {
      *
      * @param header  the message header
      * @param request the query request to be sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -807,10 +976,11 @@ public final class AsyncGDSClient {
      * Sends a message towards the GDS, notifying on the {@link AsyncGDSClient#listener} if a reply arrives.
      *
      * @param data the message data sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public ChannelFuture sendMessage(MessageData data) throws ValidationException, IOException {
+    ChannelFuture sendMessage(MessageData data) throws ValidationException, IOException {
         return sendMessage(MessageManager.createMessageHeaderBase(userName, data.getTypeHelper().getMessageDataType()), data);
     }
 
@@ -819,10 +989,11 @@ public final class AsyncGDSClient {
      *
      * @param messageID the message ID to be used in the header
      * @param data      the message data sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public ChannelFuture sendMessage(String messageID, MessageData data) throws ValidationException, IOException {
+    ChannelFuture sendMessage(String messageID, MessageData data) throws ValidationException, IOException {
         MessageHeader header = MessageManager.createMessageHeaderBase(
                 userName,
                 messageID != null ? messageID : UUID.randomUUID().toString(),
@@ -835,10 +1006,11 @@ public final class AsyncGDSClient {
      *
      * @param header the message header
      * @param data   the message data sent to the GDS.
+     * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException {
+    ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException {
         log.config("Sending message with ID " + header.getTypeHelper().asBaseMessageHeader().getMessageId()
                 + " of type " + data.getTypeHelper().getMessageDataType());
         return sendMessage(MessageManager.createMessage(header, data));
@@ -856,8 +1028,9 @@ public final class AsyncGDSClient {
      * @return the ChannelFuture associated with the WebSocket connection
      */
     private ChannelFuture sendMessage(byte[] message) {
-        if (getState() != ConnectionState.LOGGED_IN) {
-            throw new IllegalStateException("Cannot send message without a login success! Expected client state 'LOGGED_IN' but got " + getState());
+        ConnectionState state = getState();
+        if (state != ConnectionState.LOGGED_IN) {
+            throw new IllegalStateException("Could not send message! Expected client state 'LOGGED_IN' but got " + state);
         }
         return client.send(message);
     }
@@ -932,13 +1105,13 @@ public final class AsyncGDSClient {
                     break;
             }
         } catch (IOException | ReadException | ValidationException e) {
-            log.warning("The format of the incoming binary message is invalid! " + e.toString());
+            log.info("The format of the incoming binary message is invalid! " + e.toString());
         }
     }
 
     private class NettyWebSocketClient {
         NettyWebSocketClient() {
-            log.info("NettyWebSocketClient initialized!");
+            log.config("NettyWebSocketClient initialized!");
         }
 
         Channel channel;
@@ -976,7 +1149,7 @@ public final class AsyncGDSClient {
                     }
                 }
 
-                log.info("Netty channels initialized!");
+                log.config("Netty channels initialized!");
 
             } catch (Throwable t) {
                 log.severe(t.toString());
@@ -1002,21 +1175,19 @@ public final class AsyncGDSClient {
 
         ChannelFuture send(byte[] message) {
             WebSocketFrame frame = new BinaryWebSocketFrame(Unpooled.wrappedBuffer(message));
-            log.info("Sending BinaryWebSocketFrame..");
+            log.config("Sending BinaryWebSocketFrame..");
             log.fine("Message is " + message.length + " bytes");
             return channel.writeAndFlush(frame);
         }
     }
 
     private class GDSWebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
-        private final AsyncGDSClient gdsClient;
         private WebSocketClientHandshaker handshaker;
         private ChannelPromise handshakeFuture;
 
         GDSWebSocketClientHandler(WebSocketClientHandshaker handshaker) {
-            this.gdsClient = AsyncGDSClient.this;
             this.handshaker = handshaker;
-            gdsClient.log.info("GDSWebSocketClientHandler initialized!");
+            log.config("GDSWebSocketClientHandler initialized!");
         }
 
         @Override
@@ -1026,56 +1197,54 @@ public final class AsyncGDSClient {
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
-            gdsClient.log.info("WebSocketClient connection successfully opened!");
+            log.config("WebSocketClient connection successfully opened!");
             handshaker.handshake(ctx.channel());
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            gdsClient.log.info("WebSocketClient connection disconnected!");
-            GDSMessageListener messageListener = gdsClient.listener;
-            if (messageListener != null) {
-                //proper CLOSE after communications
-                if (getState() == ConnectionState.DISCONNECTED ||
-                        state.compareAndSet(ConnectionState.LOGGED_IN, ConnectionState.DISCONNECTED)) {
-                    messageListener.onDisconnect(client.channel);
-                    //login failed and the connection was closed from the GDS side
-                } else if (getState() != ConnectionState.FAILED) {
-                    log.warning("The state should be either FAILED or LOGGED_IN but found " + getState() + "!");
-                }
+            log.info("WebSocketClient connection disconnected!");
+            //proper CLOSE after communications
+            if (getState() == ConnectionState.DISCONNECTED ||
+                    state.compareAndSet(ConnectionState.LOGGED_IN, ConnectionState.DISCONNECTED)) {
+                listener.onDisconnect(client.channel);
+                //login failed and the connection was closed from the GDS side
+            } else if (getState() != ConnectionState.FAILED) {
+                log.warning("The state should be either FAILED or LOGGED_IN but found " + getState() + "!");
             }
+
             super.channelInactive(ctx);
         }
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
             if (getState() == ConnectionState.FAILED) {
-                gdsClient.log.info("Incoming message but the client is already in a failed state! (msg: " + msg.toString() + ")");
+                log.config("Incoming message but the client is already in a failed state! (msg: " + msg.toString() + ")");
                 return;
             }
             if (getState() == ConnectionState.DISCONNECTED) {
-                gdsClient.log.info("Incoming message but the client is already in a disconnected state! (msg: " + msg.toString() + ")");
+                log.config("Incoming message but the client is already in a disconnected state! (msg: " + msg.toString() + ")");
                 return;
             }
             Channel ch = ctx.channel();
             if (!handshaker.isHandshakeComplete()) {
                 try {
                     handshaker.finishHandshake(ch, (FullHttpResponse) msg);
-                    gdsClient.log.info("WebSocketClient connection established!");
-                    gdsClient.client.channel = ch;
+                    log.info("WebSocketClient connection established!");
+                    client.channel = ch;
                     handshakeFuture.setSuccess();
-                    if (!gdsClient.state.compareAndSet(ConnectionState.CONNECTING, ConnectionState.CONNECTED)) {
+                    if (!state.compareAndSet(ConnectionState.CONNECTING, ConnectionState.CONNECTED)) {
                         if (getState() != ConnectionState.DISCONNECTED) {
-                            String exceptionMessage = "Expected CONNECTING but got " + gdsClient.getState();
-                            gdsClient.state.set(ConnectionState.FAILED);
+                            String exceptionMessage = "Expected CONNECTING but got " + getState();
+                            state.set(ConnectionState.FAILED);
                             throw new IllegalStateException(exceptionMessage);
                         }
                     }
 
-                    if (!gdsClient.state.compareAndSet(ConnectionState.CONNECTED, ConnectionState.LOGGING_IN)) {
+                    if (!state.compareAndSet(ConnectionState.CONNECTED, ConnectionState.LOGGING_IN)) {
                         if (getState() == ConnectionState.DISCONNECTED) {
-                            String exceptionMessage = "Expected CONNECTED but got " + gdsClient.getState();
-                            gdsClient.state.set(ConnectionState.FAILED);
+                            String exceptionMessage = "Expected CONNECTED but got " + getState();
+                            state.set(ConnectionState.FAILED);
                             throw new IllegalStateException(exceptionMessage);
                         }
                     }
@@ -1083,15 +1252,15 @@ public final class AsyncGDSClient {
                     MessageHeader header = MessageManager.createMessageHeaderBase(userName, MessageDataType.CONNECTION_0);
                     //Current GDS version is 5.1
                     MessageData data = MessageManager.createMessageData0Connection(true, (5 << 16 | 1), false, null, userPassword);
-                    gdsClient.log.info("Sending login message..");
+                    log.config("Sending login message..");
                     byte[] message = MessageManager.createMessage(header, data);
                     ch.writeAndFlush(new BinaryWebSocketFrame(Unpooled.wrappedBuffer(message)));
                 } catch (WebSocketHandshakeException e) {
-                    gdsClient.log.info("WebSocketClient failed to connect!");
+                    log.info("WebSocketClient failed to connect!");
                     handshakeFuture.setFailure(e);
                     if (getState() != ConnectionState.FAILED) {
-                        gdsClient.state.set(ConnectionState.FAILED);
-                        gdsClient.listener.onConnectionFailure(ch, Either.fromLeft(e));
+                        state.set(ConnectionState.FAILED);
+                        listener.onConnectionFailure(ch, Either.fromLeft(e));
                     }
                 }
                 return;
@@ -1106,21 +1275,21 @@ public final class AsyncGDSClient {
 
             WebSocketFrame frame = (WebSocketFrame) msg;
             if (frame instanceof BinaryWebSocketFrame) {
-                gdsClient.log.info("WebSocketClient received BinaryWebSocketFrame");
+                log.fine("WebSocketClient received BinaryWebSocketFrame");
                 byte[] binaryFrame = new byte[frame.content().readableBytes()];
                 frame.content().readBytes(binaryFrame);
-                gdsClient.handleIncomingMessage(binaryFrame);
+                handleIncomingMessage(binaryFrame);
             } else if (frame instanceof TextWebSocketFrame) {
-                gdsClient.log.fine("WebSocketClient received TextWebSocketFrame");
+                log.fine("WebSocketClient received TextWebSocketFrame");
             } else if (frame instanceof PingWebSocketFrame) {
-                gdsClient.log.fine("WebSocketClient received ping");
+                log.fine("WebSocketClient received ping");
                 ch.writeAndFlush(new PongWebSocketFrame());
             } else if (frame instanceof PongWebSocketFrame) {
-                gdsClient.log.fine("WebSocketClient received pong");
+                log.fine("WebSocketClient received pong");
             } else if (frame instanceof CloseWebSocketFrame) {
-                gdsClient.log.info("WebSocketClient received closing frame..");
+                log.config("WebSocketClient received closing frame..");
                 CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame) frame;
-                gdsClient.log.info("Close status: " + closeWebSocketFrame.statusCode() + ", reason: " + closeWebSocketFrame.reasonText());
+                log.config("Close status: " + closeWebSocketFrame.statusCode() + ", reason: " + closeWebSocketFrame.reasonText());
                 if (getState() != ConnectionState.LOGGED_IN) {
                     state.set(ConnectionState.FAILED);
                     countDownLatch.countDown();
@@ -1128,7 +1297,7 @@ public final class AsyncGDSClient {
                 }
                 close();
             } else {
-                gdsClient.log.info("Unsupported frame type: " + frame.getClass().getName());
+                log.fine("Unsupported frame type: " + frame.getClass().getName());
             }
         }
 
@@ -1142,8 +1311,8 @@ public final class AsyncGDSClient {
 
             if (getState() != ConnectionState.FAILED) {
                 if (getState() != ConnectionState.LOGGED_IN) {
-                    gdsClient.state.set(ConnectionState.FAILED);
-                    gdsClient.listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
+                    state.set(ConnectionState.FAILED);
+                    listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
                 }
             }
             throw new RuntimeException(cause);

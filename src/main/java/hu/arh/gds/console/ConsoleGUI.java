@@ -95,7 +95,15 @@ public class ConsoleGUI {
 
             @Override
             public void onInput(Window basePane, KeyStroke keyStroke, AtomicBoolean deliverEvent) {
+
                 KeyType keyType = keyStroke.getKeyType();
+                if (dataPanel.getTableModel().getRowCount() == 0) {
+                    if (keyType == KeyType.End || keyType == KeyType.Home) {
+                        deliverEvent.set(false);
+                        return;
+                    }
+                }
+
                 if (keyType == KeyType.ArrowLeft && selectedColumn > 0) {
                     --selectedColumn;
                 }

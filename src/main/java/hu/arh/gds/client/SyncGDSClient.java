@@ -6,6 +6,10 @@
 
 package hu.arh.gds.client;
 
+import hu.arh.gds.message.clienttypes.AttachmentResult;
+import hu.arh.gds.message.clienttypes.EventDocumentResponse;
+import hu.arh.gds.message.clienttypes.EventResponse;
+import hu.arh.gds.message.clienttypes.QueryResponse;
 import hu.arh.gds.message.data.*;
 import hu.arh.gds.message.data.impl.AckStatus;
 import hu.arh.gds.message.data.impl.AttachmentResponseAckResultHolderImpl;
@@ -20,11 +24,12 @@ import io.netty.handler.ssl.SslContext;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -231,15 +236,14 @@ public final class SyncGDSClient {
                     latchPair.setSecond(new Pair<>(header, data));
                     latchPair.getFirst().countDown();
                 } else {
-                    log.info("The message with ID " + header.getMessageId() + " was not expected by the client.");
+                    log.warning("The message with ID " + header.getMessageId() + " was not expected by the client.");
                 }
             }
 
         };
 
         if (log == null) {
-            this.log = Logger.getLogger("SyncGDSClient");
-            this.log.setLevel(Level.SEVERE);
+            this.log = AsyncGDSClient.createDefaultLogger("SyncGDSClient");
         } else {
             this.log = log;
         }
@@ -254,6 +258,8 @@ public final class SyncGDSClient {
         closeLatch = new CountDownLatch(1);
         loginResponse = new AtomicReference<>();
         incomingCache = new ConcurrentHashMap<>();
+
+        this.log.config("SyncGDSClient successfully initialized.");
     }
 
 
@@ -375,12 +381,55 @@ public final class SyncGDSClient {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
+     * @param operations     The list of strings containing the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return the event ACK with the result.
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+
+    public EventResponse sendEvent2(String operations,
+                                    Map<String, byte[]> binaryContents,
+                                    List<PriorityLevelHolder> priorityLevels)
+            throws IOException, ValidationException {
+        return sendEvent2(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2),
+                MessageManager.createMessageData2Event(operations, binaryContents, priorityLevels));
+    }
+
+
+    /**
+     * Sends an event message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
+     * @param operations     The list of strings containing the event operations.
+     * @param binaryContents The attachments sent along with the message.
+     * @param priorityLevels The priority levels
+     * @return the event ACK with the result.
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+
+    public EventResponse sendEvent2(List<String> operations,
+                                    Map<String, byte[]> binaryContents,
+                                    List<PriorityLevelHolder> priorityLevels)
+            throws IOException, ValidationException {
+        return sendEvent2(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2),
+                MessageManager.createMessageData2Event(operations, binaryContents, priorityLevels));
+    }
+
+    /**
+     * Sends an event message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
      * @param event the event to be sent to the GDS.
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData3EventAck> sendEvent2(MessageData2Event event)
+    public EventResponse sendEvent2(MessageData2Event event)
             throws IOException, ValidationException {
         return sendEvent2(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2), event);
     }
@@ -397,7 +446,7 @@ public final class SyncGDSClient {
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
 
-    public Pair<MessageHeaderBase, MessageData3EventAck> sendEvent2(String messageID, MessageData2Event event)
+    public EventResponse sendEvent2(String messageID, MessageData2Event event)
             throws IOException, ValidationException {
         return sendEvent2(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.EVENT_2), event);
     }
@@ -413,7 +462,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData3EventAck> sendEvent2(MessageHeaderBase header, MessageData2Event event)
+    public EventResponse sendEvent2(MessageHeaderBase header, MessageData2Event event)
             throws IOException, ValidationException {
         String messageID = header.getMessageId();
         return awaitEventACK3(processOutgoingMessage(messageID, () -> asyncGDSClient.sendEvent2(header, event)), messageID);
@@ -434,7 +483,27 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>
+    public AttachmentResult
+    sendAttachmentRequest4(String request) throws IOException, ValidationException {
+        return sendAttachmentRequest4(MessageManager.createMessageHeaderBase(userName, MessageDataType.ATTACHMENT_REQUEST_4),
+                MessageManager.createMessageData4AttachmentRequest(request));
+    }
+
+    /**
+     * Sends an attachment request message, awaiting the reply. If the GDS does not respond within the given time limit
+     * ({@code timeout}), will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     * Since the GDS might not have the attachment stored, it is possible that the first reply will not contain any binaries,
+     * and the GDS will send it later in an other message, so the attachment itself will be sent in either
+     * a {@link MessageData5AttachmentRequestAck} or an {@link MessageData6AttachmentResponse} type of message.
+     * Therefore the return type will be an {@link Either} type as well.
+     *
+     * @param request the attachment request to be sent to the GDS.
+     * @return the event ACK with the result.
+     * @throws IOException         if the message cannot be packed
+     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     */
+    public AttachmentResult
     sendAttachmentRequest4(MessageData4AttachmentRequest request) throws IOException, ValidationException {
         return sendAttachmentRequest4(MessageManager.createMessageHeaderBase(userName, MessageDataType.ATTACHMENT_REQUEST_4), request);
     }
@@ -455,7 +524,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>
+    public AttachmentResult
     sendAttachmentRequest4(String messageID, MessageData4AttachmentRequest request) throws IOException, ValidationException {
         return sendAttachmentRequest4(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.ATTACHMENT_REQUEST_4), request);
     }
@@ -475,7 +544,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>
+    public AttachmentResult
     sendAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request) throws IOException, ValidationException {
         String messageID = header.getMessageId();
         return awaitAttachment(processOutgoingMessage(messageID, () -> asyncGDSClient.sendAttachmentRequest4(header, request)), messageID);
@@ -491,7 +560,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData9EventDocumentAck> sendEventDocument8(MessageData8EventDocument eventDocument)
+    public EventDocumentResponse sendEventDocument8(MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
         return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2), eventDocument);
     }
@@ -507,7 +576,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData9EventDocumentAck> sendEventDocument8(String messageID, MessageData8EventDocument eventDocument)
+    public EventDocumentResponse sendEventDocument8(String messageID, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
         return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.EVENT_2), eventDocument);
     }
@@ -523,7 +592,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData9EventDocumentAck> sendEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument)
+    public EventDocumentResponse sendEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
         String messageID = header.getMessageId();
         return awaitEventDocumentACK9(processOutgoingMessage(messageID, () -> asyncGDSClient.sendEventDocument8(header, eventDocument)), messageID);
@@ -535,12 +604,56 @@ public final class SyncGDSClient {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @return the query ACK with the result.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public QueryResponse sendQueryRequest10(
+            String query,
+            ConsistencyType consistencyType,
+            Long timeout) throws IOException, ValidationException {
+        return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, MessageDataType.QUERY_REQUEST_10),
+                MessageManager.createMessageData10QueryRequest(query, consistencyType, timeout));
+    }
+
+    /**
+     * Sends a query message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
+     * @param query           the String containing the SELECT query
+     * @param consistencyType the type of consistency used for the query
+     * @param timeout         the timeout used in the GDS for the query
+     * @param pageSize        the page size used for the query
+     * @param queryType       the type of the query (scroll/page)
+     * @return the query ACK with the result.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public QueryResponse sendQueryRequest10(
+            String query,
+            ConsistencyType consistencyType,
+            Long timeout,
+            Integer pageSize,
+            Integer queryType) throws IOException, ValidationException {
+        return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, MessageDataType.QUERY_REQUEST_10),
+                MessageManager.createMessageData10QueryRequest(query, consistencyType, timeout, pageSize, queryType));
+    }
+
+    /**
+     * Sends a query message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
      * @param request the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendQueryRequest10(MessageData10QueryRequest request)
+    public QueryResponse sendQueryRequest10(MessageData10QueryRequest request)
             throws IOException, ValidationException {
         return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, MessageDataType.QUERY_REQUEST_10), request);
     }
@@ -557,7 +670,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendQueryRequest10(String messageID, MessageData10QueryRequest request)
+    public QueryResponse sendQueryRequest10(String messageID, MessageData10QueryRequest request)
             throws IOException, ValidationException {
         return sendQueryRequest10(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.QUERY_REQUEST_10), request);
     }
@@ -574,10 +687,38 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendQueryRequest10(MessageHeaderBase header, MessageData10QueryRequest request)
+    public QueryResponse sendQueryRequest10(MessageHeaderBase header, MessageData10QueryRequest request)
             throws IOException, ValidationException {
         String messageID = header.getMessageId();
         return awaitQueryACK11(processOutgoingMessage(messageID, () -> asyncGDSClient.sendQueryRequest10(header, request)), messageID);
+    }
+
+
+    /**
+     * @param queryContextHolder the ContextHolder containing information about the current query status
+     * @param timeout            the timeout used in the GDS for the query
+     * @return
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public QueryResponse sendNextQueryPage12(
+            QueryContextHolder queryContextHolder, Long timeout) throws IOException, ValidationException {
+        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
+                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
+    }
+
+    /**
+     * @param queryContextHolder the ContextHolder containing information about the current query status
+     * @param timeout            the timeout used in the GDS for the query
+     * @return
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public QueryResponse sendNextQueryPage12(
+            QueryContextHolderSerializable queryContextHolder,
+            Long timeout) throws IOException, ValidationException {
+        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
+                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
     }
 
     /**
@@ -590,7 +731,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendNextQueryPage12(MessageData12NextQueryPage request)
+    public QueryResponse sendNextQueryPage12(MessageData12NextQueryPage request)
             throws IOException, ValidationException {
         return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12), request);
     }
@@ -606,7 +747,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendNextQueryPage12(String messageID, MessageData12NextQueryPage request)
+    public QueryResponse sendNextQueryPage12(String messageID, MessageData12NextQueryPage request)
             throws IOException, ValidationException {
         return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.NEXT_QUERY_PAGE_12), request);
     }
@@ -623,7 +764,7 @@ public final class SyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    public Pair<MessageHeaderBase, MessageData11QueryRequestAck> sendNextQueryPage12(MessageHeaderBase header, MessageData12NextQueryPage request)
+    public QueryResponse sendNextQueryPage12(MessageHeaderBase header, MessageData12NextQueryPage request)
             throws IOException, ValidationException {
         String messageID = header.getMessageId();
         return awaitQueryACK11(processOutgoingMessage(messageID, () -> asyncGDSClient.sendNextQueryPage12(header, request)), messageID);
@@ -637,7 +778,7 @@ public final class SyncGDSClient {
      *
      * @param messageID        the ID for the message that will be used to await it and avoid multiple messages with the same ID.
      * @param messageOperation the operation to send the message
-     * @return
+     * @return the created CountDownLatch used to await the message
      * @throws IOException              if the message cannot be packed
      * @throws ValidationException      if any value constraints the restrictions in the structure of the header or the body.
      * @throws IllegalArgumentException if the given messageID is already used for an outgoing message which
@@ -677,14 +818,14 @@ public final class SyncGDSClient {
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
-    private Pair<MessageHeaderBase, MessageData3EventAck> awaitEventACK3(CountDownLatch countDownLatch, String messageID) {
+    private EventResponse awaitEventACK3(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
             if (resultPair.getSecond().getTypeHelper().isEventAckMessageData3()) {
-                return new Pair<>(resultPair.getFirst(), (MessageData3EventAck) resultPair.getSecond());
+                return new EventResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asEventAckMessageData3());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
-                log.info(msg);
+                log.config(msg);
                 throw new IllegalStateException(msg);
             }
 
@@ -705,14 +846,14 @@ public final class SyncGDSClient {
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
-    private Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>
-    awaitAttachment(CountDownLatch countDownLatch, String messageID) {
+    private AttachmentResult awaitAttachment(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
             if (resultPair.getSecond().getTypeHelper().isAttachmentRequestAckMessageData5()) {
                 MessageData5AttachmentRequestAck messageData5 = resultPair.getSecond().getTypeHelper().asAttachmentRequestAckMessageData5();
                 if (messageData5.getData() == null || messageData5.getData().getResult().getAttachment() != null) {
-                    return new Pair<>(resultPair.getFirst(), Either.fromLeft((MessageData5AttachmentRequestAck) resultPair.getSecond()));
+                    return new AttachmentResult(resultPair.getFirst(),
+                            Either.fromLeft(resultPair.getSecond().getTypeHelper().asAttachmentRequestAckMessageData5()));
                 } else {
                     try {
                         log.config("The incoming message with the ID " + messageID + " did not contain the attachment, " +
@@ -737,7 +878,7 @@ public final class SyncGDSClient {
                             //this should never happen as the message creation only contains valid values above.
                             log.severe(e.toString());
                         }
-                        return new Pair<>(resultPair.getFirst(), Either.fromRight(attachmentResponse));
+                        return new AttachmentResult(resultPair.getFirst(), Either.fromRight(attachmentResponse));
 
                     } catch (IOException | ValidationException e) {
                         //this should never happen as our awaitMessage runnable is an empty statement
@@ -748,7 +889,7 @@ public final class SyncGDSClient {
                 }
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
-                log.info(msg);
+                log.config(msg);
                 throw new IllegalStateException(msg);
             }
 
@@ -768,14 +909,14 @@ public final class SyncGDSClient {
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
-    private Pair<MessageHeaderBase, MessageData9EventDocumentAck> awaitEventDocumentACK9(CountDownLatch countDownLatch, String messageID) {
+    private EventDocumentResponse awaitEventDocumentACK9(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
             if (resultPair.getSecond().getTypeHelper().isEventDocumentAckMessageData9()) {
-                return new Pair<>(resultPair.getFirst(), (MessageData9EventDocumentAck) resultPair.getSecond());
+                return new EventDocumentResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asEventDocumentAckMessageData9());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
-                log.info(msg);
+                log.config(msg);
                 throw new IllegalStateException(msg);
             }
 
@@ -795,14 +936,14 @@ public final class SyncGDSClient {
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
-    private Pair<MessageHeaderBase, MessageData11QueryRequestAck> awaitQueryACK11(CountDownLatch countDownLatch, String messageID) {
+    private QueryResponse awaitQueryACK11(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
             if (resultPair.getSecond().getTypeHelper().isQueryRequestAckMessageData11()) {
-                return new Pair<>(resultPair.getFirst(), (MessageData11QueryRequestAck) resultPair.getSecond());
+                return new QueryResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asQueryRequestAckMessageData11());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
-                log.info(msg);
+                log.config(msg);
                 throw new IllegalStateException(msg);
             }
 
