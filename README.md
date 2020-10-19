@@ -297,7 +297,7 @@ First, we create the client object. To make things easier, a `AsyncGDSClientBuil
 This (and the listener interface) can be found in the `hu.arh.gds.client` package.
  
  The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you dont have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
-   - `withListener(GDSMessageListener listener)` - sets the callback listener tho the given value.
+   - `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
    - `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
    - `withURI(String URI)` - sets the GDS URI.
    - `withUserName(String userName)` - sets the username used in the GDS communication.
@@ -329,7 +329,7 @@ public AsyncGDSClient(
   - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
   - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client drops the connection and login request and raises an exception if it does not arrive (or if the GDS is unavailable).
   - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used.
-  `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
+  - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
   - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
  
@@ -530,7 +530,7 @@ try{
 }
 ```
 
-For the rest of our guides, the `try-catch` blocks around the creation and sending will be omitted so they are easier to read, but you should forget them.
+For the rest of our guides, the `try-catch` blocks around the creation and sending will be omitted so they are easier to read, but you should not forget them.
 
 The default header means that there is no fragmentation set, the creation and request times are set to the current system time. The message data type is determined automatically.
 
@@ -851,7 +851,6 @@ The restrictions for these values are the same as specified in the async client,
 - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
 - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
 - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used.
-`listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
 - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
 ### Methods
@@ -926,7 +925,7 @@ The only exception to this scheme is the `sendAttachmentRequest4(..)` method.
 Since the GDS might not have the attachment stored, it is possible that the first reply will not contain any binaries, and the GDS will send it later in an other message, so the attachment itself will be sent in either a `MessageData5AttachmentRequestAck` or an `MessageData6AttachmentResponse` type of message.
 Since the sync client awaits the binary itself, the type of the returned result will mirror this: the return value is `Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>>`.
 
-The `Either` class indicates that it is not predetermined which value will be set, so the result is _either_ a  `MessageData5AttachmentRequestAck` or a `MessageData6AttachmentResponse`. the `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value.
+The `Either` class indicates that it is not predetermined which value will be set, so the result is _either_ a  `MessageData5AttachmentRequestAck` or a `MessageData6AttachmentResponse`. The `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value.
 
 
 ```java
