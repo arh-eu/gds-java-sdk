@@ -848,7 +848,8 @@ The restrictions for these values are the same as specified in the async client,
 - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
 - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
 - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
-- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arh.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.` - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
+- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arh.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
+ - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
 - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
 ### Methods
@@ -863,6 +864,26 @@ Since the synchronous client uses a request-reply scheme, not all type of messag
 
 
 The parameters (and overloads) for these messages are the same as specified on the async client.
+
+The returning types inherit from the same class, the `GDSMessage` (found in the `hu.arh.gds.message.clienttypes` package).
+
+This class has two methods:
+ - `MessageHeaderBase getHeader();` which returns the header from the message, 
+ - `T getData();` which returns the data part of the message.
+
+ The generic type `T` is substituted for each subclass as the following:
+
+  - `EventResponse -> MessageData3EventAck`
+  - `AttachmentResult -> Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>`
+  - `EventDocumentResponse -> MessageData9EventDocumentAck`
+  - `QueryResponse -> MessageData11QueryRequestAck`
+
+As the type of the message the attachment result arrives in is not predetermined, it returns an _either_ object.
+To make things easier the `AttachmentResult` class has additional methods to check for the proper type:
+
+The `isAttachmentRequestAck()` and the `isAttachmentResponse()` will return boolean values to indicate the message content, while the `getDataAsAttachmentRequestAck()` and `getDataAsAttachmentResponse()` methods will return the proper types from the underlying data structure.
+
+
 
 ### Connecting
 
@@ -952,7 +973,7 @@ if (result.isAttachmentRequestAck()) {
 
 A full example of a synchronous client can be seen below.
 
-You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator).
+You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator) if you have no access to a GDS instance.
 
 ```java
 import hu.arh.gds.client.SyncGDSClient;
