@@ -1086,7 +1086,7 @@ public final class AsyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    private ChannelFuture sendMessage(MessageData data) throws ValidationException, IOException {
+    public ChannelFuture sendMessage(MessageData data) throws ValidationException, IOException {
         return sendMessage(MessageManager.createMessageHeaderBase(userName, data.getTypeHelper().getMessageDataType()), data);
     }
 
@@ -1099,7 +1099,7 @@ public final class AsyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    private ChannelFuture sendMessage(String messageID, MessageData data) throws ValidationException, IOException {
+    public ChannelFuture sendMessage(String messageID, MessageData data) throws ValidationException, IOException {
         MessageHeader header = MessageManager.createMessageHeaderBase(
                 userName,
                 messageID != null ? messageID : UUID.randomUUID().toString(),
@@ -1116,7 +1116,7 @@ public final class AsyncGDSClient {
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
-    private ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException {
+    public ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException {
         log.config("Sending message with ID " + header.getTypeHelper().asBaseMessageHeader().getMessageId()
                 + " of type " + data.getTypeHelper().getMessageDataType());
         return sendMessage(MessageManager.createMessage(header, data));

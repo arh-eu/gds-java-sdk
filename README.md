@@ -56,7 +56,7 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
         * [URL](#url)
         * [Username](#username)
         * [Password](#password)
-        * [Cert, secret](#cert--secret)
+        * [Cert, secret](#cert-secret)
         * [Timeout](#timeout)
         * [Hex](#hex)
         * [Export](#export)
@@ -84,13 +84,14 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
     + [Reusing the client](#reusing-the-client)
     + [Thread-safety](#thread-safety)
     + [Working with custom messages](#working-with-custom-messages)
+    + [Full example](#Async-client-example)
   * [Synchronous Client](#synchronous-client)
     + [Client creation](#client-creation)
     + [Methods](#methods)
     + [Connecting](#connecting)
     + [Closing](#closing)
     + [Sending (sync) messages](#sending-sync-messages)
-    + [Full example](#Sync-client-full-example)
+    + [Full example](#Sync-client-example)
 
 ## Console client
 
@@ -270,23 +271,27 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 
 ## Library
 
-- [Creating the client](#Creating-the-client)
-  - [Client Factory](#Client-factory)
-  - [Constructor and value restrictions](#Constructor-and-value-restrictions)
-- [Subscribing with a listener](#Subscribing-with-a-listener)
-- [Connecting to the GDS](#Connecting-to-the-GDS)
-- [Create messages](#Create-messages)
-- [Send and receive messages](#Send-and-receive-messages)
-	- [INSERT](#Insert)
-	- [UPDATE](#Update)
-	- [MERGE](#Merge)
-	- [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ACK-MESSAGE-FOR-THE-INSERT-UPDATE-AND-MERGE)
-	- [SELECT](#Select)
-		- [QUERY](#Query)
-		- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
-	- [AUTOMATIC PUSHING](#AUTOMATIC-PUSHING)
-- [Close the connection](#Close-the-connection)
-- [Working with custom messages](#Working-with-custom-messages)
+ * [Library](#library)
+    + [Creating the client](#creating-the-client)
+      - [Client Factory](#client-factory)
+      - [Constructor and value restrictions](#constructor-and-value-restrictions)
+    + [Subscribing with the listener](#subscribing-with-the-listener)
+    + [Connecting to the GDS](#connecting-to-the-gds)
+    + [Create messages](#create-messages)
+    + [Send and receive messages](#send-and-receive-messages)
+      - [INSERT](#insert)
+      - [UPDATE](#update)
+      - [MERGE](#merge)
+      - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert-update-and-merge)
+      - [SELECT](#select)
+        * [QUERY](#query)
+        * [ATTACHMENT REQUEST](#attachment-request)
+      - [AUTOMATIC PUSHING](#automatic-pushing)
+    + [Close the connection](#close-the-connection)
+    + [Reusing the client](#reusing-the-client)
+    + [Thread-safety](#thread-safety)
+    + [Working with custom messages](#working-with-custom-messages)
+    + [Full example](#Async-client-example)
 
 ### Creating the client
 
@@ -807,6 +812,109 @@ try{
 }
 ```
 
+### Async client example
+This is a simple class demonstrating how can you send queries to the GDS using the async client.
+```java
+import hu.arh.gds.client.AsyncGDSClient;
+import hu.arh.gds.client.Either;
+import hu.arh.gds.client.GDSMessageListener;
+import hu.arh.gds.client.Pair;
+import hu.arh.gds.message.data.ConsistencyType;
+import hu.arh.gds.message.data.MessageData11QueryRequestAck;
+import hu.arh.gds.message.data.MessageData1ConnectionAck;
+import hu.arh.gds.message.header.MessageHeaderBase;
+import hu.arh.gds.message.util.ValidationException;
+import io.netty.channel.Channel;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class AsyncExample {
+
+    private final static String USERNAME = "user";
+    private final static String URI = "ws://127.0.0.1:8888/gate";
+
+
+    public static void main(String[] args) {
+        try {
+            Object lock = new Object();
+            final AtomicReference<AsyncGDSClient> clientAtomicReference = new AtomicReference<>();
+
+            AsyncGDSClient asyncGDSClient = AsyncGDSClient.getBuilder()
+                    .withURI(URI)
+                    .withUserName(USERNAME)
+                    .withListener(new GDSMessageListener() {
+
+                        @Override
+                        public void onConnectionSuccess(Channel ch, MessageHeaderBase header, MessageData1ConnectionAck response) {
+                            System.out.println("Client connected!");
+                            synchronized (lock) {
+                                lock.notify();
+                            }
+                        }
+
+                        @Override
+                        public void onDisconnect(Channel channel) {
+                            System.out.println("Client disconnected!");
+                        }
+
+                        @Override
+                        public void onConnectionFailure(Channel channel, Either<Throwable, Pair<MessageHeaderBase, MessageData1ConnectionAck>> reason) {
+                            System.out.println("Client could not connect!");
+                            System.out.println("Reason: " + reason);
+                            synchronized (lock) {
+                                lock.notify();
+                            }
+                        }
+
+
+                        @Override
+                        public void onQueryRequestAck11(MessageHeaderBase header, MessageData11QueryRequestAck response) {
+                            AsyncGDSClient gdsClient = clientAtomicReference.get();
+                            if (response.getGlobalStatus().isErrorStatus()) {
+                                System.out.println("Select FAILED: " + response.getGlobalException());
+                                gdsClient.close();
+                                return;
+                            }
+
+                            System.out.println("Received " + response.getQueryResponseHolder().getHits().size() + " records.");
+                            if (response.getQueryResponseHolder().getMorePage()) {
+                                try {
+                                    gdsClient.sendNextQueryPage12(response.getQueryResponseHolder().getQueryContextHolder(), 10_000L);
+                                } catch (IOException | ValidationException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                gdsClient.close();
+                            }
+                        }
+                    }).build();
+
+            clientAtomicReference.set(asyncGDSClient);
+            asyncGDSClient.connect();
+
+            synchronized (lock) {
+                lock.wait();
+            }
+
+            if (asyncGDSClient.isConnected()) {
+                try {
+                    asyncGDSClient.sendQueryRequest10("SELECT * FROM multi_event LIMIT 1000", ConsistencyType.NONE, 10_000L);
+
+                } catch (ValidationException | IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                asyncGDSClient.close();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+
 ## Synchronous Client
 
 
@@ -969,7 +1077,7 @@ if (result.isAttachmentRequestAck()) {
 }
 ```
 
-### Sync client full example
+### Sync client example
 
 A full example of a synchronous client can be seen below.
 
