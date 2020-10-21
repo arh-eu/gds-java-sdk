@@ -20,6 +20,7 @@ import hu.arh.gds.message.util.MessageManager;
 import hu.arh.gds.message.util.ValidationException;
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslContext;
+import org.msgpack.value.Value;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -479,7 +480,7 @@ public final class SyncGDSClient {
      * Therefore the return type will be an {@link Either} type as well.
      *
      * @param request the attachment request to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the attachment result
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -499,7 +500,7 @@ public final class SyncGDSClient {
      * Therefore the return type will be an {@link Either} type as well.
      *
      * @param request the attachment request to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the attachment result
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -520,7 +521,7 @@ public final class SyncGDSClient {
      *
      * @param messageID the message ID to be used in the header
      * @param request   the attachment request to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the attachment result
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -540,7 +541,7 @@ public final class SyncGDSClient {
      *
      * @param header  the message header to be used
      * @param request the attachment request to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the attachment result
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -551,18 +552,57 @@ public final class SyncGDSClient {
     }
 
     /**
+     * Sends an event document response message, awaiting the reply. If the GDS does not respond within the given
+     * time limit ({@code timeout}), will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
+     * @param tableName    the table name
+     * @param fieldHolders the field holder values
+     * @param records      the records
+     * @return The event document ACK message sent by the GDS.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public EventDocumentResponse sendEventDocument8(String tableName,
+                                                    List<FieldHolder> fieldHolders,
+                                                    List<List<Value>> records) throws IOException, ValidationException {
+        return sendEventDocument8(MessageManager.createMessageData8EventDocument(tableName, fieldHolders, records));
+    }
+
+
+    /**
+     * Sends an event document message, awaiting the reply. If the GDS does not respond within the given
+     * time limit ({@code timeout}), will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
+     * @param tableName        the table name
+     * @param fieldHolders     the field holder values
+     * @param records          the records
+     * @param returningOptions the returning fields
+     * @return The event document ACK message sent by the GDS.
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
+    public EventDocumentResponse sendEventDocument8(String tableName,
+                                                    List<FieldHolder> fieldHolders,
+                                                    List<List<Value>> records,
+                                                    Map<Integer, List<String>> returningOptions) throws IOException, ValidationException {
+        return sendEventDocument8(MessageManager.createMessageData8EventDocument(tableName, fieldHolders, records, returningOptions));
+    }
+
+    /**
      * Sends an event document message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
      * @param eventDocument the event document to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
     public EventDocumentResponse sendEventDocument8(MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
-        return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_2), eventDocument);
+        return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, MessageDataType.EVENT_DOCUMENT_8), eventDocument);
     }
 
     /**
@@ -572,13 +612,13 @@ public final class SyncGDSClient {
      *
      * @param messageID     the message ID to be used in the header
      * @param eventDocument the event document to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
     public EventDocumentResponse sendEventDocument8(String messageID, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
-        return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.EVENT_2), eventDocument);
+        return sendEventDocument8(MessageManager.createMessageHeaderBase(userName, messageID, MessageDataType.EVENT_DOCUMENT_8), eventDocument);
     }
 
     /**
@@ -588,7 +628,7 @@ public final class SyncGDSClient {
      *
      * @param header        the message header
      * @param eventDocument the event document to be sent to the GDS.
-     * @return the event ACK with the result.
+     * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
      * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
      */
@@ -695,9 +735,13 @@ public final class SyncGDSClient {
 
 
     /**
+     * Sends a next query page request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
      * @param queryContextHolder the ContextHolder containing information about the current query status
      * @param timeout            the timeout used in the GDS for the query
-     * @return
+     * @return the query ACK with the result.
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
      */
@@ -707,10 +751,15 @@ public final class SyncGDSClient {
                 MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
     }
 
+
     /**
+     * Sends a next query page request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * will throw a {@link GDSTimeoutException}.
+     * Otherwise returns the response given by the GDS.
+     *
      * @param queryContextHolder the ContextHolder containing information about the current query status
      * @param timeout            the timeout used in the GDS for the query
-     * @return
+     * @return the query ACK with the result.
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
      */
@@ -722,7 +771,7 @@ public final class SyncGDSClient {
     }
 
     /**
-     * Sends a next query request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * Sends a next query page request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
@@ -737,7 +786,7 @@ public final class SyncGDSClient {
     }
 
     /**
-     * Sends a next query request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
+     * Sends a next query page request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *

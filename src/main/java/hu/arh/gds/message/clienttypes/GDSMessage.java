@@ -11,6 +11,11 @@ import hu.arh.gds.message.header.MessageHeaderBase;
 
 import java.util.Objects;
 
+/**
+ * Abstract class indicating that this message is treated as a message from the GDS.
+ *
+ * @param <T> the type of the Data part.
+ */
 abstract class GDSMessage<T> {
 
     protected final MessageHeaderBase header;

@@ -10,6 +10,10 @@ import hu.arh.gds.client.Pair;
 import hu.arh.gds.message.data.MessageData11QueryRequestAck;
 import hu.arh.gds.message.header.MessageHeaderBase;
 
+
+/**
+ * Represents a response to a Query Request (type 10) or a Next Query Page request (type 12) message.
+ */
 public class QueryResponse extends GDSMessage<MessageData11QueryRequestAck> {
 
     public QueryResponse(Pair<MessageHeaderBase, MessageData11QueryRequestAck> response) {

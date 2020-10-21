@@ -560,6 +560,13 @@ public class MessageManager {
                 globalException);
     }
 
+    /**
+     * @param result      the result holder containing the attachment
+     * @param eventHolder the event holder of the message
+     * @return The created {@link MessageData6AttachmentResponse} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData6AttachmentResponse createMessageData6AttachmentResponse(
             AttachmentResultHolder result,
             EventHolder eventHolder
@@ -570,6 +577,14 @@ public class MessageManager {
                 eventHolder);
     }
 
+    /**
+     * @param globalStatus    the Status code for the request
+     * @param data            the data for the attachment response
+     * @param globalException the error in string format (if any)
+     * @return The created {@link MessageData7AttachmentResponseAck} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData7AttachmentResponseAck createMessageData7AttachmentResponseAck(
             AckStatus globalStatus,
             AttachmentResponseAckResultHolder data,
@@ -581,6 +596,14 @@ public class MessageManager {
                 globalException);
     }
 
+    /**
+     * @param tableName    the table name
+     * @param fieldHolders the field holder values
+     * @param records      the records
+     * @return The created {@link MessageData9EventDocumentAck} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData8EventDocument createMessageData8EventDocument(
             String tableName,
             List<FieldHolder> fieldHolders,
@@ -588,6 +611,15 @@ public class MessageManager {
         return createMessageData8EventDocument(tableName, fieldHolders, records, new HashMap<>(0));
     }
 
+    /**
+     * @param tableName        the table name
+     * @param fieldHolders     the field holder values
+     * @param records          the records
+     * @param returningOptions the returning fields
+     * @return The created {@link MessageData9EventDocumentAck} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData8EventDocument createMessageData8EventDocument(
             String tableName,
             List<FieldHolder> fieldHolders,
@@ -601,6 +633,14 @@ public class MessageManager {
                 returningOptions);
     }
 
+    /**
+     * @param globalStatus    the Status code for the request
+     * @param result          the result of the event document request
+     * @param globalException the error in string format (if any)
+     * @return The created {@link MessageData9EventDocumentAck} instance
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant
+     */
     public static MessageData9EventDocumentAck createMessageMessageData9EventDocumentAck(
             AckStatus globalStatus,
             List<EventDocumentResultHolder> result,
@@ -656,6 +696,17 @@ public class MessageManager {
                 queryType);
     }
 
+
+    /**
+     * Creates a Query ACK message. This should be only used if the client is a GDS instance that can be connected to.
+     *
+     * @param globalStatus    the global status code for the ACK message.
+     * @param queryResponse   the response data for the query
+     * @param globalException the global exception message (in plain, english text) if any errors happened.
+     * @return The created {@link MessageData11QueryRequestAck} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
     public static MessageData11QueryRequestAck createMessageData11QueryRequestAck(
             AckStatus globalStatus,
             QueryResponseHolder queryResponse,

@@ -12,6 +12,10 @@ import hu.arh.gds.message.data.MessageData5AttachmentRequestAck;
 import hu.arh.gds.message.data.MessageData6AttachmentResponse;
 import hu.arh.gds.message.header.MessageHeaderBase;
 
+/**
+ * Represents the result for an Attachment Request.
+ * Since the reply can arrive in either a type 5 or a type 6 message, the data part is an either object.
+ */
 public class AttachmentResult extends GDSMessage<Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> {
 
     public AttachmentResult(Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> response) {
