@@ -929,7 +929,7 @@ If you need to, multiple threads can use the same client, as the blocking in the
 
 ### Client creation
 
-The synchronous client uses a builder with the same methods as the async client (excluding the `setListener(..)`, as it cannot defined here), but its name is `SyncGDSClientBuilder`. It can be invoked with the static `getBuilder()` method as well in the `SyncGDSClient`.
+The synchronous client uses a builder with the same methods as the async client (excluding the `withListener(..)`, as it cannot defined here), but its name is `SyncGDSClientBuilder`. It can be invoked with the static `getBuilder()` method as well in the `SyncGDSClient`.
 
 ```java
 final String URI = "ws://127.0.0.1:8888/gate";
@@ -957,7 +957,6 @@ The restrictions for these values are the same as specified in the async client,
 - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
 - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
 - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arh.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
- - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
 - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
 ### Methods
