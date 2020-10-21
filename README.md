@@ -1092,7 +1092,7 @@ import hu.arh.gds.message.util.MessageManager;
 public class SimpleExample {
     public static void main(String[] args) throws Throwable {
         SyncGDSClient syncGDSClient = SyncGDSClient.getBuilder()
-                .withURI("ws://127.0.0.1/gate")
+                .withURI("ws://127.0.0.1:8888/gate")
                 .withUserName("user")
                 .withTimeout(10_000L)
                 .build();
