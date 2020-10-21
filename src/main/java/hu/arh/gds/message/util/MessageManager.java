@@ -641,7 +641,7 @@ public class MessageManager {
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
      */
-    public static MessageData9EventDocumentAck createMessageMessageData9EventDocumentAck(
+    public static MessageData9EventDocumentAck createMessageData9EventDocumentAck(
             AckStatus globalStatus,
             List<EventDocumentResultHolder> result,
             String globalException) throws IOException, ValidationException {

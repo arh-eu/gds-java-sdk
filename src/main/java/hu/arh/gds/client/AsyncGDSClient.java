@@ -875,7 +875,7 @@ public final class AsyncGDSClient {
     public ChannelFuture sendEventDocumentAck9(AckStatus globalStatus,
                                                List<EventDocumentResultHolder> result,
                                                String globalException) throws IOException, ValidationException {
-        return sendMessage(MessageManager.createMessageMessageData9EventDocumentAck(globalStatus, result, globalException));
+        return sendMessage(MessageManager.createMessageData9EventDocumentAck(globalStatus, result, globalException));
     }
 
     /**
