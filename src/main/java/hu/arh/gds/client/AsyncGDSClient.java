@@ -349,7 +349,8 @@ public final class AsyncGDSClient {
                         if (getState() != ConnectionState.FAILED || getState() != ConnectionState.DISCONNECTED) {
                             state.set(ConnectionState.FAILED);
                             listener.onConnectionFailure(client.channel,
-                                    Either.fromLeft(new GDSTimeoutException("The GDS did not respond within " + timeout + "ms!")));
+                                    Either.fromLeft(new GDSTimeoutException("The GDS did not respond within " + timeout
+                                            + "ms! (Is the URI correct?)")));
                         }
                     }
                 } catch (InterruptedException ie) {

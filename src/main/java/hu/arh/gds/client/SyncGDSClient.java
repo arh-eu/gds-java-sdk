@@ -294,6 +294,8 @@ public final class SyncGDSClient {
             asyncGDSClient.connect();
             try {
                 if (!connectLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                    connectionFailureReason = Either.fromLeft(new GDSTimeoutException("The GDS did not reply within "
+                    + timeout + "ms! (Is the URI correct?)"));
                     return false;
                 }
                 return (asyncGDSClient.getState() == ConnectionState.LOGGED_IN);
