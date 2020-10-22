@@ -588,7 +588,7 @@ for (int pixel : binaryData) {
 }
 byte[] byteArray = baos.toByteArray();
 
-MessageData data = MessageManager.createMessageData2Event(
+MessageData2Event data = MessageManager.createMessageData2Event(
         new ArrayList<String>() {{
             add("INSERT INTO multi_event (id, plate, speed, images) VALUES('" + eventId + "', 'ABC123', 90, array('" + attachmentId +"'))");
             add("INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('" + attachmentId + "', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
@@ -602,7 +602,7 @@ client.sendEvent2(data);
 
 #### UPDATE
 ```java
-MessageData data = MessageManager.createMessageData2Event(
+MessageData2Event data = MessageManager.createMessageData2Event(
         new ArrayList<String>() {{
             add("UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'");
         }},
@@ -615,7 +615,7 @@ client.sendEvent2(data);
 
 #### MERGE
 ```java
-MessageData data = MessageManager.createMessageData2Event(
+MessageData2Event data = MessageManager.createMessageData2Event(
         new ArrayList<String>() {{
             add("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
                     "ON (multi_event.id = I.id) " +
@@ -1059,7 +1059,7 @@ The `isAttachmentRequestAck()` and the `isAttachmentResponse()` methods will ret
 
 
 ```java
-AttachmentResult result = syncGDSClient.sendAttachmentRequest4(MessageManager.createMessageData4AttachmentRequest("SELECT * FROM attachments"));
+AttachmentResult result = client.sendAttachmentRequest4(MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400"));
 
 if (result.isAttachmentRequestAck()) {
     if (result.getDataAsAttachmentRequestAck().getBinary() == null) {
