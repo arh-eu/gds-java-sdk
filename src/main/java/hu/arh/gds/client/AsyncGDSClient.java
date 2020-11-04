@@ -617,7 +617,7 @@ public final class AsyncGDSClient {
      * @throws IOException         if any of the fields contain illegal value(type)s
      * @throws ValidationException if the contents of message violate the class invariant
      */
-    public ChannelFuture createMessageData5AttachmentRequestAck(
+    public ChannelFuture sendAttachmentRequestAck5(
             AckStatus globalStatus,
             AttachmentRequestAckDataHolder data,
             String globalException) throws IOException, ValidationException {
