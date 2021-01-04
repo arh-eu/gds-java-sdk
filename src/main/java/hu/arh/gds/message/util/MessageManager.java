@@ -428,6 +428,39 @@ public class MessageManager {
                 password);
     }
 
+
+    /**
+     * Creates a connection message with the given values.
+     * Validates the contents, throwing any exception on failure
+     *
+     * @param serveOnTheSameConnection Whether the replies for the requests should be sent on this connection
+     * @param clusterName              The name of the cluster the GDS belongs to.
+     * @param protocolVersionNumber    The protocol used for the communication. The value is not yet checked.
+     * @param fragmentationSupported   Whether the client supports fragmentation on the messages
+     * @param fragmentTransmissionUnit If {@code fragmentationSupported} is true, indicates the maximal chunk size of
+     *                                 the fragmented messages the client can accept.
+     * @param password                 The password used for password authentication.
+     * @return The created {@link MessageData0Connection} instance
+     * @throws IOException         if any of the fields contain illegal value(type)s
+     * @throws ValidationException if the contents of message violate the class invariant
+     */
+    public static MessageData0Connection createMessageData0Connection(
+            Boolean serveOnTheSameConnection,
+            String clusterName,
+            Integer protocolVersionNumber,
+            Boolean fragmentationSupported,
+            Long fragmentTransmissionUnit,
+            String password) throws IOException, ValidationException {
+
+        return new MessageData0ConnectionImpl(false,
+                serveOnTheSameConnection,
+                clusterName,
+                protocolVersionNumber,
+                fragmentationSupported,
+                fragmentTransmissionUnit,
+                password);
+    }
+
     /**
      * Creates a connection ACK message. This should be only used if the client is a GDS instance that can be connected to.
      *

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class QueryResponseHolderImpl implements QueryResponseHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 6;
+    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 7;
     private Long numberOfHits;
     private Long numberOfFilteredHits;
     private Boolean morePage;
@@ -23,6 +23,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
     private QueryContextHolder queryContextHolder;
     private List<FieldHolder> fieldHolders;
     private List<List<Value>> hits;
+    private Long numberOfTotalHits;
 
     public QueryResponseHolderImpl(Long numberOfHits,
                                    Long numberOfFilteredHits,
@@ -30,37 +31,23 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                                    QueryContextHolder queryContextHolder,
                                    List<FieldHolder> fieldHolders,
                                    List<List<Value>> hits) {
+        this(numberOfHits, numberOfFilteredHits, morePage, queryContextHolder, fieldHolders, hits, null);
+    }
+
+    public QueryResponseHolderImpl(Long numberOfHits,
+                                   Long numberOfFilteredHits,
+                                   Boolean morePage,
+                                   QueryContextHolder queryContextHolder,
+                                   List<FieldHolder> fieldHolders,
+                                   List<List<Value>> hits,
+                                   Long numberOfTotalHits) {
         this.numberOfHits = numberOfHits;
         this.numberOfFilteredHits = numberOfFilteredHits;
         this.morePage = morePage;
         this.queryContextHolder = queryContextHolder;
         this.fieldHolders = fieldHolders;
         this.hits = hits;
-        checkContent(this);
-    }
-
-    public QueryResponseHolderImpl(Long numberOfHits,
-                                   Long numberOfFilteredHits,
-                                   Boolean morePage,
-                                   QueryContextHolderSerializable queryContextHolderSerializable,
-                                   List<FieldHolder> fieldHolders,
-                                   List<List<Value>> hits) throws ValidationException {
-        this.queryContextHolderSerializable = queryContextHolderSerializable;
-        List<Value> fieldValues = new ArrayList<>();
-        for (Object value : queryContextHolderSerializable.getFieldValues()) {
-            try {
-                fieldValues.add(Converters.convertToMessagePackValue(value));
-            } catch (Exception e) {
-                throw new ValidationException(e.getMessage() + ". " + value);
-            }
-        }
-        this.queryContextHolder = new QueryContextHolderImpl(queryContextHolderSerializable.getScrollId(),
-                queryContextHolderSerializable.getQuery(), queryContextHolderSerializable.getDeliveredNumberOfHits(),
-                queryContextHolderSerializable.getQueryStartTime(), queryContextHolderSerializable.getConsistencyType(),
-                queryContextHolderSerializable.getLastBucketId(),
-                new GDSHolderImpl(queryContextHolderSerializable.getClusterName(), queryContextHolderSerializable.getGDSNodeName()),
-                fieldValues, queryContextHolderSerializable.getPartitionNames());
-
+        this.numberOfTotalHits = numberOfTotalHits;
         checkContent(this);
     }
 
@@ -125,6 +112,10 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         return NUMBER_OF_PUBLIC_ELEMENTS;
     }
 
+    public Long getNumberOfTotalHits() {
+        return numberOfTotalHits;
+    }
+
     @Override
     public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
@@ -134,13 +125,14 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         WriterHelper.packPackable(packer, this.queryContextHolder);
         WriterHelper.packPackables(packer, this.fieldHolders);
         WriterHelper.packValueListListValues(packer, this.hits);
+        WriterHelper.packValue(packer, this.numberOfTotalHits);
     }
 
     public static QueryResponseHolderImpl unpackContent(MessageUnpacker unpacker) throws IOException, ReadException {
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "query ack data",
                 QueryResponseHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "query ack data",
+            int headerSize = ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS - 1, "query ack data",
                     QueryResponseHolderImpl.class.getSimpleName());
 
             Long numberOfHitsTemp = ReaderHelper.unpackLongValue(unpacker, "number of hits",
@@ -181,13 +173,22 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                     "fieldvalue",
                     QueryResponseHolderImpl.class.getSimpleName());
 
+            Long totalHits = null;
+            if (headerSize >= NUMBER_OF_PUBLIC_ELEMENTS) {
+                totalHits = ReaderHelper.unpackLongValue(unpacker, "numberOfTotalHits", QueryResponseHolderImpl.class.getSimpleName());
+                for (int ii = NUMBER_OF_PUBLIC_ELEMENTS + 1; ii < headerSize; ++ii) {
+                    unpacker.unpackValue();
+                }
+            }
+
+
             QueryResponseHolderImpl queryResponseTemp = new QueryResponseHolderImpl(numberOfHitsTemp,
                     numberOfFilteredHits,
                     morePage,
                     queryContextHolderTemp,
                     fieldHoldersTemp,
-                    hitsTemp);
-
+                    hitsTemp,
+                    totalHits);
             checkContent(queryResponseTemp);
             return queryResponseTemp;
         } else {
@@ -231,6 +232,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                 ", queryContextHolder=" + queryContextHolder +
                 ", fieldHolders=" + fieldHolders +
                 ", hits=" + hits +
+                ", numberOfTotalHits=" + numberOfTotalHits +
                 '}';
     }
 }

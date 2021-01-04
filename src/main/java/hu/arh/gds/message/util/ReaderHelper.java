@@ -27,7 +27,7 @@ public class ReaderHelper {
         if (expected == null) {
             return headerSize;
         } else {
-            if (headerSize != expected) {
+            if (headerSize < expected) {
                 throw new ReadException(
                         String.format("%s: Array header size (%s) does not match expected value (%s). Array name: %s.",
                                 className,
@@ -49,7 +49,7 @@ public class ReaderHelper {
         if (expected == null) {
             return headerSize;
         } else {
-            if (headerSize != expected) {
+            if (headerSize < expected) {
                 throw new ReadException(
                         String.format("%s: Map header size (%s) does not match expected value (%s). Map name: %s",
                                 className,
