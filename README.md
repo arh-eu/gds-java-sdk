@@ -28,7 +28,7 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 JitPack gives you a flexible, virtual maven repository which can work with github projects.
 
-The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.3` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.4` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -37,7 +37,7 @@ If you want to download this and install it manually in your local repository wi
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.4-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -299,7 +299,7 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 
 First, we create the client object. To make things easier, a `AsyncGDSClientBuilder` class is available as a static class nested in the `AsyncGDSClient` class, making the creation of the client easier.
 
-This (and the listener interface) can be found in the `hu.arh.gds.client` package.
+This (and the listener interface) can be found in the `hu.arheu.gds.client` package.
  
  The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you dont have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
    - `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
@@ -333,7 +333,7 @@ public AsyncGDSClient(
   - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
   - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
   - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client drops the connection and login request and raises an exception if it does not arrive (or if the GDS is unavailable).
-  - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arh.gds.client.AsyncGDSClient::methodName | Some error message, that will be in the log.`
+  - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.AsyncGDSClient::methodName | Some error message, that will be in the log.`
   - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
   - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
@@ -553,7 +553,7 @@ In the following, take a look at what sending and receiving messages look like f
 
 You might want to read the hex part from the [EVENT command](#event-command) to understand why and how we use these in the attachments.
 
-The hex values for a string can be retrieved via the `hu.arh.gds.message.util.Utils` class, by a `static` method with a signature of `String stringToUTF8Hex(String)`.
+The hex values for a string can be retrieved via the `hu.arheu.gds.message.util.Utils` class, by a `static` method with a signature of `String stringToUTF8Hex(String)`.
 
 #### INSERT
 ```java
@@ -815,15 +815,15 @@ try{
 ### Async client example
 This is a simple class demonstrating how can you send queries to the GDS using the async client.
 ```java
-import hu.arh.gds.client.AsyncGDSClient;
-import hu.arh.gds.client.Either;
-import hu.arh.gds.client.GDSMessageListener;
-import hu.arh.gds.client.Pair;
-import hu.arh.gds.message.data.ConsistencyType;
-import hu.arh.gds.message.data.MessageData11QueryRequestAck;
-import hu.arh.gds.message.data.MessageData1ConnectionAck;
-import hu.arh.gds.message.header.MessageHeaderBase;
-import hu.arh.gds.message.util.ValidationException;
+import hu.arheu.gds.client.AsyncGDSClient;
+import hu.arheu.gds.client.Either;
+import hu.arheu.gds.client.GDSMessageListener;
+import hu.arheu.gds.client.Pair;
+import hu.arheu.gds.message.data.ConsistencyType;
+import hu.arheu.gds.message.data.MessageData11QueryRequestAck;
+import hu.arheu.gds.message.data.MessageData1ConnectionAck;
+import hu.arheu.gds.message.header.MessageHeaderBase;
+import hu.arheu.gds.message.util.ValidationException;
 import io.netty.channel.Channel;
 
 import java.io.IOException;
@@ -956,7 +956,7 @@ The restrictions for these values are the same as specified in the async client,
 - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
 - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
 - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
-- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arh.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
+- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
 - `sslCtx` - the SSLContext used to setup the TLS for the client. If TLS is not used, the value should be set to `null`.
   The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
 ### Methods
@@ -972,7 +972,7 @@ Since the synchronous client uses a request-reply scheme, not all type of messag
 
 The parameters (and overloads) for these messages are the same as specified on the async client.
 
-The returning types inherit from the same class, the `GDSMessage` (found in the `hu.arh.gds.message.clienttypes` package).
+The returning types inherit from the same class, the `GDSMessage` (found in the `hu.arheu.gds.message.clienttypes` package).
 
 This class has two methods:
  - `MessageHeaderBase getHeader();` which returns the header from the message, 
@@ -1030,7 +1030,7 @@ client.close();
 ### Sending (sync) messages 
 
 
-As mentioned, these methods use return values. To make life easier, special classes were introduced (found in the `hu.arh.gds.message.clienttypes` package) with the received `MessageHeaderBase` and proper subclass of the `MessageData`.
+As mentioned, these methods use return values. To make life easier, special classes were introduced (found in the `hu.arheu.gds.message.clienttypes` package) with the received `MessageHeaderBase` and proper subclass of the `MessageData`.
 
 The header can be accessed by the `getHeader()` and the data part with the `getData()` getter method (as explained above).
 
@@ -1083,10 +1083,10 @@ A full example of a synchronous client can be seen below.
 You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator) if you have no access to a GDS instance.
 
 ```java
-import hu.arh.gds.client.SyncGDSClient;
-import hu.arh.gds.message.clienttypes.QueryResponse;
-import hu.arh.gds.message.data.ConsistencyType;
-import hu.arh.gds.message.util.MessageManager;
+import hu.arheu.gds.client.SyncGDSClient;
+import hu.arheu.gds.message.clienttypes.QueryResponse;
+import hu.arheu.gds.message.data.ConsistencyType;
+import hu.arheu.gds.message.util.MessageManager;
 
 public class SimpleExample {
     public static void main(String[] args) throws Throwable {
