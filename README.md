@@ -28,7 +28,7 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 JitPack gives you a flexible, virtual maven repository which can work with github projects.
 
-The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.4` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.4.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -37,7 +37,7 @@ If you want to download this and install it manually in your local repository wi
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -304,6 +304,9 @@ This (and the listener interface) can be found in the `hu.arheu.gds.client` pack
  The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you dont have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
    - `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
    - `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
+   - `withServeOnTheSameConnection(boolean value)` - sets whether replies should be sent on the same connection as this.
+   - `withNioEventLoopGroup(NioEventLoopGroup nioEventLoopGroup)` - sets the NioEventLoopGroup to be used.
+   - `withShutdownByClose(boolean value)` - sets whether the Nio event loop should be shut down on close.
    - `withURI(String URI)` - sets the GDS URI.
    - `withUserName(String userName)` - sets the username used in the GDS communication.
    - `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
@@ -316,13 +319,16 @@ This (and the listener interface) can be found in the `hu.arheu.gds.client` pack
  If you want to avoid using the builder, you can invoke the constructor directly, which has the following signature:
  ```java
 public AsyncGDSClient(
-    String URI,
-    String userName,
-    String userPassword,
-    long timeout,
-    Logger log,
+    String uri,
+     String userName, 
+     String userPassword, 
+     long timeout, 
+     Logger log,
     GDSMessageListener listener,
-    SslContext sslCtx) {
+    SslContext sslCtx,
+    NioEventLoopGroup eventLoopGroup,
+    boolean shutdownByClose,
+boolean serveOnTheSameConnection) {
         //...
     }
 ```
