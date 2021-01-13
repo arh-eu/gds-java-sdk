@@ -62,6 +62,7 @@ public final class AsyncGDSClient {
         private GDSMessageListener listener;
         private Logger logger;
         private boolean shutdownByClose;
+        private boolean serveOnTheSameConnection;
         private SslContext sslContext;
         private String URI;
         private String userName;
@@ -70,6 +71,7 @@ public final class AsyncGDSClient {
 
         private AsyncGDSClientBuilder() {
             shutdownByClose = true;
+            serveOnTheSameConnection = true;
             timeout = 3000L;
         }
 
@@ -111,6 +113,20 @@ public final class AsyncGDSClient {
 
         public AsyncGDSClientBuilder withShutdownByClose(boolean shutdownByClose) {
             this.shutdownByClose = shutdownByClose;
+            return this;
+        }
+
+        /**
+         * Sets whether the GDS should send its replies on the same connection as the original login was sent on.
+         * This can make attachment requests be unable to be served if set to true, as if the connection is dropped
+         * before the GDS can retrieve the binary it cannot send it later.
+         *
+         * @param serveOnTheSameConnection whether the replies should be served on the same connection as this.
+         * @return this builder
+         */
+
+        public AsyncGDSClientBuilder withServeOnTheSameConnection(boolean serveOnTheSameConnection) {
+            this.serveOnTheSameConnection = serveOnTheSameConnection;
             return this;
         }
 
@@ -192,7 +208,7 @@ public final class AsyncGDSClient {
         }
 
         public AsyncGDSClient build() {
-            return new AsyncGDSClient(URI, userName, userPassword, timeout, logger, listener, sslContext, nioEventLoopGroup, shutdownByClose);
+            return new AsyncGDSClient(URI, userName, userPassword, timeout, logger, listener, sslContext, nioEventLoopGroup, shutdownByClose, serveOnTheSameConnection);
         }
     }
 
@@ -213,6 +229,7 @@ public final class AsyncGDSClient {
     private final NioEventLoopGroup eventLoopGroup;
     private final GDSMessageListener listener;
     private final Logger log;
+    private final boolean serveOnTheSameConnection;
     private final boolean shutdownByClose;
     private final SslContext sslCtx;
     private final URI uri;
@@ -225,21 +242,23 @@ public final class AsyncGDSClient {
      * the {@code shutDownByClose} parameter is only taken into account if the EventLoopGroup is set, otherwise the
      * value will always be used as {@code true} regardless of the one specified here.
      *
-     * @param uri             The URI of the GDS instance the client will connect to
-     * @param userName        The username used for the login message
-     * @param userPassword    The password used for the password authentication
-     * @param timeout         The timeout (in milliseconds) used to indicate when the connection should be considered as failed
-     *                        if not responded within the given time frame
-     * @param log             A {@link Logger} instance for error messages. If null, a default will be created with
-     *                        only {@link Level#SEVERE} logs.
-     * @param listener        The listener which handles the incoming messages (callback on receiving anything). Cannot be null.
-     * @param eventLoopGroup  the NioEventLoopGroup to be used by the WebSocket client
-     * @param shutdownByClose whether the EventLoopGroup should be shut down when close() is called.
+     * @param uri                      The URI of the GDS instance the client will connect to
+     * @param userName                 The username used for the login message
+     * @param userPassword             The password used for the password authentication
+     * @param timeout                  The timeout (in milliseconds) used to indicate when the connection should be considered as failed
+     *                                 if not responded within the given time frame
+     * @param log                      A {@link Logger} instance for error messages. If null, a default will be created with
+     *                                 only {@link Level#SEVERE} logs.
+     * @param listener                 The listener which handles the incoming messages (callback on receiving anything). Cannot be null.
+     * @param eventLoopGroup           the NioEventLoopGroup to be used by the WebSocket client
+     * @param shutdownByClose          whether the EventLoopGroup should be shut down when close() is called.
+     * @param serveOnTheSameConnection whether the replies should be sent on the same connection as this.
      * @throws IllegalArgumentException if the URI or the username is null or empty (or the URI is invalid)
      *                                  or the timeout is less, than {@code 1}.
      */
     public AsyncGDSClient(String uri, String userName, String userPassword, long timeout, Logger log,
-                          GDSMessageListener listener, SslContext sslCtx, NioEventLoopGroup eventLoopGroup, boolean shutdownByClose) {
+                          GDSMessageListener listener, SslContext sslCtx, NioEventLoopGroup eventLoopGroup,
+                          boolean shutdownByClose, boolean serveOnTheSameConnection) {
 
         Objects.requireNonNull(uri, "The URI for the GDS cannot be null!");
         Objects.requireNonNull(userName, "The username for the GDS cannot be null!");
@@ -254,6 +273,7 @@ public final class AsyncGDSClient {
         }
 
         this.listener = listener;
+        this.serveOnTheSameConnection = serveOnTheSameConnection;
 
         if (eventLoopGroup == null) {
             this.eventLoopGroup = new NioEventLoopGroup();
@@ -1364,7 +1384,7 @@ public final class AsyncGDSClient {
 
                     MessageHeader header = MessageManager.createMessageHeaderBase(userName, MessageDataType.CONNECTION_0);
                     //Current GDS version is 5.1
-                    MessageData data = MessageManager.createMessageData0Connection(true, (5 << 16 | 1), false, null, userPassword);
+                    MessageData data = MessageManager.createMessageData0Connection(serveOnTheSameConnection, (5 << 16 | 1), false, null, userPassword);
                     log.config("Sending login message..");
                     byte[] message = MessageManager.createMessage(header, data);
                     ch.writeAndFlush(new BinaryWebSocketFrame(Unpooled.wrappedBuffer(message)));

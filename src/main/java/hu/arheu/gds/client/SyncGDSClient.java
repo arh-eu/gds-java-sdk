@@ -249,7 +249,7 @@ public final class SyncGDSClient {
             this.log = log;
         }
 
-        this.asyncGDSClient = new AsyncGDSClient(uri, userName, userPassword, timeout, this.log, listener, sslContext, null, true);
+        this.asyncGDSClient = new AsyncGDSClient(uri, userName, userPassword, timeout, this.log, listener, sslContext, null, true, true);
         this.userName = userName;
         this.timeout = timeout;
 
