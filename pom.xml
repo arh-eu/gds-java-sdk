@@ -6,7 +6,7 @@
 
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.5.0</version>
 
     <dependencies>
         <dependency>

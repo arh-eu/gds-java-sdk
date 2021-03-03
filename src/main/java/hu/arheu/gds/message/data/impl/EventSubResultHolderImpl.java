@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class EventSubResultHolderImpl implements EventSubResultHolder {
-    private AckStatus subStatus;
-    private String id;
-    private String tableName;
-    private Boolean created;
-    private Long version;
-    private List<Value> recordValues;
+    private final AckStatus subStatus;
+    private final String id;
+    private final String tableName;
+    private final Boolean created;
+    private final String version;
+    private final List<Value> recordValues;
 
     public EventSubResultHolderImpl(AckStatus subStatus,
                                     String id,
                                     String tableName,
                                     Boolean created,
-                                    Long version,
+                                    String version,
                                     List<Value> recordValues) {
         this.subStatus = subStatus;
         this.id = id;
@@ -60,7 +60,7 @@ public class EventSubResultHolderImpl implements EventSubResultHolder {
     }
 
     @Override
-    public Long getVersion() {
+    public String getVersion() {
         return this.version;
     }
 
@@ -99,7 +99,7 @@ public class EventSubResultHolderImpl implements EventSubResultHolder {
             Boolean createdTemp = ReaderHelper.unpackBooleanValue(unpacker, "created",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            Long versionTemp = ReaderHelper.unpackLongValue(unpacker, "version",
+            String versionTemp = ReaderHelper.unpackStringValue(unpacker, "version",
                     EventSubResultHolderImpl.class.getSimpleName());
 
             List<Value> recordValuesTemp = ReaderHelper.unpackValueValues(unpacker,

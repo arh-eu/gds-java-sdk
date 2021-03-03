@@ -272,6 +272,7 @@ public enum FieldValueType {
                 //also checks for null
                 return ImmutableNilValueImpl.get();
             }
+            @SuppressWarnings("unchecked")
             Map<String, String> map = (Map<String, String>) o;
             Value[] data = new Value[map.size() * 2];
             int i = 0;
@@ -291,7 +292,7 @@ public enum FieldValueType {
     };
 
 
-    private int value;
+    private final int value;
     private static final Map<Integer, FieldValueType> map = new HashMap<>();
 
     FieldValueType(int value) {
@@ -303,9 +304,9 @@ public enum FieldValueType {
             map.put(fieldValueType.value, fieldValueType);
         }
     }
-
     private static Object[] objectToArray(Object o) {
         if (o instanceof Collection) {
+            //noinspection rawtypes
             return ((Collection) o).toArray();
         } else {
             return (Object[]) o;

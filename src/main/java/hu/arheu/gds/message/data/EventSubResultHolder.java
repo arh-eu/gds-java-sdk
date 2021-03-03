@@ -11,6 +11,6 @@ public interface EventSubResultHolder extends Packable {
     String getId();
     String getTableName();
     Boolean getCreated();
-    Long getVersion();
+    String getVersion();
     List<Value> getRecordValues();
 }

@@ -24,8 +24,8 @@ public enum MessageDataType {
     ROUTING_TABLE_UPDATE_13(13),
     TRAFFIC_STATISTICS_14(14);
 
-    private int value;
-    private static final Map map = new HashMap<>();
+    private final int value;
+    private static final Map<Integer, MessageDataType> map = new HashMap<>();
 
     MessageDataType(int value) {
         this.value = value;
@@ -42,6 +42,6 @@ public enum MessageDataType {
     }
 
     public static MessageDataType valueOf(Integer value) {
-        return (MessageDataType) map.get(value);
+        return map.get(value);
     }
 }
