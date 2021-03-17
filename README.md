@@ -644,7 +644,7 @@ GDSMessageListener listener = new GDSMessageListener() {
     // ... rest of the overrides as you want 
     
     @Override
-    void onEventAck3(MessageHeaderBase header, MessageData3EventAck response) {
+    public void onEventAck3(MessageHeaderBase header, MessageData3EventAck response) {
             System.out.println("Event ACK message received with '" + response.getGlobalStatus() + "' status code");
     }  
 };
@@ -755,7 +755,7 @@ GDSMessageListener listener = new GDSMessageListener() {
     // ... rest of the overrides as you want
     
     @Override
-    void onAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response) {
+    public void onAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response) {
          //... same as above.
      }
      
