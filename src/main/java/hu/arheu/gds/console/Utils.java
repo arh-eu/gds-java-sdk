@@ -42,7 +42,7 @@ public class Utils {
         JsonSerializer<Value> valueJsonSerializer = (value, type, jsonSerializationContext) ->
                 JsonParser.parseString(value.toJson());
         JsonSerializer<byte[]> binaryJsonSerializer = (value, type, jsonSerializationContext) ->
-                JsonParser.parseString(value == null ? "null" : value.length + " bytes");
+                JsonParser.parseString(value == null ? "null" : "'" + value.length + " bytes'");
 
         gsonBuilder.registerTypeAdapter(Value.class, valueJsonSerializer);
         gsonBuilder.registerTypeAdapter(byte[].class, binaryJsonSerializer);

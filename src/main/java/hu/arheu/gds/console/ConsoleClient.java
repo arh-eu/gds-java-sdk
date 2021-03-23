@@ -103,9 +103,10 @@ public class ConsoleClient implements Runnable {
             if (attachmentResult.isAttachmentRequestAck()) {
                 MessageData5AttachmentRequestAck attachmentRequestAck = attachmentResult.getDataAsAttachmentRequestAck();
                 exportResult(header, attachmentRequestAck);
-                Utils.saveAttachment(messageId, attachmentRequestAck.getBinary(),
-                        attachmentRequestAck.getData().getResult().getMeta());
-
+                if (attachmentRequestAck.getGlobalStatus().getValue() == 200) {
+                    Utils.saveAttachment(messageId, attachmentRequestAck.getBinary(),
+                            attachmentRequestAck.getData().getResult().getMeta());
+                }
             } else {
                 MessageData6AttachmentResponse attachmentResponse = attachmentResult.getDataAsAttachmentResponse();
                 exportResult(header, attachmentResponse);
