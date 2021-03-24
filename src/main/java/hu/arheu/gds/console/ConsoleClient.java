@@ -13,6 +13,7 @@ import hu.arheu.gds.message.clienttypes.EventResponse;
 import hu.arheu.gds.message.clienttypes.QueryResponse;
 import hu.arheu.gds.message.data.*;
 import hu.arheu.gds.message.data.impl.AckStatus;
+import hu.arheu.gds.message.data.impl.AttachmentResultHolderImpl;
 import hu.arheu.gds.message.header.MessageHeaderBase;
 import hu.arheu.gds.message.util.MessageManager;
 import hu.arheu.gds.message.util.ValidationException;
@@ -104,14 +105,14 @@ public class ConsoleClient implements Runnable {
                 MessageData5AttachmentRequestAck attachmentRequestAck = attachmentResult.getDataAsAttachmentRequestAck();
                 exportResult(header, attachmentRequestAck);
                 if (attachmentRequestAck.getGlobalStatus().getValue() == 200) {
-                    Utils.saveAttachment(messageId, attachmentRequestAck.getBinary(),
-                            attachmentRequestAck.getData().getResult().getMeta());
+                    AttachmentResultHolder result = attachmentRequestAck.getData().getResult();
+                    Utils.saveAttachment(messageId, result.getAttachment(), result.getMeta());
                 }
             } else {
                 MessageData6AttachmentResponse attachmentResponse = attachmentResult.getDataAsAttachmentResponse();
                 exportResult(header, attachmentResponse);
-                Utils.saveAttachment(messageId, attachmentResponse.getBinary(),
-                        attachmentResponse.getResult().getMeta());
+                AttachmentResultHolder result = attachmentResponse.getResult();
+                Utils.saveAttachment(messageId, result.getAttachment(), result.getMeta());
             }
         } catch (IllegalArgumentException | IOException | ValidationException iae) {
             logger.severe(iae.getMessage());
