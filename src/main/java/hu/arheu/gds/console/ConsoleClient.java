@@ -182,7 +182,7 @@ public class ConsoleClient implements Runnable {
                 if (syncGDSClient.hasConnectionFailed()) {
                     System.err.println("Could not connect to the GDS! Reason: " + syncGDSClient.getConnectionError());
                 } else if (syncGDSClient.hasLoginFailed()) {
-                    System.err.println("Could not log in to the GDS! Reason: " + syncGDSClient.getLoginResponse().getSecond().getGlobalException());
+                    System.err.println("Could not log in to the GDS! Reason: " + syncGDSClient.getLoginFailureReason().getSecond().getGlobalException());
                 }
             }
         } finally {
