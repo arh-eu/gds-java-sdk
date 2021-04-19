@@ -106,7 +106,14 @@ public class Utils {
     public static void saveAttachment(String messageId, byte[] attachment, String meta) throws IOException {
         createAttachmentsFolder();
         String extension;
-        extension = mimeExtensions.getOrDefault(meta, "unknown");
+//        extension = mimeExtensions.getOrDefault(meta, "unknown");
+        extension = "unknown";
+        for (String entries : mimeExtensions.keySet()) {
+            if (meta != null && meta.contains(entries)) {
+                extension = mimeExtensions.get(entries);
+                break;
+            }
+        }
         OutputStream os = new FileOutputStream(ATTACHMENTS_FOLDER_NAME + "/" + messageId + "-attachment." + extension);
         os.write(attachment);
         os.close();
