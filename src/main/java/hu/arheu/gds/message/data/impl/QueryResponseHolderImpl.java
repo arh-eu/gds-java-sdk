@@ -13,17 +13,18 @@ import org.msgpack.value.ValueType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class QueryResponseHolderImpl implements QueryResponseHolder {
     private static final int NUMBER_OF_PUBLIC_ELEMENTS = 7;
-    private Long numberOfHits;
-    private Long numberOfFilteredHits;
-    private Boolean morePage;
+    private final Long numberOfHits;
+    private final Long numberOfFilteredHits;
+    private final Boolean morePage;
     private QueryContextHolderSerializable queryContextHolderSerializable;
-    private QueryContextHolder queryContextHolder;
-    private List<FieldHolder> fieldHolders;
-    private List<List<Value>> hits;
-    private Long numberOfTotalHits;
+    private final QueryContextHolder queryContextHolder;
+    private final List<FieldHolder> fieldHolders;
+    private final List<List<Value>> hits;
+    private final Long numberOfTotalHits;
 
     public QueryResponseHolderImpl(Long numberOfHits,
                                    Long numberOfFilteredHits,
@@ -89,7 +90,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
     }
 
     @Override
-    public QueryContextHolderSerializable getQueryContextHolderSerializable() throws Exception {
+    public QueryContextHolderSerializable getQueryContextHolderSerializable() {
         if (queryContextHolderSerializable == null) {
             queryContextHolderSerializable = Converters
                     .getQueryContextDescriptorSerializable(queryContextHolder);
@@ -112,6 +113,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         return NUMBER_OF_PUBLIC_ELEMENTS;
     }
 
+    @Override
     public Long getNumberOfTotalHits() {
         return numberOfTotalHits;
     }
@@ -202,25 +204,12 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         QueryResponseHolderImpl that = (QueryResponseHolderImpl) o;
-        if (numberOfHits != null ? !numberOfHits.equals(that.numberOfHits) : that.numberOfHits != null) return false;
-        if (numberOfFilteredHits != null ? !numberOfFilteredHits.equals(that.numberOfFilteredHits) : that.numberOfFilteredHits != null)
-            return false;
-        if (morePage != null ? !morePage.equals(that.morePage) : that.morePage != null) return false;
-        if (queryContextHolder != null ? !queryContextHolder.equals(that.queryContextHolder) : that.queryContextHolder != null)
-            return false;
-        if (fieldHolders != null ? !fieldHolders.equals(that.fieldHolders) : that.fieldHolders != null) return false;
-        return hits != null ? hits.equals(that.hits) : that.hits == null;
+        return Objects.equals(numberOfHits, that.numberOfHits) && Objects.equals(numberOfFilteredHits, that.numberOfFilteredHits) && Objects.equals(morePage, that.morePage) && Objects.equals(queryContextHolderSerializable, that.queryContextHolderSerializable) && Objects.equals(queryContextHolder, that.queryContextHolder) && Objects.equals(fieldHolders, that.fieldHolders) && Objects.equals(hits, that.hits) && Objects.equals(numberOfTotalHits, that.numberOfTotalHits);
     }
 
     @Override
     public int hashCode() {
-        int result = numberOfHits != null ? numberOfHits.hashCode() : 0;
-        result = 31 * result + (numberOfFilteredHits != null ? numberOfFilteredHits.hashCode() : 0);
-        result = 31 * result + (morePage != null ? morePage.hashCode() : 0);
-        result = 31 * result + (queryContextHolder != null ? queryContextHolder.hashCode() : 0);
-        result = 31 * result + (fieldHolders != null ? fieldHolders.hashCode() : 0);
-        result = 31 * result + (hits != null ? hits.hashCode() : 0);
-        return result;
+        return Objects.hash(numberOfHits, numberOfFilteredHits, morePage, queryContextHolderSerializable, queryContextHolder, fieldHolders, hits, numberOfTotalHits);
     }
 
     @Override

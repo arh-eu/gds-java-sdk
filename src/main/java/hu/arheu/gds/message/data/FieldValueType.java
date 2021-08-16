@@ -289,6 +289,50 @@ public enum FieldValueType {
         public FieldValueType getBaseType() {
             return TEXT;
         }
+    },
+    GEO_DATA(15) {
+        @Override
+        public Value valueFromObject(Object o) {
+            return KEYWORD.valueFromObject(o);
+        }
+
+        @Override
+        public FieldValueType getBaseType() {
+            return this;
+        }
+    },
+    GEO_DATA_ARRAY(16) {
+        @Override
+        public Value valueFromObject(Object o) {
+            return KEYWORD_ARRAY.valueFromObject(o);
+        }
+
+        @Override
+        public FieldValueType getBaseType() {
+            return GEO_DATA;
+        }
+    },
+    DATE_TIME(17) {
+        @Override
+        public Value valueFromObject(Object o) {
+            return KEYWORD.valueFromObject(o);
+        }
+
+        @Override
+        public FieldValueType getBaseType() {
+            return this;
+        }
+    },
+    DATE_TIME_ARRAY(18) {
+        @Override
+        public Value valueFromObject(Object o) {
+            return KEYWORD_ARRAY.valueFromObject(o);
+        }
+
+        @Override
+        public FieldValueType getBaseType() {
+            return DATE_TIME;
+        }
     };
 
 
@@ -304,6 +348,7 @@ public enum FieldValueType {
             map.put(fieldValueType.value, fieldValueType);
         }
     }
+
     private static Object[] objectToArray(Object o) {
         if (o instanceof Collection) {
             //noinspection rawtypes

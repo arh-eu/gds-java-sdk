@@ -28,7 +28,7 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 JitPack gives you a flexible, virtual maven repository which can work with github projects.
 
-The `<groupId>` stands for the github user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.5.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.6.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -37,7 +37,7 @@ If you want to download this and install it manually in your local repository wi
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>1.5.1</version>
+    <version>1.6.0</version>
 </dependency>
 ```
 
@@ -45,7 +45,7 @@ If you want to download this and install it manually in your local repository wi
 
 # Usage
 
-Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a messages library with serialization/deserialization functionality and with a WebSocket client, so you can use this to send and receive messages.
+Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a "messages" library with serialization/deserialization functionality and with a WebSocket client, so you can use this to send and receive messages.
 The SDK also includes a console client that allows you to send and receive messages without writing any code.
 You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
 
@@ -65,6 +65,7 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
         * [ATTACHMENT-REQUEST command](#attachment-request-command)
         * [QUERY command](#query-command)
   * [Library](#library)
+    + [TL;DR method summary](#tldr-method-summary)
     + [Creating the client](#creating-the-client)
       - [Client Factory](#client-factory)
       - [Constructor and value restrictions](#constructor-and-value-restrictions)
@@ -270,7 +271,7 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 ```
 
 ## Library
-
+ * [TL;DR method summary](#tldr-method-summary)
  * [Library](#library)
     + [Creating the client](#creating-the-client)
       - [Client Factory](#client-factory)
@@ -293,6 +294,73 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
     + [Working with custom messages](#working-with-custom-messages)
     + [Full example](#Async-client-example)
 
+### TL;DR method summary
+
+The specification can be read on the [GDS Wiki page](https://github.com/arh-eu/gds/wiki/Message-Data).
+
+Only the most important types and their methods are listed here, we rely on your IDE's support for code completion and documentation.
+
+#### Event Request ACK 3:
+
+```java
+public interface MessageData9EventDocumentAckDescriptor {
+    List<EventDocumentResultHolder> getResults();
+}
+
+public interface EventDocumentResultHolder {
+    AckStatus getStatus();
+    String getNotification();
+    Map<String, Value> getReturnValues(); //Value is the MessagePack value type
+}
+
+```
+
+#### Query Request ACK 11:
+
+```java
+public interface QueryResponseHolder {
+    Long getNumberOfHits();
+    Long getNumberOfFilteredHits();
+    Boolean getMorePage();
+    QueryContextHolder getQueryContextHolder();
+    QueryContextHolderSerializable getQueryContextHolderSerializable();
+    List<FieldHolder> getFieldHolders();
+    List<List<Value>> getHits(); //Value is the MessagePack value type
+    Long getNumberOfTotalHits();
+}
+
+public interface FieldHolder {
+    FieldValueType getFieldType();
+    String getMimeType();
+    String getFieldName();
+}
+
+public enum FieldValueType {
+    KEYWORD(0),
+    KEYWORD_ARRAY(1),
+    TEXT(2),
+    BOOLEAN(3),
+    DOUBLE(4),
+    DOUBLE_ARRAY(5),
+    INTEGER(6),
+    INTEGER_ARRAY(7),
+    LONG(8),
+    BINARY(9),
+    BINARY_ARRAY(10),
+    TEXT_ARRAY(11),
+    BOOLEAN_ARRAY(12),
+    LONG_ARRAY(13),
+    STRING_MAP(14),
+    GEO_DATA(15),
+    GEO_DATA_ARRAY(16),
+    DATE_TIME(17),
+    DATE_TIME_ARRAY(18);
+    //...
+}
+
+
+
+```
 ### Creating the client
 
 #### Client Factory
@@ -301,7 +369,7 @@ First, we create the client object. To make things easier, a `AsyncGDSClientBuil
 
 This (and the listener interface) can be found in the `hu.arheu.gds.client` package.
  
- The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you dont have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
+ The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you don't have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
    - `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
    - `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
    - `withServeOnTheSameConnection(boolean value)` - sets whether replies should be sent on the same connection as this.

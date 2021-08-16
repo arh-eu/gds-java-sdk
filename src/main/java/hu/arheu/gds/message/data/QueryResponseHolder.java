@@ -14,4 +14,5 @@ public interface QueryResponseHolder extends PublicElementCountable, Packable {
     QueryContextHolderSerializable getQueryContextHolderSerializable() throws Exception;
     List<FieldHolder> getFieldHolders();
     List<List<Value>> getHits();
+    Long getNumberOfTotalHits();
 }

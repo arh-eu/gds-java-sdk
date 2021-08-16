@@ -166,8 +166,8 @@ public final class SyncGDSClient {
     private final AtomicReference<Pair<MessageHeaderBase, MessageData1ConnectionAck>> loginResponse;
 
     private volatile Either<Throwable, Pair<MessageHeaderBase, MessageData1ConnectionAck>> connectionFailureReason;
-    private volatile CountDownLatch connectLatch;
-    private volatile CountDownLatch closeLatch;
+    private final CountDownLatch connectLatch;
+    private final CountDownLatch closeLatch;
 
     private final Logger log;
     private final long timeout;
