@@ -98,7 +98,7 @@ public class MessageManager {
      * @return the {@link MessageDataType} value indicating the type of the message data
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
-     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     * @throws ValidationException if the contents of the header violate the class invariant (i.e. if {@code is_fragmented}
      *                             is given, {@code first_fragment} cannot be {@code null} and so.)
      */
     public static MessageDataType getMessageDataType(byte[] message) throws ReadException, IOException, ValidationException {
@@ -123,7 +123,7 @@ public class MessageManager {
      * @param data   The data (content) of the message.
      * @return the binary array containing the message packed by {@code MessagePack}
      * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     * @throws ValidationException if the contents of the header violate the class invariant (i.e. if {@code is_fragmented}
      *                             is given, {@code first_fragment} cannot be {@code null} and so.)
      */
     public static byte[] createMessage(MessageHeader header, MessageData data) throws IOException, ValidationException {
@@ -158,7 +158,7 @@ public class MessageManager {
      * @return {@link MessageHeaderBase} containing the header information
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
-     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     * @throws ValidationException if the contents of the header violate the class invariant (i.e. if {@code is_fragmented}
      *                             is given, {@code first_fragment} cannot be {@code null} and so.)
      */
     public static MessageHeader getMessageHeaderFromBinaryMessage(byte[] message) throws IOException, ReadException, ValidationException {
@@ -184,7 +184,7 @@ public class MessageManager {
      * @return {@link MessageData} containing the header information
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ReadException       if the message format is invalid (not an array) or it does not contain 11 elements
-     * @throws ValidationException if the contents of the header violate the class invariant (ie. if {@code is_fragmented}
+     * @throws ValidationException if the contents of the header violate the class invariant (i.e. if {@code is_fragmented}
      *                             is given, {@code first_fragment} cannot be {@code null} and so.)
      */
     public static MessageData getMessageData(byte[] message) throws IOException, ReadException, ValidationException {
@@ -236,7 +236,7 @@ public class MessageManager {
      * @return the created {@link MessageHeaderBase} instance
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -265,7 +265,7 @@ public class MessageManager {
      * @return the created {@link MessageHeaderBase} instance
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -302,7 +302,7 @@ public class MessageManager {
      * @return the created {@link MessageHeaderBase} instance
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     *                             (i.e. {@code userName} cannot be null)
      */
 
     public static MessageHeaderBase createMessageHeaderBase(
@@ -345,7 +345,7 @@ public class MessageManager {
      * @return the created {@link MessageHeaderBase} instance
      * @throws IOException         if any of the header fields contain illegal value(type)s
      * @throws ValidationException if the contents of the header violate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,

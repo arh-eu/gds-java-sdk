@@ -20,7 +20,7 @@ import io.netty.channel.Channel;
  * The rest of the methods, however if called without an active override will throw {@link AbstractMethodError} as
  * they were not handled by the client code.
  * <p>
- * This is useful if the client only wants to send and receive specific messages (ie. only interested in SELECT
+ * This is useful if the client only wants to send and receive specific messages (i.e. only interested in SELECT
  * queries, therefore it only overrides (implements) the {@link GDSMessageListener#onQueryRequestAck11(MessageHeaderBase, MessageData11QueryRequestAck)}
  * method.
  * <p>

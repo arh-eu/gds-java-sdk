@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * <p>
  * Since messages might not arrive in time, a timeout has to be specified for the waiting to avoid the code to be stuck.
  */
-public final class SyncGDSClient {
+public final class SyncGDSClient implements AutoCloseable {
     public final static class SyncGDSClientBuilder {
 
         private Logger logger;
@@ -309,6 +309,7 @@ public final class SyncGDSClient {
     /**
      * Closes the connection towards the GDS.
      */
+    @Override
     public void close() {
         synchronized (lock) {
             asyncGDSClient.close();
