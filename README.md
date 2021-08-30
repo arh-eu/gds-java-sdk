@@ -299,11 +299,91 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 The specification can be read on the [GDS Wiki page](https://github.com/arh-eu/gds/wiki/Message-Data).
 
 Only the most important types, and their methods are listed here, we rely on your IDE's support for code completion and documentation.
+Their inheritance and custom hierarchy is not always present for readability.  
+
+Classes already listed will not be expanded again.
+
+The `Value` class is from the `MessagePack` standard library, it will not be further expanded here.
+
+#### All ACK Messages:
+
+Every ACK message implements this interface, therefore accessing the status, or the exception on error is the same for all of them.
+
+```java
+interface Ack {
+    AckStatus getGlobalStatus();
+    String getGlobalException();
+}
+```
+
 
 #### Event Request ACK 3:
 
+Event reply follows the (wiki)[https://github.com/arh-eu/gds/wiki/Message-Data#event-ack---data-type-3] format as well.
+
 ```java
-public interface MessageData9EventDocumentAckDescriptor {
+public interface MessageData3EventAckDescriptor extends Ack {
+    List<EventResultHolder> getEventResult();
+}
+
+public interface EventResultHolder {
+    AckStatus getStatus();
+    String getNotification();
+    List<FieldHolder> getFieldHolders();
+    List<EventSubResultHolder> getFieldValues();
+}
+
+public interface EventSubResultHolder {
+    AckStatus getSubStatus();
+    String getId();
+    String getTableName();
+    Boolean getCreated();
+    String getVersion();
+    List<Value> getRecordValues(); //Value is the MessagePack value type
+}
+
+```
+
+#### Attachment Request ACK 5:
+
+```java
+
+public interface MessageData5AttachmentRequestAckDescriptor extends Ack {
+    AttachmentRequestAckDataHolder getData();
+}
+
+public interface AttachmentRequestAckDataHolder {
+    AckStatus getStatus();
+    AttachmentResultHolder getResult();
+    Long getRemainedWaitTimeMillis();
+}
+public interface AttachmentResultHolder extends Packable {
+    List<String> getRequestIds();
+    String getOwnerTable();
+    String getAttachmentId();
+    List<String> getOwnerIds();
+    String getMeta();
+    Long getTtl();
+    Long getToValid();
+    byte[] getAttachment();
+}
+
+```
+
+#### Attachment Response 7:
+
+```java
+public interface MessageData6AttachmentResponseDescriptor {
+    AttachmentResultHolder getResult();
+    EventHolder getEventHolder();
+}
+
+```
+
+#### Event Document Request ACK 9:
+
+```java
+public interface MessageData9EventDocumentAckDescriptor extends Ack {
     List<EventDocumentResultHolder> getResults();
 }
 
@@ -316,6 +396,11 @@ public interface EventDocumentResultHolder {
 ```
 
 #### Query Request ACK 11:
+
+The structure explained in the [Wiki](https://github.com/arh-eu/gds/wiki/Message-Data#query-request-ack---data-type-11) 
+is represented by the `QueryResponseHolder` class.
+The `QueryContextHolder` and `QueryContextHolderSerializable` fields are the same but with different internal representations
+to allow faster serialization. 
 
 ```java
 public interface QueryResponseHolder {
