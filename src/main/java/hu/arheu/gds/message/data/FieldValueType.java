@@ -272,13 +272,12 @@ public enum FieldValueType {
                 //also checks for null
                 return ImmutableNilValueImpl.get();
             }
-            @SuppressWarnings("unchecked")
-            Map<String, String> map = (Map<String, String>) o;
+            Map<?, ?> map = (Map<?, ?>) o;
             Value[] data = new Value[map.size() * 2];
             int i = 0;
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                data[i] = new ImmutableStringValueImpl(entry.getKey());
-                data[i + 1] = new ImmutableStringValueImpl(entry.getValue());
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                data[i] = new ImmutableStringValueImpl((String) entry.getKey());
+                data[i + 1] = new ImmutableStringValueImpl((String) entry.getValue());
                 i += 2;
             }
 
@@ -290,7 +289,7 @@ public enum FieldValueType {
             return TEXT;
         }
     },
-    GEO_DATA(15) {
+    GEO_POINT(15) {
         @Override
         public Value valueFromObject(Object o) {
             return KEYWORD.valueFromObject(o);
@@ -301,7 +300,7 @@ public enum FieldValueType {
             return this;
         }
     },
-    GEO_DATA_ARRAY(16) {
+    GEO_POINT_ARRAY(16) {
         @Override
         public Value valueFromObject(Object o) {
             return KEYWORD_ARRAY.valueFromObject(o);
@@ -309,10 +308,10 @@ public enum FieldValueType {
 
         @Override
         public FieldValueType getBaseType() {
-            return GEO_DATA;
+            return GEO_POINT;
         }
     },
-    DATE_TIME(17) {
+    GEO_SHAPE(17) {
         @Override
         public Value valueFromObject(Object o) {
             return KEYWORD.valueFromObject(o);
@@ -323,13 +322,31 @@ public enum FieldValueType {
             return this;
         }
     },
-    DATE_TIME_ARRAY(18) {
+    GEO_SHAPE_ARRAY(18) {
         @Override
         public Value valueFromObject(Object o) {
             return KEYWORD_ARRAY.valueFromObject(o);
         }
 
         @Override
+        public FieldValueType getBaseType() {
+            return GEO_SHAPE;
+        }
+    },
+    DATE_TIME(19) {
+        public Value valueFromObject(Object o) {
+            return KEYWORD.valueFromObject(o);
+        }
+
+        public FieldValueType getBaseType() {
+            return this;
+        }
+    },
+    DATE_TIME_ARRAY(20) {
+        public Value valueFromObject(Object o) {
+            return KEYWORD_ARRAY.valueFromObject(o);
+        }
+
         public FieldValueType getBaseType() {
             return DATE_TIME;
         }
@@ -351,8 +368,7 @@ public enum FieldValueType {
 
     private static Object[] objectToArray(Object o) {
         if (o instanceof Collection) {
-            //noinspection rawtypes
-            return ((Collection) o).toArray();
+            return ((Collection<?>) o).toArray();
         } else {
             return (Object[]) o;
         }
@@ -361,7 +377,7 @@ public enum FieldValueType {
     public abstract Value valueFromObject(Object o);
 
     /**
-     * Returns the base type of a type (e.q. TEXT_ARRAY ~> TEXT, INTEGER ~> INTEGER).
+     * Returns the base type of a type (e.g. TEXT_ARRAY ~> TEXT, INTEGER ~> INTEGER).
      *
      * @return The base type.
      */
