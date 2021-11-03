@@ -20,6 +20,7 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.swing.*;
+import hu.arheu.gds.message.data.FieldValueType;
 import hu.arheu.gds.message.data.QueryResponseHolder;
 import org.msgpack.value.Value;
 
@@ -156,7 +157,7 @@ public class ConsoleGUI {
         }
         try {
             screen.refresh();
-        } catch (IOException e) {
+        } catch (IOException ignored) {
 
         }
     }
@@ -296,8 +297,15 @@ public class ConsoleGUI {
         for (List<Value> hit : responseHolder.getHits()) {
             List<String> row = new ArrayList<>();
             row.add(String.valueOf(c++));
+            int col = 0;
             for (Value value : hit) {
-                row.add(value.toString());
+                FieldValueType fieldType = responseHolder.getFieldHolders().get(col).getFieldType();
+                if (fieldType == FieldValueType.BINARY || fieldType == FieldValueType.BINARY_ARRAY) {
+                    row.add("<binary data>");
+                } else {
+                    row.add(value.toString());
+                }
+                ++col;
             }
             table.getTableModel().addRow(row);
         }
@@ -307,7 +315,7 @@ public class ConsoleGUI {
 
     private static class SearchDialog extends DialogWindow {
         private String result;
-        private CheckBox caseInsensitiveBox;
+        private final CheckBox caseInsensitiveBox;
 
         SearchDialog(String title, String value, boolean boxChecked) {
             super(title);
@@ -334,11 +342,11 @@ public class ConsoleGUI {
 
             mainPanel.addComponent(new EmptySpace(TerminalSize.ONE));
             textBox.setLayoutData(
-                    GridLayout.createLayoutData(
-                            GridLayout.Alignment.FILL,
-                            GridLayout.Alignment.CENTER,
-                            true,
-                            false))
+                            GridLayout.createLayoutData(
+                                    GridLayout.Alignment.FILL,
+                                    GridLayout.Alignment.CENTER,
+                                    true,
+                                    false))
                     .addTo(mainPanel);
             mainPanel.addComponent(new EmptySpace(TerminalSize.ONE));
 
@@ -346,21 +354,21 @@ public class ConsoleGUI {
             caseInsensitiveBox = new CheckBox("Case insensitive search");
             caseInsensitiveBox.setChecked(boxChecked);
             caseInsensitiveBox.setLayoutData(
-                    GridLayout.createLayoutData(
-                            GridLayout.Alignment.FILL,
-                            GridLayout.Alignment.CENTER,
-                            true,
-                            false))
+                            GridLayout.createLayoutData(
+                                    GridLayout.Alignment.FILL,
+                                    GridLayout.Alignment.CENTER,
+                                    true,
+                                    false))
                     .addTo(mainPanel);
 
             mainPanel.addComponent(new EmptySpace(TerminalSize.ONE));
 
             buttonPanel.setLayoutData(
-                    GridLayout.createLayoutData(
-                            GridLayout.Alignment.END,
-                            GridLayout.Alignment.CENTER,
-                            false,
-                            false))
+                            GridLayout.createLayoutData(
+                                    GridLayout.Alignment.END,
+                                    GridLayout.Alignment.CENTER,
+                                    false,
+                                    false))
                     .addTo(mainPanel);
             setComponent(mainPanel);
         }
