@@ -1,19 +1,35 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 
-import java.io.IOException;
+public interface MessageData10QueryRequest extends MessageData {
+    String getQuery();
 
-public abstract class MessageData10QueryRequest extends MessageData implements MessageData10QueryRequestDescriptor {
-    
-    public MessageData10QueryRequest(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    ConsistencyType getConsistencyType();
+
+    Long getTimeout();
+
+    Integer getPageSize();
+
+    Integer getQueryType();
+
+    @Override
+    default MessageData10QueryRequest asQueryRequestMessageData10() throws ClassCastException {
+        return this;
     }
 
-    public MessageData10QueryRequest(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isQueryRequestMessageData10() {
+        return true;
     }
 
-    public MessageData10QueryRequest() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.QUERY_REQUEST_10;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 5;
+    }
 }

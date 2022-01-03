@@ -1,11 +1,10 @@
-package hu.arheu.gds.message.header;
+
+package hu.arheu.gds.message.data;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author oliver.nagy
- */
+
 public enum MessageDataType {
 
     CONNECTION_0(0),
@@ -20,9 +19,7 @@ public enum MessageDataType {
     EVENT_DOCUMENT_ACK_9(9),
     QUERY_REQUEST_10(10),
     QUERY_REQUEST_ACK_11(11),
-    NEXT_QUERY_PAGE_12(12),
-    ROUTING_TABLE_UPDATE_13(13),
-    TRAFFIC_STATISTICS_14(14);
+    NEXT_QUERY_PAGE_12(12);
 
     private final int value;
     private static final Map<Integer, MessageDataType> map = new HashMap<>();

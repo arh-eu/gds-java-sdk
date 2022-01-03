@@ -1,19 +1,47 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+import org.msgpack.value.Value;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
-public abstract class MessageData8EventDocument extends MessageData implements MessageData8EventDocumentDescriptor {
 
-    public MessageData8EventDocument(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+public interface MessageData8EventDocument extends MessageData {
+
+    String getTableName();
+
+    List<FieldHolder> getFieldHolders();
+
+    List<List<Value>> getRecords();
+
+    Map<Integer, List<String>> getReturningOptions();
+
+    //these are not serialized
+
+    List<List<Object>> getRecordsObject();
+
+    List<Map<String, Value>> getRecordsMap();
+
+    List<Map<String, Object>> getRecordsObjectMap();
+
+    @Override
+    default MessageData8EventDocument asEventDocumentMessageData8() throws ClassCastException {
+        return this;
     }
 
-    public MessageData8EventDocument(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isEventDocumentMessageData8() {
+        return true;
     }
 
-    public MessageData8EventDocument() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.EVENT_DOCUMENT_8;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 4;
+    }
 }

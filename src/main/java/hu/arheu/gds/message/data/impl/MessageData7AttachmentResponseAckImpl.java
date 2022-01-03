@@ -1,63 +1,54 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.AttachmentResponseAckResultHolder;
+import hu.arheu.gds.message.data.AttachmentResultHolder;
 import hu.arheu.gds.message.data.MessageData7AttachmentResponseAck;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Objects;
 
-public class MessageData7AttachmentResponseAckImpl extends MessageData7AttachmentResponseAck {
+
+public class MessageData7AttachmentResponseAckImpl extends MessagePart implements MessageData7AttachmentResponseAck {
+
     private AckStatus globalStatus;
-    AttachmentResponseAckResultHolder data;
+    private AttachmentResponseAckResultHolder data;
     private String globalException;
 
-    public MessageData7AttachmentResponseAckImpl(boolean cache,
-                                                 AckStatus globalStatus,
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData7AttachmentResponseAckImpl() {
+    }
+
+    public MessageData7AttachmentResponseAckImpl(AckStatus globalStatus,
                                                  AttachmentResponseAckResultHolder data,
-                                                 String globalException) throws IOException, ValidationException {
+                                                 String globalException) throws ValidationException {
+
         this.globalStatus = globalStatus;
         this.data = data;
         this.globalException = globalException;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData7AttachmentResponseAckImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData7AttachmentResponseAckImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData7AttachmentResponseAckImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.ATTACHMENT_RESPONSE_ACK_7;
-            }
-
-            @Override
-            public MessageData7AttachmentResponseAckImpl asAttachmentResponseAckMessageData7() {
-                return MessageData7AttachmentResponseAckImpl.this;
-            }
-
-            @Override
-            public boolean isAttachmentResponseAckMessageData7() {
-                return true;
-            }
-        };
+    public MessageData7AttachmentResponseAckImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -74,8 +65,8 @@ public class MessageData7AttachmentResponseAckImpl extends MessageData7Attachmen
         return this.globalException;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     public boolean isAttachmentResponseAckMessageData7() {
@@ -83,21 +74,22 @@ public class MessageData7AttachmentResponseAckImpl extends MessageData7Attachmen
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
+    public void checkContent() {
+        Validator.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
                 "globalStatus");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException, ValidationException {
         WriterHelper.packArrayHeader(packer, 3);
         WriterHelper.packValue(packer, this.globalStatus == null ? null : this.globalStatus.getValue());
-        WriterHelper.packPackable(packer, this.data);
+        WriterHelper.packMessagePart(packer, this.data);
         WriterHelper.packValue(packer, this.globalException);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException, ValidationException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "attachment response ack data",
                 this.getClass().getSimpleName())) {
 
@@ -105,11 +97,12 @@ public class MessageData7AttachmentResponseAckImpl extends MessageData7Attachmen
                     this.getClass().getSimpleName());
             this.globalStatus = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "global status",
                     this.getClass().getSimpleName()));
-            this.data = AttachmentResponseAckResultHolderImpl.unpackContent(unpacker);
+            this.data = new AttachmentResponseAckResultHolderImpl();
+            this.data.unpackContentFrom(unpacker);
             this.globalException = ReaderHelper.unpackStringValue(unpacker, "global exception",
                     this.getClass().getSimpleName());
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -131,10 +124,13 @@ public class MessageData7AttachmentResponseAckImpl extends MessageData7Attachmen
 
     @Override
     public String toString() {
+        AttachmentResultHolder arh = data != null ? data.getResult() : null;
         return "MessageData7AttachmentResponseAckImpl{" +
                 "globalStatus=" + globalStatus +
-                ", data=" + data +
-                ", globalException='" + globalException + '\'' +
+                ", table=" + (null != arh ? arh.getOwnerTable() : "null") +
+                ", attachmentId=" + (null != arh ? arh.getAttachmentId() : "null") +
+                ", attachmentSize=" + ((null != arh && null != arh.getAttachment())
+                    ? arh.getAttachment().length : "null") +
                 '}';
     }
 }

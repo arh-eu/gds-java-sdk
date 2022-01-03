@@ -1,113 +1,114 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package hu.arheu.gds.message;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ReaderHelper;
-import hu.arheu.gds.message.util.ValidationException;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.GdsMessagePart;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
 
-/**
- * @author oliver.nagy
- */
-public abstract class MessagePart {
+
+public abstract class MessagePart implements GdsMessagePart {
+    public enum Type {
+        /**
+         * Message Header types
+         */
+        HEADER,
+        /**
+         * Message Data types
+         */
+        DATA,
+        /**
+         * Other, mostly nested types
+         */
+        OTHER,
+        /**
+         * Full message with headerand data
+         */
+        FULL
+    }
 
     private byte[] binary;
-    protected boolean cache;
 
-    private int messageSize;
-
-    protected void init() {
-        //override this method
-    }
-
-    public MessagePart(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        this.messageSize = binary.length;
-        init();
-        Deserialize(binary, cache, true);
-    }
-
-    public MessagePart(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        this.messageSize = binary.length;
-        init();
-        Deserialize(binary, cache, isFullMessage);
-    }
-
-    protected MessagePart() throws IOException {
-        init();
-    }
-
-    /**
-     * Serializes this message by the MessagePack standards and returns the created byte array.
-     *
-     * @return the raw bytes of the serialized message
-     * @throws IOException         if the serialization fails for any reason
-     * @throws ValidationException if any value violates the constraints in this message
-     */
-    public final byte[] getBinary() throws IOException, ValidationException {
+    @Override
+    public final byte[] getBinary() {
         if (this.binary == null) {
-            return Serialize();
+            return serialize();
         }
         return this.binary;
     }
 
-    /**
-     * Returns the size of this message in MessagePack binary format.
-     *
-     * @return the number of bytes in the serialized version of this message
-     */
-    public int getMessageSize() {
-        return this.messageSize;
+    @Override
+    public final int getMessageSize() {
+        return getBinary().length;
     }
 
-    protected final void Deserialize(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(binary);
-        if (isFullMessage) {
-            int arrayHeader = ReaderHelper.unpackArrayHeader(unpacker, null, null, null);
-            if (getMessagePartType() == MessagePartType.DATA) {
-                unpacker.skipValue(arrayHeader - 1);
+    @Override
+    public abstract void packContentTo(MessageBufferPacker packer) throws WriteException;
+
+    @Override
+    public abstract void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException;
+
+    @Override
+    public abstract void checkContent() throws ValidationException;
+
+    protected abstract Type getMessagePartType();
+
+    protected final void deserialize(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary, false);
+    }
+
+    protected final void deserialize(byte[] binary, boolean cacheBinary) throws ReadException, ValidationException {
+        try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(binary)) {
+            int start = (int) unpacker.getTotalReadBytes();
+            unpackContentFrom(unpacker);
+            int end = (int) unpacker.getTotalReadBytes();
+            if (cacheBinary) {
+                this.binary = Arrays.copyOfRange(binary, start, end);
+            } else {
+                this.binary = null;
             }
-        }
-        int startOfMessagePart = (int) unpacker.getTotalReadBytes();
-        UnpackValues(unpacker);
-        int endOfMessagePart = (int) unpacker.getTotalReadBytes();
-        if (cache) {
-            this.binary = Arrays.copyOfRange(binary, startOfMessagePart, endOfMessagePart);
-        } else {
-            this.binary = null;
-        }
-        try {
-            unpacker.close();
-        } catch (IOException e) {
+        } catch (IOException exc) {
+            throw new ReadException("Could not deserialize the message!", exc);
         }
     }
 
-    protected final byte[] Serialize() throws IOException, ValidationException {
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        PackValues(packer);
-        this.binary = packer.toByteArray();
-        this.messageSize = this.binary.length;
-        try {
-            packer.close();
-        } catch (IOException e) {
+
+    protected final byte[] serialize() {
+        try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+            packContentTo(packer);
+            this.binary = packer.toByteArray();
+        } catch (IOException exc) {
+            throw new IllegalStateException("Unexpected error during serialization!", exc);
         }
-        packer = null;
         return this.binary;
     }
 
-    protected abstract void PackValues(MessageBufferPacker packer) throws IOException, ValidationException;
+    @Override
+    public final void readExternal(ObjectInput in) throws ReadException {
+        try {
+            byte[] binary = new byte[in.readInt()];
+            in.readFully(binary);
+            deserialize(binary, false);
+        } catch (IOException | ValidationException ex) {
+            throw new ReadException("Could not read object from ObjectInput!", ex);
+        }
+    }
 
-    protected abstract void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException, ValidationException;
-
-    protected abstract MessagePartType getMessagePartType();
-
-    protected abstract void checkContent();
+    @Override
+    public final void writeExternal(ObjectOutput out) throws WriteException {
+        try {
+            byte[] binary = getBinary();
+            out.writeInt(binary.length);
+            out.write(binary);
+        } catch (IOException ex) {
+            throw new WriteException("Could not write object to ObjectOutput!", ex);
+        }
+    }
 }

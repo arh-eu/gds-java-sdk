@@ -1,47 +1,56 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventDocumentResultHolder;
-import hu.arheu.gds.message.util.ExceptionHelper;
-import hu.arheu.gds.message.util.ReadException;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.WriteException;
 import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
 import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Map;
 import java.util.Objects;
 
-public class EventDocumentResultHolderImpl implements EventDocumentResultHolder {
-    private static final int NUMBER_OF_PUBLIC_FIELDS = 3;
 
-    private final AckStatus status;
-    private final String notification;
-    private final Map<String, Value> returnValues;
+public class EventDocumentResultHolderImpl extends MessagePart implements EventDocumentResultHolder {
+
+    private AckStatus status;
+    private String notification;
+    private Map<String, Value> returnValues;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public EventDocumentResultHolderImpl() {
+    }
 
     public EventDocumentResultHolderImpl(AckStatus status,
                                          String notification,
                                          Map<String, Value> returnValues) {
+
         this.status = status;
         this.notification = notification;
         this.returnValues = returnValues;
-        checkContent(this);
-    }
 
-    private static void checkContent(EventDocumentResultHolder eventDocumentResult) {
-        ExceptionHelper.requireNonNullValue(eventDocumentResult.getStatus(),
-                eventDocumentResult.getClass().getSimpleName(),
-                "status");
-        ExceptionHelper.requireNonNullValue(eventDocumentResult.getReturnValues(),
-                eventDocumentResult.getClass().getSimpleName(),
-                "returnValues");
+        checkContent();
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_FIELDS;
+    public void checkContent() {
+        Validator.requireNonNullValue(getStatus(), getClass().getSimpleName(), "status");
+        Validator.requireNonNullValue(getReturnValues(), getClass().getSimpleName(), "returnValues");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -60,42 +69,40 @@ public class EventDocumentResultHolderImpl implements EventDocumentResultHolder 
     }
 
     @Override
-    public void packContent(MessageBufferPacker packer) throws IOException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, this.status == null ? null : this.status.getValue());
         WriterHelper.packValue(packer, this.notification);
         WriterHelper.packMapStringValueValues(packer, this.returnValues);
     }
 
-    public static EventDocumentResultHolder unpackContent(MessageUnpacker unpacker) throws IOException, ReadException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "result",
                 EventDocumentResultHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_FIELDS, "result",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "result",
                     EventDocumentResultHolderImpl.class.getSimpleName());
 
-            AckStatus statusTemp = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
+            status = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
                     EventDocumentResultHolderImpl.class.getSimpleName()));
 
-            String notificationTemp = ReaderHelper.unpackStringValue(unpacker, "notification",
+            notification = ReaderHelper.unpackStringValue(unpacker, "notification",
                     EventDocumentResultHolderImpl.class.getSimpleName());
 
-            Map<String, Value> returnValuesTemp = ReaderHelper.unpackMapStringValueValues(unpacker,
+            returnValues = ReaderHelper.unpackMapStringValueValues(unpacker,
                     null,
                     "return values",
                     "return values map key (fieldname)",
                     "return values map value (fieldvalue)",
                     EventDocumentResultHolderImpl.class.getSimpleName());
 
-            EventDocumentResultHolder eventDocumentResultTemp = new EventDocumentResultHolderImpl(statusTemp,
-                    notificationTemp,
-                    returnValuesTemp);
-            checkContent(eventDocumentResultTemp);
-            return eventDocumentResultTemp;
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -110,15 +117,7 @@ public class EventDocumentResultHolderImpl implements EventDocumentResultHolder 
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, notification, returnValues);
-    }
 
-    @Override
-    public String toString() {
-        return "EventDocumentResultHolderImpl{" +
-                "status=" + status +
-                ", notification='" + notification + '\'' +
-                ", returnValues=" + returnValues +
-                '}';
+        return Objects.hash(status, notification, returnValues);
     }
 }

@@ -2,7 +2,7 @@ package hu.arheu.gds.console.parser;
 
 import com.beust.jcommander.JCommander;
 import hu.arheu.gds.console.MessageType;
-import hu.arheu.gds.message.util.Utils;
+import hu.arheu.gds.message.util.Converters;
 
 public class ArgumentParser {
 
@@ -34,7 +34,7 @@ public class ArgumentParser {
 
         if (options.hex != null) {
             for (String hexValue : options.hex) {
-                System.out.println(hexValue + " = " + "0x" + Utils.stringToUTF8Hex(hexValue));
+                System.out.println(hexValue + " = " + "0x" + Converters.stringToUTF8Hex(hexValue));
             }
             return null;
         }

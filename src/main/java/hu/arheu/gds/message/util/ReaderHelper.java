@@ -1,10 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package hu.arheu.gds.message.util;
 
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
@@ -15,24 +13,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author oliver.nagy
- */
 
 public class ReaderHelper {
+
+    public static int unpackArrayHeader(MessageUnpacker unpacker) throws ReadException {
+        try {
+            return unpacker.unpackArrayHeader();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
+
+    public static int unpackMapHeader(MessageUnpacker unpacker) throws ReadException {
+        try {
+            return unpacker.unpackMapHeader();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
 
     public static int unpackArrayHeader(MessageUnpacker unpacker,
                                         Integer expected,
                                         String arrayName,
-                                        String className) throws IOException, ReadException {
+                                        String className) throws ReadException {
 
-        int headerSize = unpacker.unpackArrayHeader();
+        int headerSize = ReaderHelper.unpackArrayHeader(unpacker);
         if (expected == null) {
             return headerSize;
         } else {
             if (headerSize < expected) {
                 throw new ReadException(
-                        String.format("%s: Array header size (%s) does not match expected value (%s). Array name: %s.",
+                        String.format("%s: Array headersize (%s) does not match the expected minimum value (%s). Array name: %s.",
                                 className,
                                 headerSize,
                                 expected,
@@ -43,18 +54,39 @@ public class ReaderHelper {
         }
     }
 
+    public static int unpackArrayHeaderStrictly(MessageUnpacker unpacker,
+                                                int expected1,
+                                                int expected2,
+                                                String arrayName,
+                                                String className) throws ReadException {
+
+        int headerSize = ReaderHelper.unpackArrayHeader(unpacker);
+        if (headerSize != expected1 && headerSize != expected2) {
+            throw new ReadException(
+                    String.format("%s: Array headersize (%s) does not match expected value (%s or %s). Array name: " +
+                                    "%s.",
+                            className,
+                            headerSize,
+                            expected1,
+                            expected2,
+                            arrayName));
+        } else {
+            return headerSize;
+        }
+    }
+
     public static int unpackMapHeader(MessageUnpacker unpacker,
                                       Integer expected,
                                       String mapName,
-                                      String className) throws IOException, ReadException {
+                                      String className) throws ReadException {
 
-        int headerSize = unpacker.unpackMapHeader();
+        int headerSize = ReaderHelper.unpackMapHeader(unpacker);
         if (expected == null) {
             return headerSize;
         } else {
-            if (headerSize < expected) {
+            if (headerSize != expected) {
                 throw new ReadException(
-                        String.format("%s: Map header size (%s) does not match expected value (%s). Map name: %s",
+                        String.format("%s: Map headersize (%s) does not match expected value (%s). Map name: %s",
                                 className,
                                 headerSize,
                                 expected,
@@ -67,9 +99,9 @@ public class ReaderHelper {
 
     public static String unpackStringValue(MessageUnpacker unpacker,
                                            String fieldName,
-                                           String className) throws IOException, ReadException {
+                                           String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (unpackedValue.getValueType() != ValueType.STRING) {
@@ -87,9 +119,9 @@ public class ReaderHelper {
     public static <T extends Enum<T>> T unpackEnumValueAsString(MessageUnpacker unpacker,
                                                                 Class<T> enumType,
                                                                 String fieldName,
-                                                                String className) throws IOException, ReadException {
+                                                                String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (unpackedValue.getValueType() != ValueType.STRING) {
@@ -104,7 +136,7 @@ public class ReaderHelper {
                 return Enum.valueOf(enumType, unpackedValue.asStringValue().asString());
             } catch (IllegalArgumentException e) {
                 throw new ReadException(
-                        String.format("%s: Cannot convert field value (%s) to enum. Location: %s. Field name: %s.",
+                        String.format("Cannot convert field value (%s) to enum. Location: Field name: %s.",
                                 unpackedValue.asStringValue().asStringValue(),
                                 fieldName));
             }
@@ -113,9 +145,9 @@ public class ReaderHelper {
 
     public static Boolean unpackBooleanValue(MessageUnpacker unpacker,
                                              String fieldName,
-                                             String className) throws IOException, ReadException {
+                                             String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (unpackedValue.getValueType() != ValueType.BOOLEAN) {
@@ -132,9 +164,9 @@ public class ReaderHelper {
 
     public static Integer unpackIntegerValue(MessageUnpacker unpacker,
                                              String fieldName,
-                                             String className) throws IOException, ReadException {
+                                             String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (unpackedValue.getValueType() != ValueType.INTEGER) {
@@ -146,15 +178,14 @@ public class ReaderHelper {
                             fieldName));
         } else {
             return unpackedValue.asIntegerValue().asInt();
-
         }
     }
 
     public static Long unpackLongValue(MessageUnpacker unpacker,
                                        String fieldName,
-                                       String className) throws IOException, ReadException {
+                                       String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (!unpackedValue.getValueType().isNumberType()) {
@@ -168,12 +199,22 @@ public class ReaderHelper {
             return unpackedValue.asNumberValue().toLong();
         }
     }
+    public static long unpackNotNullLongValue(MessageUnpacker unpacker,
+                                       String fieldName,
+                                       String className) throws ReadException, ValidationException {
+
+        Long value = unpackLongValue(unpacker, fieldName, className);
+        if(value == null){
+            throw new ValidationException(String.format("Long value for field %1$s cannot be null!", fieldName));
+        }
+        return value;
+    }
 
     public static byte[] unpackBinary(MessageUnpacker unpacker,
                                       String fieldName,
-                                      String className) throws IOException, ReadException {
+                                      String className) throws ReadException {
 
-        Value unpackedValue = unpacker.unpackValue();
+        Value unpackedValue = ReaderHelper.unpackValue(unpacker);
         if (unpackedValue.isNilValue()) {
             return null;
         } else if (unpackedValue.getValueType() != ValueType.BINARY) {
@@ -193,25 +234,25 @@ public class ReaderHelper {
                                     String className) throws ReadException {
 
         try {
-            return unpacker.unpackValue();
+            return ReaderHelper.unpackValue(unpacker);
         } catch (IOException e) {
             throw new ReadException(
-                    String.format("%s: Exception message: %s. Field name: %s", className, e.toString(), fieldName));
+                    String.format("%s: Exception message: %s. Field name: %s", className, e, fieldName));
         }
     }
 
-    public static Boolean nextExpectedValueTypeIsNil(MessageUnpacker unpacker,
+    public static boolean nextExpectedValueTypeIsNil(MessageUnpacker unpacker,
                                                      ValueType expectedValueType,
                                                      String valueName,
-                                                     String className) throws IOException, ReadException {
+                                                     String className) throws ReadException {
 
-        ValueType nextValueType = unpacker.getNextFormat().getValueType();
+        ValueType nextValueType = ReaderHelper.getNextValueType(unpacker);
         if (nextValueType.equals(expectedValueType)) {
             return false;
         } else if (!nextValueType.isNilType()) {
             throw new ReadException(String.format("%s: Value type (%s) does not match expected type (%s). Value name: %s.",
                     className,
-                    nextValueType.toString(),
+                    nextValueType,
                     expectedValueType.toString(),
                     valueName));
         } else {
@@ -219,11 +260,19 @@ public class ReaderHelper {
         }
     }
 
+    public static ValueType getNextValueType(MessageUnpacker unpacker) throws ReadException {
+        try {
+            return unpacker.getNextFormat().getValueType();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
+
     public static List<String> unpackStringValues(MessageUnpacker unpacker,
                                                   Integer expectedArrayHeaderSize,
                                                   String arrayName,
                                                   String fieldName,
-                                                  String className) throws IOException, ReadException {
+                                                  String className) throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, arrayName, className)) {
             List<String> temp = new ArrayList<>();
@@ -233,7 +282,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -242,7 +291,7 @@ public class ReaderHelper {
                                                     Integer expectedArrayHeaderSize,
                                                     String arrayName,
                                                     String fieldName,
-                                                    String className) throws IOException, ReadException {
+                                                    String className) throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, arrayName, className)) {
             List<Integer> temp = new ArrayList<>();
@@ -252,7 +301,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -261,7 +310,7 @@ public class ReaderHelper {
                                                 Integer expectedArrayHeaderSize,
                                                 String arrayName,
                                                 String fieldName,
-                                                String className) throws IOException, ReadException {
+                                                String className) throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, arrayName, className)) {
             List<Value> temp = new ArrayList<>();
@@ -271,7 +320,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -283,7 +332,7 @@ public class ReaderHelper {
                                                               String externalArrayName,
                                                               String internalArrayName,
                                                               String fieldName,
-                                                              String className) throws IOException, ReadException {
+                                                              String className) throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, externalArrayName, className)) {
             List<List<Value>> temp = new ArrayList<>();
@@ -295,7 +344,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -305,7 +354,7 @@ public class ReaderHelper {
                                                                 String mapName,
                                                                 String keyFieldName,
                                                                 String valueFieldName,
-                                                                String className) throws IOException, ReadException {
+                                                                String className) throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.MAP, mapName, className)) {
             Map<String, Value> temp = new HashMap<>();
@@ -316,7 +365,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -328,7 +377,7 @@ public class ReaderHelper {
                                                                     String keyFieldName,
                                                                     String valueFieldName,
                                                                     String className)
-            throws IOException, ReadException {
+            throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.MAP, mapName, className)) {
             Map<Integer, String> temp = new HashMap<>();
@@ -339,7 +388,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -352,7 +401,7 @@ public class ReaderHelper {
                                                                               String valueFieldName,
                                                                               String fieldName,
                                                                               String className)
-            throws IOException, ReadException {
+            throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.MAP, mapName, className)) {
             Map<Integer, List<String>> temp = new HashMap<>();
@@ -363,7 +412,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -374,7 +423,7 @@ public class ReaderHelper {
                                                                      String keyFieldName,
                                                                      String valueFieldName,
                                                                      String className)
-            throws IOException, ReadException {
+            throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.MAP, mapName, className)) {
             Map<String, byte[]> temp = new HashMap<>();
@@ -385,7 +434,7 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
@@ -396,7 +445,7 @@ public class ReaderHelper {
                                                                       String keyFieldName,
                                                                       String valueFieldName,
                                                                       String className)
-            throws IOException, ReadException {
+            throws ReadException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.MAP, mapName, className)) {
             Map<Integer, Boolean> temp = new HashMap<>();
@@ -407,8 +456,33 @@ public class ReaderHelper {
             }
             return temp;
         } else {
-            unpacker.unpackNil();
+            unpackNil(unpacker);
         }
         return null;
     }
+
+    public static boolean isNextNil(MessageUnpacker unpacker) throws ReadException {
+        try {
+            return unpacker.getNextFormat().getValueType().isNilType();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
+
+    public static void unpackNil(MessageUnpacker unpacker) throws ReadException {
+        try {
+            unpacker.unpackNil();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
+
+    public static Value unpackValue(MessageUnpacker unpacker) throws ReadException {
+        try {
+            return unpacker.unpackValue();
+        } catch (IOException e) {
+            throw new ReadException(e);
+        }
+    }
+
 }

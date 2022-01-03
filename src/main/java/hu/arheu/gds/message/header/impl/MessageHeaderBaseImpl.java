@@ -1,31 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package hu.arheu.gds.message.header.impl;
 
-import hu.arheu.gds.message.MessagePartType;
-import hu.arheu.gds.message.header.MessageDataType;
+import hu.arheu.gds.message.MessagePart;
+import hu.arheu.gds.message.data.MessageDataType;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
 import hu.arheu.gds.message.header.MessageHeaderBase;
-import hu.arheu.gds.message.header.MessageHeaderType;
-import hu.arheu.gds.message.header.MessageHeaderTypeHelper;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 
-import java.io.IOException;
 import java.util.Objects;
 
-/**
- * @author oliver.nagy
- */
-public class MessageHeaderBaseImpl extends MessageHeaderBase {
+
+public class MessageHeaderBaseImpl extends MessagePart implements MessageHeaderBase {
 
     private String userName;
     private String messageId;
-    private Long createTime;
-    private Long requestTime;
+    private long createTime;
+    private long requestTime;
     private Boolean isFragmented;
     private Boolean firstFragment;
     private Boolean lastFragment;
@@ -33,17 +29,22 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     private Long fullDataSize;
     private MessageDataType dataType;
 
-    public MessageHeaderBaseImpl(boolean cache,
-                                 String userName,
+    /**
+     * Do not remove, as it's needed for the serialization through {@link java.io.Externalizable}
+     */
+    public MessageHeaderBaseImpl() {
+    }
+
+    public MessageHeaderBaseImpl(String userName,
                                  String messageId,
-                                 Long createTime,
-                                 Long requestTime,
+                                 long createTime,
+                                 long requestTime,
                                  Boolean isFragmented,
                                  Boolean firstFragment,
                                  Boolean lastFragment,
                                  Long offset,
                                  Long fullDataSize,
-                                 MessageDataType dataType) throws IOException, ValidationException {
+                                 MessageDataType dataType) throws ValidationException {
 
         this.userName = userName;
         this.messageId = messageId;
@@ -55,66 +56,56 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
         this.offset = offset;
         this.fullDataSize = fullDataSize;
         this.dataType = dataType;
-        this.cache = cache;
 
         checkContent();
-
-        if (cache) {
-            Serialize();
-        }
+        serialize();
     }
 
-    public MessageHeaderBaseImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageHeaderBaseImpl(MessageHeaderBase other) throws ValidationException {
+        this.userName = other.getUserName();
+        this.messageId = other.getMessageId();
+        this.createTime = other.getCreateTime();
+        this.requestTime = other.getRequestTime();
+        this.isFragmented = other.getIsFragmented();
+        this.firstFragment = other.getFirstFragment();
+        this.lastFragment = other.getLastFragment();
+        this.offset = other.getOffset();
+        this.fullDataSize = other.getFullDataSize();
+        this.dataType = other.getDataType();
+        //other is checked and serialized
     }
 
-    public MessageHeaderBaseImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    public MessageHeaderBaseImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageHeaderTypeHelper() {
-            @Override
-            public MessageHeaderType getMessageHeaderType() {
-                return MessageHeaderType.BASE;
-            }
-
-            @Override
-            public MessageHeaderBase asBaseMessageHeader() {
-                return MessageHeaderBaseImpl.this;
-            }
-
-            @Override
-            public boolean isBaseMessageHeader() {
-                return true;
-            }
-        };
+    public MessageHeaderBaseImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
-    protected void checkContent() {
+    public void checkContent() {
 
-        ExceptionHelper.requireNonNullValue(this.userName, this.getClass().getSimpleName(), "userName");
-        ExceptionHelper.requireNonNullValue(this.messageId, this.getClass().getSimpleName(), "messageId");
-        ExceptionHelper.requireNonNullValue(this.createTime, this.getClass().getSimpleName(), "createTime");
-        ExceptionHelper.requireNonNullValue(this.requestTime, this.getClass().getSimpleName(), "requestTime");
-        ExceptionHelper.requireNonNullValue(this.isFragmented, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.userName, this.getClass().getSimpleName(), "userName");
+        Validator.requireNonNullValue(this.messageId, this.getClass().getSimpleName(), "messageId");
+        Validator.requireNonNullValue(this.createTime, this.getClass().getSimpleName(), "createTime");
+        Validator.requireNonNullValue(this.requestTime, this.getClass().getSimpleName(), "requestTime");
+        Validator.requireNonNullValue(this.isFragmented, this.getClass().getSimpleName(),
                 "isFragmented");
-        ExceptionHelper.requireNonNullValue(this.dataType, this.getClass().getSimpleName(), "dataType");
+        Validator.requireNonNullValue(this.dataType, this.getClass().getSimpleName(), "dataType");
 
         if (this.isFragmented) {
-            ExceptionHelper.requireNonNullValue(this.firstFragment, this.getClass().getSimpleName(),
+            Validator.requireNonNullValue(this.firstFragment, this.getClass().getSimpleName(),
                     "firstFragment");
-            ExceptionHelper.requireNonNullValue(this.lastFragment, this.getClass().getSimpleName(),
+            Validator.requireNonNullValue(this.lastFragment, this.getClass().getSimpleName(),
                     "lastFragment");
-            ExceptionHelper.requireNonNullValue(this.offset, this.getClass().getSimpleName(), "offset");
-            ExceptionHelper.requireNonNullValue(this.fullDataSize, this.getClass().getSimpleName(),
+            Validator.requireNonNullValue(this.offset, this.getClass().getSimpleName(), "offset");
+            Validator.requireNonNullValue(this.fullDataSize, this.getClass().getSimpleName(),
                     "fullDataSize");
         } else {
-            ExceptionHelper.requireNullValue(this.firstFragment, this.getClass().getSimpleName(), "firstFragment");
-            ExceptionHelper.requireNullValue(this.lastFragment, this.getClass().getSimpleName(), "lastFragment");
-            ExceptionHelper.requireNullValue(this.fullDataSize, this.getClass().getSimpleName(), "fullDataSize");
+            Validator.requireNullValue(this.firstFragment, this.getClass().getSimpleName(), "firstFragment");
+            Validator.requireNullValue(this.lastFragment, this.getClass().getSimpleName(), "lastFragment");
+            Validator.requireNullValue(this.fullDataSize, this.getClass().getSimpleName(), "fullDataSize");
         }
     }
 
@@ -129,12 +120,12 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     }
 
     @Override
-    public Long getRequestTime() {
+    public long getRequestTime() {
         return this.requestTime;
     }
 
     @Override
-    public Long getCreateTime() {
+    public long getCreateTime() {
         return this.createTime;
     }
 
@@ -169,13 +160,12 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     }
 
     @Override
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.HEADER;
+    protected final MessagePart.Type getMessagePartType() {
+        return MessagePart.Type.HEADER;
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException {
-
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
         WriterHelper.packValue(packer, this.getUserName());
         WriterHelper.packValue(packer, this.getMessageId());
         WriterHelper.packValue(packer, this.getCreateTime());
@@ -189,15 +179,14 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws IOException, ReadException {
-
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
         this.userName = (ReaderHelper.unpackStringValue(unpacker, "username",
                 this.getClass().getSimpleName()));
         this.messageId = (ReaderHelper.unpackStringValue(unpacker, "message id",
                 this.getClass().getSimpleName()));
-        this.createTime = (ReaderHelper.unpackLongValue(unpacker, "create time",
+        this.createTime = (ReaderHelper.unpackNotNullLongValue(unpacker, "create time",
                 this.getClass().getSimpleName()));
-        this.requestTime = (ReaderHelper.unpackLongValue(unpacker, "request time",
+        this.requestTime = (ReaderHelper.unpackNotNullLongValue(unpacker, "request time",
                 this.getClass().getSimpleName()));
         this.isFragmented = (ReaderHelper.unpackBooleanValue(unpacker, "is fragmented",
                 this.getClass().getSimpleName()));
@@ -210,7 +199,6 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
                 this.getClass().getSimpleName()));
         this.dataType = (MessageDataType.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "data type",
                 this.getClass().getSimpleName())));
-
         checkContent();
     }
 
@@ -218,23 +206,30 @@ public class MessageHeaderBaseImpl extends MessageHeaderBase {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         MessageHeaderBaseImpl that = (MessageHeaderBaseImpl) o;
-
-        if (!Objects.equals(userName, that.userName)) return false;
-        if (!Objects.equals(messageId, that.messageId)) return false;
-        if (!Objects.equals(isFragmented, that.isFragmented)) return false;
-        if (!Objects.equals(firstFragment, that.firstFragment))
-            return false;
-        if (!Objects.equals(lastFragment, that.lastFragment)) return false;
-        if (!Objects.equals(offset, that.offset)) return false;
-        if (!Objects.equals(fullDataSize, that.fullDataSize)) return false;
-        return dataType == that.dataType;
+        return Objects.equals(userName, that.userName)
+                && Objects.equals(messageId, that.messageId)
+                && Objects.equals(createTime, that.createTime)
+                && Objects.equals(requestTime, that.requestTime)
+                && Objects.equals(isFragmented, that.isFragmented)
+                && Objects.equals(firstFragment, that.firstFragment)
+                && Objects.equals(lastFragment, that.lastFragment)
+                && Objects.equals(offset, that.offset)
+                && Objects.equals(fullDataSize, that.fullDataSize)
+                && dataType == that.dataType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userName, messageId, requestTime, createTime, isFragmented, firstFragment, lastFragment,
-                offset, fullDataSize, dataType);
+        return Objects.hash(userName,
+                messageId,
+                createTime,
+                requestTime,
+                isFragmented,
+                firstFragment,
+                lastFragment,
+                offset,
+                fullDataSize,
+                dataType);
     }
 }

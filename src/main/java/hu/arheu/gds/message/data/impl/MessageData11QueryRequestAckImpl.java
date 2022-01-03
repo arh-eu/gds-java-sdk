@@ -1,105 +1,96 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.MessageData11QueryRequestAck;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
 import hu.arheu.gds.message.data.QueryResponseHolder;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
+import java.util.Objects;
 
-public class MessageData11QueryRequestAckImpl extends MessageData11QueryRequestAck {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 3;
+
+public class MessageData11QueryRequestAckImpl extends MessagePart implements MessageData11QueryRequestAck {
 
     private AckStatus globalStatus;
     private QueryResponseHolder queryResponseHolder;
     private String globalException;
 
-    public MessageData11QueryRequestAckImpl(boolean cache,
-                                            AckStatus globalStatus,
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData11QueryRequestAckImpl() {
+    }
+
+    public MessageData11QueryRequestAckImpl(AckStatus globalStatus,
                                             QueryResponseHolder queryResponseHolder,
-                                            String globalException) throws IOException, NullPointerException, ValidationException {
+                                            String globalException) throws ValidationException {
+
         this.globalStatus = globalStatus;
         this.queryResponseHolder = queryResponseHolder;
         this.globalException = globalException;
         checkContent();
-        if (cache) {
-            Serialize();
-        }
-
     }
 
-    protected void checkContent() throws NullPointerException {
-        ExceptionHelper.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
+
+    public void checkContent() throws ValidationException {
+
+        Validator.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
                 "globalStatus");
     }
 
-    public MessageData11QueryRequestAckImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData11QueryRequestAckImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData11QueryRequestAckImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    public MessageData11QueryRequestAckImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.QUERY_REQUEST_ACK_11;
-            }
-            @Override
-            public MessageData11QueryRequestAckImpl asQueryRequestAckMessageData11() {
-                return MessageData11QueryRequestAckImpl.this;
-            }
-            @Override
-            public boolean isQueryRequestAckMessageData11() {
-                return true;
-            }
-        };
-    }
-
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
-        WriterHelper.packArrayHeader(packer, NUMBER_OF_PUBLIC_ELEMENTS);
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
+        WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, this.globalStatus == null ? null : this.globalStatus.getValue());
-        WriterHelper.packPackable(packer, this.queryResponseHolder);
+        WriterHelper.packMessagePart(packer, this.queryResponseHolder);
         WriterHelper.packValue(packer, this.globalException);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "query response",
                 this.getClass().getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "query response",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "query response",
                     this.getClass().getSimpleName());
 
             this.globalStatus = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "global status",
                     this.getClass().getSimpleName()));
 
-            this.queryResponseHolder = QueryResponseHolderImpl.unpackContent(unpacker);
+            this.queryResponseHolder = new QueryResponseHolderImpl();
+            this.queryResponseHolder.unpackContentFrom(unpacker);
 
             this.globalException = ReaderHelper.unpackStringValue(unpacker, "global exception",
                     this.getClass().getSimpleName());
+
             checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-    }
-
-    @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
     }
 
     @Override
@@ -122,18 +113,14 @@ public class MessageData11QueryRequestAckImpl extends MessageData11QueryRequestA
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MessageData11QueryRequestAckImpl that = (MessageData11QueryRequestAckImpl) o;
-        if (globalStatus != that.globalStatus) return false;
-        if (queryResponseHolder != null ? !queryResponseHolder.equals(that.queryResponseHolder) : that.queryResponseHolder != null)
-            return false;
-        return globalException != null ? globalException.equals(that.globalException) : that.globalException == null;
+        return globalStatus == that.globalStatus
+                && Objects.equals(queryResponseHolder, that.queryResponseHolder)
+                && Objects.equals(globalException, that.globalException);
     }
 
     @Override
     public int hashCode() {
-        int result = globalStatus != null ? globalStatus.hashCode() : 0;
-        result = 31 * result + (queryResponseHolder != null ? queryResponseHolder.hashCode() : 0);
-        result = 31 * result + (globalException != null ? globalException.hashCode() : 0);
-        return result;
+        return Objects.hash(globalStatus, queryResponseHolder, globalException);
     }
 
     @Override

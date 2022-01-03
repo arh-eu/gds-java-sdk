@@ -1,63 +1,55 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventResultHolder;
 import hu.arheu.gds.message.data.MessageData3EventAck;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class MessageData3EventAckImpl extends MessageData3EventAck {
+
+public class MessageData3EventAckImpl extends MessagePart implements MessageData3EventAck {
+
     private List<EventResultHolder> eventResults;
     private AckStatus globalStatus;
     private String globalException;
 
-    public MessageData3EventAckImpl(boolean cache,
-                                    List<EventResultHolder> eventResults,
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData3EventAckImpl() {
+    }
+
+    public MessageData3EventAckImpl(List<EventResultHolder> eventResults,
                                     AckStatus globalStatus,
-                                    String globalException) throws IOException, ValidationException {
+                                    String globalException) throws ValidationException {
+
         this.eventResults = eventResults;
         this.globalStatus = globalStatus;
         this.globalException = globalException;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData3EventAckImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData3EventAckImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData3EventAckImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.EVENT_ACK_3;
-            }
-            @Override
-            public MessageData3EventAckImpl asEventAckMessageData3() {
-                return MessageData3EventAckImpl.this;
-            }
-            @Override
-            public boolean isEventAckMessageData3() {
-                return true;
-            }
-        };
+    public MessageData3EventAckImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -75,26 +67,28 @@ public class MessageData3EventAckImpl extends MessageData3EventAck {
         return this.globalException;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
+    public void checkContent() throws ValidationException {
+        Validator.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
                 "globalStatus");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
         WriterHelper.packArrayHeader(packer, 3);
         WriterHelper.packValue(packer, this.globalStatus == null ? null : this.globalStatus.getValue());
-        WriterHelper.packPackables(packer, this.eventResults);
+        WriterHelper.packMessagePartCollection(packer, this.eventResults);
         WriterHelper.packValue(packer, this.globalException);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event ack data",
                 this.getClass().getSimpleName())) {
 
@@ -111,15 +105,17 @@ public class MessageData3EventAckImpl extends MessageData3EventAck {
                 int arrayHeaderSize = ReaderHelper.unpackArrayHeader(unpacker, null, "event results",
                         this.getClass().getSimpleName());
                 for (int i = 0; i < arrayHeaderSize; ++i) {
-                    this.eventResults.add(EventResultHolderImpl.unpackContent(unpacker));
+                    EventResultHolderImpl holder = new EventResultHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    this.eventResults.add(holder);
                 }
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
             this.globalException = ReaderHelper.unpackStringValue(unpacker, "global exception",
                     this.getClass().getSimpleName());
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -129,17 +125,14 @@ public class MessageData3EventAckImpl extends MessageData3EventAck {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MessageData3EventAckImpl that = (MessageData3EventAckImpl) o;
-        if (eventResults != null ? !eventResults.equals(that.eventResults) : that.eventResults != null) return false;
-        if (globalStatus != that.globalStatus) return false;
-        return globalException != null ? globalException.equals(that.globalException) : that.globalException == null;
+        return Objects.equals(eventResults, that.eventResults)
+                && globalStatus == that.globalStatus
+                && Objects.equals(globalException, that.globalException);
     }
 
     @Override
     public int hashCode() {
-        int result = eventResults != null ? eventResults.hashCode() : 0;
-        result = 31 * result + (globalStatus != null ? globalStatus.hashCode() : 0);
-        result = 31 * result + (globalException != null ? globalException.hashCode() : 0);
-        return result;
+        return Objects.hash(eventResults, globalStatus, globalException);
     }
 
     @Override
@@ -147,7 +140,6 @@ public class MessageData3EventAckImpl extends MessageData3EventAck {
         return "MessageData3EventAckImpl{" +
                 "eventResults=" + eventResults +
                 ", globalStatus=" + globalStatus +
-                ", globalException='" + globalException + '\'' +
                 '}';
     }
 }

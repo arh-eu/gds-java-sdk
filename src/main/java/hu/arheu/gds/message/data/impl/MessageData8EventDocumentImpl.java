@@ -1,83 +1,75 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.FieldHolder;
 import hu.arheu.gds.message.data.MessageData8EventDocument;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.Externalizable;
+import java.util.*;
 
-public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
+
+public class MessageData8EventDocumentImpl extends MessagePart implements MessageData8EventDocument {
+
     private String tableName;
     private List<FieldHolder> fieldHolders;
     private List<List<Value>> records;
-    private List<List<Object>> recordsObject = null;
-    private List<Map<String,  Value>> recordsMap = null;
-    private List<Map<String,  Object>> recordsObjectMap = null;
     private Map<Integer, List<String>> returningOptions;
 
-    public MessageData8EventDocumentImpl(boolean cache,
-                                         String tableName,
+    //not serialized
+    private List<List<Object>> recordsObject;
+    private List<Map<String, Value>> recordsMap;
+    private List<Map<String, Object>> recordsObjectMap;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData8EventDocumentImpl() {
+    }
+
+    public MessageData8EventDocumentImpl(String tableName,
                                          List<FieldHolder> fieldHolders,
                                          List<List<Value>> records,
-                                         Map<Integer, List<String>> returningOptions) throws IOException, ValidationException {
+                                         Map<Integer, List<String>> returningOptions) throws ValidationException {
+
         this.tableName = tableName;
         this.fieldHolders = fieldHolders;
         this.records = records;
         this.returningOptions = returningOptions;
-        this.cache = cache;
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
+    public MessageData8EventDocumentImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
+    }
+
+    public MessageData8EventDocumentImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
+    }
+
+
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.tableName, this.getClass().getSimpleName(),
+    public void checkContent() throws ValidationException {
+
+        Validator.requireNonNullValue(this.tableName, this.getClass().getSimpleName(),
                 "tableName");
-        ExceptionHelper.requireNonNullValue(this.fieldHolders, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.fieldHolders, this.getClass().getSimpleName(),
                 "fieldHolders");
-        ExceptionHelper.requireNonNullValue(this.records, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.records, this.getClass().getSimpleName(),
                 "records");
-        ExceptionHelper.requireNonNullValue(this.returningOptions, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.returningOptions, this.getClass().getSimpleName(),
                 "returningOptions");
-    }
-
-    public MessageData8EventDocumentImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
-    }
-
-    public MessageData8EventDocumentImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.EVENT_DOCUMENT_8;
-            }
-            @Override
-            public MessageData8EventDocumentImpl asEventDocumentMessageData8() {
-                return MessageData8EventDocumentImpl.this;
-            }
-            @Override
-            public boolean isEventDocumentMessageData8() {
-                return true;
-            }
-        };
     }
 
     @Override
@@ -97,9 +89,9 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
 
     @Override
     public List<List<Object>> getRecordsObject() {
-        if(recordsObject == null) {
+        if (recordsObject == null) {
             recordsObject = new ArrayList<>();
-            for(List<Value> o: records) {
+            for (List<Value> o : records) {
                 recordsObject.add(new ArrayList<>(o));
             }
         }
@@ -108,11 +100,11 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
 
     @Override
     public List<Map<String, Value>> getRecordsMap() {
-        if(recordsMap == null) {
+        if (recordsMap == null) {
             recordsMap = new ArrayList<>();
-            for(List<Value> values: records) {
+            for (List<Value> values : records) {
                 Map<String, Value> record = new HashMap<>();
-                for(int i = 0; i < fieldHolders.size(); i++) {
+                for (int i = 0; i < fieldHolders.size(); i++) {
                     record.put(fieldHolders.get(i).getFieldName(), values.get(i));
                 }
                 recordsMap.add(record);
@@ -137,21 +129,24 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
         return this.returningOptions;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
         WriterHelper.packArrayHeader(packer, 4);
         WriterHelper.packValue(packer, this.tableName);
-        WriterHelper.packPackables(packer, this.fieldHolders);
+        WriterHelper.packMessagePartCollection(packer, this.fieldHolders);
         WriterHelper.packValueListListValues(packer, this.records);
-        WriterHelper.packMapIntegerStringListValues(packer, this.returningOptions);
+        WriterHelper.packEmptyMap(packer);
+        //WriterHelper.packMapIntegerStringListValues(packer, this.returningOptions);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event document data",
                 this.getClass().getSimpleName())) {
 
@@ -170,10 +165,12 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
                         this.getClass().getSimpleName());
 
                 for (int i = 0; i < fieldHoldersSize; i++) {
-                    this.fieldHolders.add(FieldHolderImpl.unpackContent(unpacker));
+                    FieldHolderImpl holder = new FieldHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    this.fieldHolders.add(holder);
                 }
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
 
             this.records = ReaderHelper.unpackValueListListValues(unpacker,
@@ -186,13 +183,13 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
 
             this.returningOptions = ReaderHelper.unpackMapIntegerStringListValues(unpacker,
                     null,
-                    null, "returnning options",
+                    null, "returning options",
                     "returning options map key",
                     "returning options map value (fieldnames)",
                     "fieldname",
                     this.getClass().getSimpleName());
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -202,31 +199,24 @@ public class MessageData8EventDocumentImpl extends MessageData8EventDocument {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MessageData8EventDocumentImpl that = (MessageData8EventDocumentImpl) o;
-        if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) return false;
-        if (fieldHolders != null ? !fieldHolders.equals(that.fieldHolders) : that.fieldHolders != null) return false;
-        if (records != null ? !records.equals(that.records) : that.records != null) return false;
-        return returningOptions != null ? returningOptions.equals(that.returningOptions) : that.returningOptions == null;
+        return Objects.equals(tableName, that.tableName)
+                && Objects.equals(fieldHolders, that.fieldHolders)
+                && Objects.equals(records, that.records)
+                && Objects.equals(returningOptions, that.returningOptions);
     }
 
     @Override
     public int hashCode() {
-        int result = tableName != null ? tableName.hashCode() : 0;
-        result = 31 * result + (fieldHolders != null ? fieldHolders.hashCode() : 0);
-        result = 31 * result + (records != null ? records.hashCode() : 0);
-        result = 31 * result + (returningOptions != null ? returningOptions.hashCode() : 0);
-        return result;
+        return Objects.hash(tableName, fieldHolders, records, returningOptions);
     }
 
     @Override
     public String toString() {
         return "MessageData8EventDocumentImpl{" +
                 "tableName='" + tableName + '\'' +
-                ", fieldHolders=" + fieldHolders +
-                ", records=" + records +
-                ", recordsObject=" + recordsObject +
-                ", recordsMap=" + recordsMap +
-                ", recordsObjectMap=" + recordsObjectMap +
-                ", returningOptions=" + returningOptions +
+                ", fieldHoldersLen=" + fieldHolders.size() +
+                ", recordsLen=" + records.size() +
+                ", returningOptionsLen=" + returningOptions.size() +
                 '}';
     }
 }

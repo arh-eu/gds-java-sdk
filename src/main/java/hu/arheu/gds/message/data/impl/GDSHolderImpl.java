@@ -1,33 +1,55 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.GDSHolder;
-import hu.arheu.gds.message.util.ExceptionHelper;
-import hu.arheu.gds.message.util.ReadException;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
 import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
 import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
+import java.util.Objects;
 
-public class GDSHolderImpl implements GDSHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 2;
 
-    private final String clusterName;
-    private final String gdsNodeName;
+public class GDSHolderImpl extends MessagePart implements GDSHolder {
+    private String clusterName;
+    private String gdsNodeName;
 
-    public GDSHolderImpl(String clusterName, String gdsNodeName) {
-        this.clusterName = clusterName;
-        this.gdsNodeName = gdsNodeName;
-        checkContent(this);
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public GDSHolderImpl() {
     }
 
-    private static void checkContent(GDSHolder gdsDescriptor) {
-        ExceptionHelper.requireNonNullValue(gdsDescriptor.getClusterName(), gdsDescriptor.getClass().getSimpleName(),
+    public GDSHolderImpl(String clusterName,
+                         String gdsNodeName) {
+
+        this.clusterName = clusterName;
+        this.gdsNodeName = gdsNodeName;
+
+        checkContent();
+    }
+
+    @Override
+    public void checkContent() {
+
+        Validator.requireNonNullValue(getClusterName(), getClass().getSimpleName(),
                 "clusterName");
-        ExceptionHelper.requireNonNullValue(gdsDescriptor.getGDSNodeName(), gdsDescriptor.getClass().getSimpleName(),
+
+        Validator.requireNonNullValue(getGDSNodeName(), getClass().getSimpleName(),
                 "gdsNodeName");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -41,36 +63,31 @@ public class GDSHolderImpl implements GDSHolder {
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
-    @Override
-    public void packContent(MessageBufferPacker packer) throws IOException {
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, getClusterName());
         WriterHelper.packValue(packer, getGDSNodeName());
     }
 
-    public static GDSHolder unpackContent(MessageUnpacker unpacker) throws ReadException, IOException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "gds descriptor",
                 GDSHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "gds descriptor",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "gds descriptor",
                     GDSHolderImpl.class.getSimpleName());
 
-            GDSHolder gdsHolderTemp = new GDSHolderImpl(
-                    ReaderHelper.unpackStringValue(unpacker, "cluster name",
-                            GDSHolderImpl.class.getSimpleName()),
-                    ReaderHelper.unpackStringValue(unpacker, "gds node name",
-                            GDSHolderImpl.class.getSimpleName()));
+            clusterName = ReaderHelper.unpackStringValue(unpacker, "cluster name",
+                    GDSHolderImpl.class.getSimpleName());
+            gdsNodeName = ReaderHelper.unpackStringValue(unpacker, "gds node name",
+                    GDSHolderImpl.class.getSimpleName());
 
-            checkContent(gdsHolderTemp);
-            return gdsHolderTemp;
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -78,23 +95,12 @@ public class GDSHolderImpl implements GDSHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GDSHolderImpl gdsHolder = (GDSHolderImpl) o;
-        if (clusterName != null ? !clusterName.equals(gdsHolder.clusterName) : gdsHolder.clusterName != null)
-            return false;
-        return gdsNodeName != null ? gdsNodeName.equals(gdsHolder.gdsNodeName) : gdsHolder.gdsNodeName == null;
+        return Objects.equals(clusterName, gdsHolder.clusterName)
+                && Objects.equals(gdsNodeName, gdsHolder.gdsNodeName);
     }
 
     @Override
     public int hashCode() {
-        int result = clusterName != null ? clusterName.hashCode() : 0;
-        result = 31 * result + (gdsNodeName != null ? gdsNodeName.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "GDSHolderImpl{" +
-                "clusterName='" + clusterName + '\'' +
-                ", gdsNodeName='" + gdsNodeName + '\'' +
-                '}';
+        return Objects.hash(clusterName, gdsNodeName);
     }
 }

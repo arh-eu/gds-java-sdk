@@ -1,19 +1,35 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 
-import java.io.IOException;
+public interface MessageData6AttachmentResponse extends MessageData {
 
-public abstract class MessageData6AttachmentResponse extends MessageData implements MessageData6AttachmentResponseDescriptor {
-   
-    public MessageData6AttachmentResponse(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    AttachmentResultHolder getResult();
+
+    /**
+     * Placeholder value, always {@code null} currently.
+     *
+     * @return {@code null}
+     */
+    EventHolder getEventHolder();
+
+    @Override
+    default MessageData6AttachmentResponse asAttachmentResponseMessageData6() throws ClassCastException {
+        return this;
     }
 
-    public MessageData6AttachmentResponse(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isAttachmentResponseMessageData6() {
+        return true;
     }
 
-    public MessageData6AttachmentResponse() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.ATTACHMENT_RESPONSE_6;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 2;
+    }
 }

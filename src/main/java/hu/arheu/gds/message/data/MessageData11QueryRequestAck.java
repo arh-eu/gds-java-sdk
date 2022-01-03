@@ -1,19 +1,26 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+public interface MessageData11QueryRequestAck extends Ack, MessageData {
+    QueryResponseHolder getQueryResponseHolder();
 
-import java.io.IOException;
-
-public abstract class MessageData11QueryRequestAck extends MessageData implements MessageData11QueryRequestAckDescriptor {
-
-    public MessageData11QueryRequestAck(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    @Override
+    default MessageData11QueryRequestAck asQueryRequestAckMessageData11() throws ClassCastException {
+        return this;
     }
 
-    public MessageData11QueryRequestAck(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isQueryRequestAckMessageData11() {
+        return true;
     }
 
-    public MessageData11QueryRequestAck() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.QUERY_REQUEST_ACK_11;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 3;
+    }
 }

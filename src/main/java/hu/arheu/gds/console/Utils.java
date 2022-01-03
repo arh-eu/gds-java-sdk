@@ -2,9 +2,7 @@ package hu.arheu.gds.console;
 
 import com.google.gson.*;
 import hu.arheu.gds.message.data.MessageData;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
 import hu.arheu.gds.message.header.MessageHeader;
-import hu.arheu.gds.message.header.MessageHeaderTypeHelper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.msgpack.value.Value;
@@ -33,9 +31,10 @@ public class Utils {
         skippedAttributes.add("binary");
         skippedAttributes.add("cache");
         skippedAttributes.add("messageSize");
-
+        /*
         skippedClasses.add(MessageHeaderTypeHelper.class);
         skippedClasses.add(MessageDataTypeHelper.class);
+        */
 
 
         GsonBuilder gsonBuilder = new GsonBuilder().setLenient();

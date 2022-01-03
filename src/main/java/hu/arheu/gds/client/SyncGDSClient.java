@@ -14,10 +14,9 @@ import hu.arheu.gds.message.data.*;
 import hu.arheu.gds.message.data.impl.AckStatus;
 import hu.arheu.gds.message.data.impl.AttachmentResponseAckResultHolderImpl;
 import hu.arheu.gds.message.data.impl.AttachmentResultHolderImpl;
-import hu.arheu.gds.message.header.MessageDataType;
+import hu.arheu.gds.message.errors.ValidationException;
 import hu.arheu.gds.message.header.MessageHeaderBase;
 import hu.arheu.gds.message.util.MessageManager;
-import hu.arheu.gds.message.util.ValidationException;
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslContext;
 import org.msgpack.value.Value;
@@ -279,7 +278,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * response for it. The return value indicates whether the login was successful.
      * <p>
      * If the connection or the login was successful the {@link SyncGDSClient#getConnectionError()} ()}
-     * will contain the response errors.
+     * will contain the response hu.arheu.gds.message.errors.
      *
      * @return {@code true} on successful login, {@code false} otherwise.
      */
@@ -295,7 +294,7 @@ public final class SyncGDSClient implements AutoCloseable {
             try {
                 if (!connectLatch.await(timeout, TimeUnit.MILLISECONDS)) {
                     connectionFailureReason = Either.fromLeft(new GDSTimeoutException("The GDS did not reply within "
-                    + timeout + "ms! (Is the URI correct?)"));
+                            + timeout + "ms! (Is the URI correct?)"));
                     return false;
                 }
                 return (asyncGDSClient.getState() == ConnectionState.LOGGED_IN);
@@ -336,7 +335,7 @@ public final class SyncGDSClient implements AutoCloseable {
     /**
      * Returns whether the connection failed because of invalid login credentials.
      *
-     * @return true if the login was not successful, false on successful login or connection errors.
+     * @return true if the login was not successful, false on successful login or connection hu.arheu.gds.message.errors.
      */
     public boolean hasLoginFailed() {
         return connectionFailureReason != null && connectionFailureReason.isRightSet();
@@ -390,7 +389,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param priorityLevels The priority levels
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public EventResponse sendEvent2(String operations,
@@ -412,7 +411,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param priorityLevels The priority levels
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public EventResponse sendEvent2(List<String> operations,
@@ -431,7 +430,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param event the event to be sent to the GDS.
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public EventResponse sendEvent2(MessageData2Event event)
             throws IOException, ValidationException {
@@ -443,11 +442,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param messageID the messageID to be used in the header.
+     * @param messageID the messageID to be used in the hu.arheu.gds.message.header.
      * @param event     the event to be sent to the GDS.
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public EventResponse sendEvent2(String messageID, MessageData2Event event)
@@ -460,11 +459,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param header the message header
+     * @param header the message hu.arheu.gds.message.header
      * @param event  the event to be sent to the GDS.
      * @return the event ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public EventResponse sendEvent2(MessageHeaderBase header, MessageData2Event event)
             throws IOException, ValidationException {
@@ -485,7 +484,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param request the attachment request to be sent to the GDS.
      * @return the attachment result
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public AttachmentResult
     sendAttachmentRequest4(String request) throws IOException, ValidationException {
@@ -505,7 +504,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param request the attachment request to be sent to the GDS.
      * @return the attachment result
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public AttachmentResult
     sendAttachmentRequest4(MessageData4AttachmentRequest request) throws IOException, ValidationException {
@@ -522,11 +521,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * a {@link MessageData5AttachmentRequestAck} or an {@link MessageData6AttachmentResponse} type of message.
      * Therefore the return type will be an {@link Either} type as well.
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the attachment request to be sent to the GDS.
      * @return the attachment result
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public AttachmentResult
     sendAttachmentRequest4(String messageID, MessageData4AttachmentRequest request) throws IOException, ValidationException {
@@ -542,11 +541,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * a {@link MessageData5AttachmentRequestAck} or an {@link MessageData6AttachmentResponse} type of message.
      * Therefore the return type will be an {@link Either} type as well.
      *
-     * @param header  the message header to be used
+     * @param header  the message headerto be used
      * @param request the attachment request to be sent to the GDS.
      * @return the attachment result
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public AttachmentResult
     sendAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request) throws IOException, ValidationException {
@@ -563,8 +562,8 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param fieldHolders the field holder values
      * @param records      the records
      * @return The event document ACK message sent by the GDS.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public EventDocumentResponse sendEventDocument8(String tableName,
                                                     List<FieldHolder> fieldHolders,
@@ -583,8 +582,8 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param records          the records
      * @param returningOptions the returning fields
      * @return The event document ACK message sent by the GDS.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public EventDocumentResponse sendEventDocument8(String tableName,
                                                     List<FieldHolder> fieldHolders,
@@ -601,7 +600,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param eventDocument the event document to be sent to the GDS.
      * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public EventDocumentResponse sendEventDocument8(MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -613,11 +612,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param messageID     the message ID to be used in the header
+     * @param messageID     the message ID to be used in the hu.arheu.gds.message.header
      * @param eventDocument the event document to be sent to the GDS.
      * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public EventDocumentResponse sendEventDocument8(String messageID, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -629,11 +628,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param header        the message header
+     * @param header        the message hu.arheu.gds.message.header
      * @param eventDocument the event document to be sent to the GDS.
      * @return the event document ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public EventDocumentResponse sendEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -651,8 +650,8 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param consistencyType the type of consistency used for the query
      * @param timeout         the timeout used in the GDS for the query
      * @return the query ACK with the result.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public QueryResponse sendQueryRequest10(
             String query,
@@ -673,8 +672,8 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param pageSize        the page size used for the query
      * @param queryType       the type of the query (scroll/page)
      * @return the query ACK with the result.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public QueryResponse sendQueryRequest10(
             String query,
@@ -694,7 +693,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param request the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendQueryRequest10(MessageData10QueryRequest request)
             throws IOException, ValidationException {
@@ -707,11 +706,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendQueryRequest10(String messageID, MessageData10QueryRequest request)
             throws IOException, ValidationException {
@@ -724,11 +723,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param header  the message header
+     * @param header  the message hu.arheu.gds.message.header
      * @param request the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendQueryRequest10(MessageHeaderBase header, MessageData10QueryRequest request)
             throws IOException, ValidationException {
@@ -745,30 +744,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param queryContextHolder the ContextHolder containing information about the current query status
      * @param timeout            the timeout used in the GDS for the query
      * @return the query ACK with the result.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public QueryResponse sendNextQueryPage12(
             QueryContextHolder queryContextHolder, Long timeout) throws IOException, ValidationException {
-        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
-                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
-    }
-
-
-    /**
-     * Sends a next query page request message, awaiting the reply. If the GDS does not respond within the given time limit ({@code timeout}),
-     * will throw a {@link GDSTimeoutException}.
-     * Otherwise returns the response given by the GDS.
-     *
-     * @param queryContextHolder the ContextHolder containing information about the current query status
-     * @param timeout            the timeout used in the GDS for the query
-     * @return the query ACK with the result.
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
-     */
-    public QueryResponse sendNextQueryPage12(
-            QueryContextHolderSerializable queryContextHolder,
-            Long timeout) throws IOException, ValidationException {
         return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
                 MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
     }
@@ -781,7 +761,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param request the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendNextQueryPage12(MessageData12NextQueryPage request)
             throws IOException, ValidationException {
@@ -793,11 +773,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendNextQueryPage12(String messageID, MessageData12NextQueryPage request)
             throws IOException, ValidationException {
@@ -810,11 +790,11 @@ public final class SyncGDSClient implements AutoCloseable {
      * will throw a {@link GDSTimeoutException}.
      * Otherwise returns the response given by the GDS.
      *
-     * @param header  the message header
+     * @param header  the message hu.arheu.gds.message.header
      * @param request the query request to be sent to the GDS.
      * @return the query ACK with the result.
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public QueryResponse sendNextQueryPage12(MessageHeaderBase header, MessageData12NextQueryPage request)
             throws IOException, ValidationException {
@@ -832,7 +812,7 @@ public final class SyncGDSClient implements AutoCloseable {
      * @param messageOperation the operation to send the message
      * @return the created CountDownLatch used to await the message
      * @throws IOException              if the message cannot be packed
-     * @throws ValidationException      if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException      if any value constraints the restrictions in the structure of the headeror the body.
      * @throws IllegalArgumentException if the given messageID is already used for an outgoing message which
      */
     private CountDownLatch processOutgoingMessage(String messageID, MessageOperation messageOperation) throws IOException, ValidationException {
@@ -849,7 +829,7 @@ public final class SyncGDSClient implements AutoCloseable {
      *
      * @param countDownLatch the CountDownLatch attached to the current message.
      * @param messageID      the ID of the message the client is currently waiting for
-     * @return the header and the data for the given message
+     * @return the headerand the data for the given message
      * @throws GDSTimeoutException  if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws InterruptedException if the current thread gets interrupted
      */
@@ -866,15 +846,15 @@ public final class SyncGDSClient implements AutoCloseable {
      *
      * @param countDownLatch the CountDownLatch attached to the current message.
      * @param messageID      the ID of the message the client is currently waiting for
-     * @return the header and the data for the given message
+     * @return the headerand the data for the given message
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
     private EventResponse awaitEventACK3(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
-            if (resultPair.getSecond().getTypeHelper().isEventAckMessageData3()) {
-                return new EventResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asEventAckMessageData3());
+            if (resultPair.getSecond().isEventAckMessageData3()) {
+                return new EventResponse(resultPair.getFirst(), resultPair.getSecond().asEventAckMessageData3());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
                 log.config(msg);
@@ -894,18 +874,18 @@ public final class SyncGDSClient implements AutoCloseable {
      *
      * @param countDownLatch the CountDownLatch attached to the current message.
      * @param messageID      the ID of the message the client is currently waiting for
-     * @return the header and the data for the given message
+     * @return the headerand the data for the given message
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
     private AttachmentResult awaitAttachment(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
-            if (resultPair.getSecond().getTypeHelper().isAttachmentRequestAckMessageData5()) {
-                MessageData5AttachmentRequestAck messageData5 = resultPair.getSecond().getTypeHelper().asAttachmentRequestAckMessageData5();
+            if (resultPair.getSecond().isAttachmentRequestAckMessageData5()) {
+                MessageData5AttachmentRequestAck messageData5 = resultPair.getSecond().asAttachmentRequestAckMessageData5();
                 if (messageData5.getData() == null || messageData5.getData().getResult().getAttachment() != null) {
                     return new AttachmentResult(resultPair.getFirst(),
-                            Either.fromLeft(resultPair.getSecond().getTypeHelper().asAttachmentRequestAckMessageData5()));
+                            Either.fromLeft(resultPair.getSecond().asAttachmentRequestAckMessageData5()));
                 } else {
                     try {
                         log.config("The incoming message with the ID " + messageID + " did not contain the attachment, " +
@@ -957,15 +937,15 @@ public final class SyncGDSClient implements AutoCloseable {
      *
      * @param countDownLatch the CountDownLatch attached to the current message.
      * @param messageID      the ID of the message the client is currently waiting for
-     * @return the header and the data for the given message
+     * @return the headerand the data for the given message
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
     private EventDocumentResponse awaitEventDocumentACK9(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
-            if (resultPair.getSecond().getTypeHelper().isEventDocumentAckMessageData9()) {
-                return new EventDocumentResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asEventDocumentAckMessageData9());
+            if (resultPair.getSecond().isEventDocumentAckMessageData9()) {
+                return new EventDocumentResponse(resultPair.getFirst(), resultPair.getSecond().asEventDocumentAckMessageData9());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
                 log.config(msg);
@@ -984,15 +964,15 @@ public final class SyncGDSClient implements AutoCloseable {
      *
      * @param countDownLatch the CountDownLatch attached to the current message.
      * @param messageID      the ID of the message the client is currently waiting for
-     * @return the header and the data for the given message
+     * @return the headerand the data for the given message
      * @throws GDSTimeoutException if the message does not arrive in time specified by {@link SyncGDSClient#timeout}
      * @throws Error               if the current thread gets interrupted
      */
     private QueryResponse awaitQueryACK11(CountDownLatch countDownLatch, String messageID) {
         try {
             Pair<MessageHeaderBase, MessageData> resultPair = awaitMessage(countDownLatch, messageID);
-            if (resultPair.getSecond().getTypeHelper().isQueryRequestAckMessageData11()) {
-                return new QueryResponse(resultPair.getFirst(), resultPair.getSecond().getTypeHelper().asQueryRequestAckMessageData11());
+            if (resultPair.getSecond().isQueryRequestAckMessageData11()) {
+                return new QueryResponse(resultPair.getFirst(), resultPair.getSecond().asQueryRequestAckMessageData11());
             } else {
                 String msg = "The type for the reply for the message with ID " + messageID + " is invalid.";
                 log.config(msg);

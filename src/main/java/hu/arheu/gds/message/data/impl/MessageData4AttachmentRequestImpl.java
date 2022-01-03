@@ -1,53 +1,43 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.MessageData4AttachmentRequest;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 
-import java.io.IOException;
+import java.io.Externalizable;
+import java.util.Objects;
 
-public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentRequest {
+
+public class MessageData4AttachmentRequestImpl extends MessagePart implements MessageData4AttachmentRequest {
+
     private String request;
 
-    public MessageData4AttachmentRequestImpl(boolean cache,
-                                             String request) throws IOException, ValidationException {
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData4AttachmentRequestImpl() {
+    }
+
+    public MessageData4AttachmentRequestImpl(String request) throws ValidationException {
+
         this.request = request;
-        this.cache = cache;
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData4AttachmentRequestImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData4AttachmentRequestImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData4AttachmentRequestImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.ATTACHMENT_REQUEST_4;
-            }
-            @Override
-            public MessageData4AttachmentRequestImpl asAttachmentRequestMessageData4() {
-                return MessageData4AttachmentRequestImpl.this;
-            }
-            @Override
-            public boolean isAttachmentRequestMessageData4() {
-                return true;
-            }
-        };
+    public MessageData4AttachmentRequestImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -55,8 +45,8 @@ public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentReq
         return this.request;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     public boolean isAttachmentRequestMessageData4() {
@@ -64,17 +54,17 @@ public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentReq
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.request, this.getClass().getSimpleName(), "request");
+    public void checkContent() throws ValidationException {
+        Validator.requireNonNullValue(this.request, this.getClass().getSimpleName(), "request");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
         WriterHelper.packValue(packer, this.request);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
         this.request = ReaderHelper.unpackStringValue(unpacker, "attachment request",
                 this.getClass().getSimpleName());
 
@@ -82,22 +72,24 @@ public class MessageData4AttachmentRequestImpl extends MessageData4AttachmentReq
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        MessageData4AttachmentRequestImpl that = (MessageData4AttachmentRequestImpl) o;
-        return request != null ? request.equals(that.request) : that.request == null;
-    }
-
-    @Override
-    public int hashCode() {
-        return request != null ? request.hashCode() : 0;
-    }
-
-    @Override
     public String toString() {
         return "MessageData4AttachmentRequestImpl{" +
                 "request='" + request + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MessageData4AttachmentRequestImpl that = (MessageData4AttachmentRequestImpl) o;
+
+        return Objects.equals(request, that.request);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(request);
     }
 }

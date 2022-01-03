@@ -1,19 +1,26 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.MessageData0Connection;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.data.MessageDataType;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
+import org.msgpack.value.impl.ImmutableNilValueImpl;
 
-import java.io.IOException;
 import java.util.Objects;
 
-public class MessageData0ConnectionImpl extends MessageData0Connection {
+
+public class MessageData0ConnectionImpl extends MessagePart implements MessageData0Connection {
+
     private Boolean serveOnTheSameConnection;
     private String clusterName;
     private Integer protocolVersionNumber;
@@ -21,75 +28,67 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
     private Long fragmentTransmissionUnit;
     private String password;
 
-    public MessageData0ConnectionImpl(boolean cache,
-                                      Boolean serveOnTheSameConnection,
+    /**
+     * Do not remove, as it's needed for the serialization through {@link java.io.Externalizable}
+     */
+    public MessageData0ConnectionImpl() {
+    }
+
+    public MessageData0ConnectionImpl(Boolean serveOnTheSameConnection,
                                       String clusterName,
                                       Integer protocolVersionNumber,
                                       Boolean fragmentationSupported,
                                       Long fragmentTransmissionUnit,
-                                      String password) throws IOException, ValidationException {
+                                      String password) throws ValidationException {
+
         this.serveOnTheSameConnection = serveOnTheSameConnection;
         this.clusterName = clusterName;
         this.protocolVersionNumber = protocolVersionNumber;
         this.fragmentationSupported = fragmentationSupported;
         this.fragmentTransmissionUnit = fragmentTransmissionUnit;
         this.password = password;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
-        init();
     }
 
-    public MessageData0ConnectionImpl(boolean cache,
-                                      Boolean serveOnTheSameConnection,
+    public MessageData0ConnectionImpl(Boolean serveOnTheSameConnection,
                                       String clusterName,
                                       Integer protocolVersionNumber,
                                       Boolean fragmentationSupported,
-                                      Long fragmentTransmissionUnit) throws IOException, ValidationException {
-        this(cache, serveOnTheSameConnection, clusterName, protocolVersionNumber, fragmentationSupported,
-                fragmentTransmissionUnit, null);
+                                      Long fragmentTransmissionUnit) throws ValidationException {
+
+        this(serveOnTheSameConnection, clusterName, protocolVersionNumber, fragmentationSupported, fragmentTransmissionUnit, null);
     }
 
 
-    public MessageData0ConnectionImpl(boolean cache,
-                                      Boolean serveOnTheSameConnection,
+    public MessageData0ConnectionImpl(Boolean serveOnTheSameConnection,
                                       Integer protocolVersionNumber,
                                       Boolean fragmentationSupported,
-                                      Long fragmentTransmissionUnit) throws IOException, ValidationException {
-        this(cache, serveOnTheSameConnection, null, protocolVersionNumber, fragmentationSupported,
-                fragmentTransmissionUnit, null);
+                                      Long fragmentTransmissionUnit) throws ValidationException {
+        this(serveOnTheSameConnection, null, protocolVersionNumber, fragmentationSupported, fragmentTransmissionUnit);
     }
 
-    public MessageData0ConnectionImpl(byte[] binary,
-                                      boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData0ConnectionImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData0ConnectionImpl(byte[] binary,
-                                      boolean cache,
-                                      boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    public MessageData0ConnectionImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
-
 
     @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.CONNECTION_0;
-            }
-            @Override
-            public MessageData0ConnectionImpl asConnectionMessageData0() {
-                return MessageData0ConnectionImpl.this;
-            }
-            @Override
-            public boolean isConnectionMessageData0() {
-                return true;
-            }
-        };
+    public MessageDataType getMessageDataType() {
+        return MessageDataType.CONNECTION_0;
+    }
+
+    @Override
+    public MessageData0ConnectionImpl asConnectionMessageData0() {
+        return MessageData0ConnectionImpl.this;
+    }
+
+    @Override
+    public boolean isConnectionMessageData0() {
+        return true;
     }
 
     @Override
@@ -122,26 +121,29 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
         return this.password;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.serveOnTheSameConnection, this.getClass().getSimpleName(),
+    public void checkContent() throws ValidationException {
+
+        Validator.requireNonNullValue(this.serveOnTheSameConnection, this.getClass().getSimpleName(),
                 "serveOnTheSameConnection");
-        ExceptionHelper.requireNonNullValue(this.protocolVersionNumber, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.protocolVersionNumber, this.getClass().getSimpleName(),
                 "protocolVersionNumber");
-        ExceptionHelper.requireNonNullValue(this.fragmentationSupported, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.fragmentationSupported, this.getClass().getSimpleName(),
                 "fragmentationSupported");
+
         if (this.fragmentationSupported) {
-            ExceptionHelper.requireNonNullValue(this.fragmentTransmissionUnit, this.getClass().getSimpleName(),
+            Validator.requireNonNullValue(this.fragmentTransmissionUnit, this.getClass().getSimpleName(),
                     "fragmentTransmissionUnit");
         }
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
         if (this.clusterName != null) {
             if (this.password != null) {
                 WriterHelper.packArrayHeader(packer, 6);
@@ -156,6 +158,7 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
                 WriterHelper.packArrayHeader(packer, 4);
             }
         }
+
         WriterHelper.packValue(packer, this.serveOnTheSameConnection);
         WriterHelper.packValue(packer, this.protocolVersionNumber);
         WriterHelper.packValue(packer, this.fragmentationSupported);
@@ -167,7 +170,8 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "connection data",
                 this.getClass().getSimpleName())) {
 
@@ -176,21 +180,21 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
 
             if (arrayHeaderSize != 4 && arrayHeaderSize != 5 && arrayHeaderSize != 6) {
                 throw new ReadException(String.format(
-                        "Array header size [%s] does not match expected header size [%s]", arrayHeaderSize, "4 or 5 or 6"));
+                        "Array headersize [%s] does not match expected headersize [%s]", arrayHeaderSize, "4 or 5 or 6"));
             }
 
-            Value value1 = unpacker.unpackValue();
-            Value value2 = unpacker.unpackValue();
-            Value value3 = unpacker.unpackValue();
-            Value value4 = unpacker.unpackValue();
-            Value value5 = null;
+            Value value1 = ReaderHelper.unpackValue(unpacker);
+            Value value2 = ReaderHelper.unpackValue(unpacker);
+            Value value3 = ReaderHelper.unpackValue(unpacker);
+            Value value4 = ReaderHelper.unpackValue(unpacker);
+            Value value5 = ImmutableNilValueImpl.get();
             Value value6 = null;
 
             if (arrayHeaderSize == 5) {
-                value5 = unpacker.unpackValue();
+                value5 = ReaderHelper.unpackValue(unpacker);
             } else if (arrayHeaderSize == 6) {
-                value5 = unpacker.unpackValue();
-                value6 = unpacker.unpackValue();
+                value5 = ReaderHelper.unpackValue(unpacker);
+                value6 = ReaderHelper.unpackValue(unpacker);
             }
 
             if (value1.isStringValue() || value1.isNilValue()) {
@@ -249,6 +253,7 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
                             "fragmentationSupported"));
                 }
                 this.fragmentationSupported = value3.asBooleanValue().getBoolean();
+
                 this.fragmentTransmissionUnit = value4.isNilValue() ? null : value4.asIntegerValue().asLong();
             }
 
@@ -268,7 +273,7 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
                 }
             }
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -289,17 +294,5 @@ public class MessageData0ConnectionImpl extends MessageData0Connection {
     @Override
     public int hashCode() {
         return Objects.hash(serveOnTheSameConnection, clusterName, protocolVersionNumber, fragmentationSupported, fragmentTransmissionUnit, password);
-    }
-
-    @Override
-    public String toString() {
-        return "MessageData0ConnectionImpl{" +
-                "serveOnTheSameConnection=" + serveOnTheSameConnection +
-                ", clusterName='" + clusterName + '\'' +
-                ", protocolVersionNumber=" + protocolVersionNumber +
-                ", fragmentationSupported=" + fragmentationSupported +
-                ", fragmentTransmissionUnit=" + fragmentTransmissionUnit +
-                ", password='" + password + '\'' +
-                '}';
     }
 }

@@ -1,19 +1,31 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+import java.util.Map;
 
-import java.io.IOException;
 
-public abstract class MessageData1ConnectionAck extends MessageData implements MessageData1ConnectionAckDescriptor {
+public interface MessageData1ConnectionAck extends Ack, MessageData {
+    MessageData0Connection getAckDataOk();
 
-    public MessageData1ConnectionAck(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    Map<Integer, String> getAckDataUnauthorizedItems();
+
+    @Override
+    default MessageData1ConnectionAck asConnectionAckMessageData1() throws ClassCastException {
+        return this;
     }
 
-    public MessageData1ConnectionAck(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isConnectionAckMessageData1() {
+        return true;
     }
 
-    public MessageData1ConnectionAck() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.CONNECTION_ACK_1;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 3;
+    }
 }

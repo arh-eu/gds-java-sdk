@@ -1,19 +1,30 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+import java.util.List;
 
-import java.io.IOException;
 
-public abstract class MessageData9EventDocumentAck extends MessageData implements MessageData9EventDocumentAckDescriptor {
+public interface MessageData9EventDocumentAck extends Ack, MessageData {
 
-    public MessageData9EventDocumentAck(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    List<EventDocumentResultHolder> getResults();
+
+    @Override
+    default MessageData9EventDocumentAck asEventDocumentAckMessageData9() throws ClassCastException {
+        return this;
     }
 
-    public MessageData9EventDocumentAck(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isEventDocumentAckMessageData9() {
+        return true;
     }
 
-    public MessageData9EventDocumentAck() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.EVENT_DOCUMENT_ACK_9;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 3;
+    }
 }

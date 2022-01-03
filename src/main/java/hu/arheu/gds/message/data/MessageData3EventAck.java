@@ -1,19 +1,30 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+import java.util.List;
 
-import java.io.IOException;
 
-public abstract class MessageData3EventAck extends MessageData implements MessageData3EventAckDescriptor {
-    
-    public MessageData3EventAck(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+public interface MessageData3EventAck extends Ack, MessageData {
+
+    List<EventResultHolder> getEventResult();
+
+    @Override
+    default MessageData3EventAck asEventAckMessageData3() throws ClassCastException {
+        return this;
     }
 
-    public MessageData3EventAck(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isEventAckMessageData3() {
+        return true;
     }
-    
-    public MessageData3EventAck() throws IOException { }
+
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.EVENT_ACK_3;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 3;
+    }
 }

@@ -1,33 +1,46 @@
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.AttachmentResponseAckResultHolder;
 import hu.arheu.gds.message.data.AttachmentResultHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Objects;
 
-public class AttachmentResponseAckResultHolderImpl implements AttachmentResponseAckResultHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 2;
-
+public class AttachmentResponseAckResultHolderImpl extends MessagePart implements AttachmentResponseAckResultHolder {
     private AckStatus status;
     private AttachmentResultHolder result;
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public AttachmentResponseAckResultHolderImpl() {
+    }
 
     public AttachmentResponseAckResultHolderImpl(AckStatus status, AttachmentResultHolder result) {
         this.status = status;
         this.result = result;
+
+        checkContent();
     }
 
-    private static void checkContent(AttachmentResponseAckResultHolder attachmentResponseAckResultHolder) {
-        ExceptionHelper.requireNonNullValue(attachmentResponseAckResultHolder.getStatus(),
-                attachmentResponseAckResultHolder.getClass().getSimpleName(),
-                "status");
-        ExceptionHelper.requireNonNullValue(attachmentResponseAckResultHolder.getResult(),
-                attachmentResponseAckResultHolder.getClass().getSimpleName(),
-                "result");
+    @Override
+    public void checkContent() {
+        Validator.requireNonNullValue(getStatus(), getClass().getSimpleName(), "status");
+        Validator.requireNonNullValue(getResult(), getClass().getSimpleName(), "result");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -41,34 +54,29 @@ public class AttachmentResponseAckResultHolderImpl implements AttachmentResponse
     }
 
     @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException, ValidationException {
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, this.status == null ? null : this.status.getValue());
-        WriterHelper.packPackable(packer, this.result);
-    }
-
-    public static AttachmentResponseAckResultHolder unpackContent(MessageUnpacker unpacker) throws IOException, ReadException {
-        if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "ack data",
-                AttachmentResponseAckResultHolder.class.getSimpleName())) {
-
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "ack data",
-                    AttachmentRequestAckDataHolderImpl.class.getSimpleName());
-
-            AttachmentResponseAckResultHolder dataTemp = new AttachmentResponseAckResultHolderImpl(
-                    AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
-                            AttachmentRequestAckDataHolderImpl.class.getSimpleName())),
-                    AttachmentResultHolderImpl.unpackContent(unpacker, AttachmentResultHolderType.ATTACHMENT_RESPONSE_ACK));
-            checkContent(dataTemp);
-            return dataTemp;
-        } else {
-            unpacker.unpackNil();
-        }
-        return null;
+        WriterHelper.packMessagePart(packer, this.result);
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+        if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "ack data",
+                AttachmentResponseAckResultHolder.class.getSimpleName())) {
+
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "ack data",
+                    AttachmentRequestAckDataHolderImpl.class.getSimpleName());
+
+            status = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
+                    AttachmentRequestAckDataHolderImpl.class.getSimpleName()));
+            result = new AttachmentResultHolderImpl();
+            ((AttachmentResultHolderImpl) result).setType(AttachmentResultHolder.Type.ATTACHMENT_RESPONSE_ACK);
+            result.unpackContentFrom(unpacker);
+            checkContent();
+        } else {
+            ReaderHelper.unpackNil(unpacker);
+        }
     }
 
     @Override
@@ -85,11 +93,4 @@ public class AttachmentResponseAckResultHolderImpl implements AttachmentResponse
         return Objects.hash(status, result);
     }
 
-    @Override
-    public String toString() {
-        return "AttachmentResponseAckResultHolderImpl{" +
-                "status=" + status +
-                ", result=" + result +
-                '}';
-    }
 }

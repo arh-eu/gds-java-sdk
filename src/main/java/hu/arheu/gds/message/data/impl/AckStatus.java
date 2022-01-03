@@ -3,10 +3,14 @@ package hu.arheu.gds.message.data.impl;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public enum AckStatus {
+
     OK(200, false),
     CREATED(201, false),
     ACCEPTED(202, false),
+    //used for client initiated, successful transaction rollback as a status code.
+    RESET_CONTENT(205, false),
     NOT_ACCEPTABLE_304(304, true),
     BAD_REQUEST(400, true),
     UNAUTHORIZED(401, true),
@@ -19,6 +23,8 @@ public enum AckStatus {
     PRECONDITION_FAILED(412, true),
     TOO_MANY_REQUESTS(429, true),
     INTERNAL_SERVER_ERROR(500, true),
+    // The GDS cannot handle the request because of an error, like the JobQueue is full, or the AsyncPool is exhausted.
+    SERVICE_UNAVAILABLE(503, true),
     LIMIT_EXCEEDED(509, true),
     NOT_EXTENDED(510, true);
 

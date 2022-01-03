@@ -1,6 +1,8 @@
+
 package hu.arheu.gds.message.data;
 
 import hu.arheu.gds.message.data.impl.AckStatus;
+
 
 /**
  * Interface used to denote an ACK message from the GDS.

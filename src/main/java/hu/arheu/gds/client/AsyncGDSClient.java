@@ -6,14 +6,14 @@
 
 package hu.arheu.gds.client;
 
+import hu.arheu.gds.message.FullGdsMessage;
 import hu.arheu.gds.message.data.*;
 import hu.arheu.gds.message.data.impl.AckStatus;
-import hu.arheu.gds.message.header.MessageDataType;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
 import hu.arheu.gds.message.header.MessageHeader;
 import hu.arheu.gds.message.header.MessageHeaderBase;
 import hu.arheu.gds.message.util.MessageManager;
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -500,7 +500,7 @@ public final class AsyncGDSClient {
      * @param priorityLevels The priority levels
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEvent2(String operations,
                                     Map<String, byte[]> binaryContents,
@@ -518,7 +518,7 @@ public final class AsyncGDSClient {
      * @param priorityLevels The priority levels
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEvent2(List<String> operations,
                                     Map<String, byte[]> binaryContents,
@@ -534,7 +534,7 @@ public final class AsyncGDSClient {
      * @param event the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEvent2(MessageData2Event event)
             throws IOException, ValidationException {
@@ -544,11 +544,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event message
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param event     the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEvent2(String messageID, MessageData2Event event)
             throws IOException, ValidationException {
@@ -558,11 +558,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event message
      *
-     * @param header the message header
+     * @param header the message hu.arheu.gds.message.header
      * @param event  the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEvent2(MessageHeaderBase header, MessageData2Event event)
             throws IOException, ValidationException {
@@ -576,7 +576,7 @@ public final class AsyncGDSClient {
      * @param request the attachment request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequest4(String request) throws IOException, ValidationException {
         return sendMessage(MessageManager.createMessageHeaderBase(userName, MessageDataType.ATTACHMENT_REQUEST_4),
@@ -589,7 +589,7 @@ public final class AsyncGDSClient {
      * @param request the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequest4(MessageData4AttachmentRequest request)
             throws IOException, ValidationException {
@@ -600,11 +600,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment request message
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequest4(String messageID, MessageData4AttachmentRequest request)
             throws IOException, ValidationException {
@@ -615,11 +615,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment request message
      *
-     * @param header  the message header
+     * @param header  the message hu.arheu.gds.message.header
      * @param request the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request)
             throws IOException, ValidationException {
@@ -650,7 +650,7 @@ public final class AsyncGDSClient {
      * @param requestAck the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequestAck5(MessageData5AttachmentRequestAck requestAck)
             throws IOException, ValidationException {
@@ -661,11 +661,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment request ACK message
      *
-     * @param messageID  the message ID to be used in the header
+     * @param messageID  the message ID to be used in the hu.arheu.gds.message.header
      * @param requestAck the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequestAck5(String messageID, MessageData5AttachmentRequestAck requestAck)
             throws IOException, ValidationException {
@@ -676,11 +676,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment request ACK message
      *
-     * @param header     the message header
+     * @param header     the message hu.arheu.gds.message.header
      * @param requestAck the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentRequestAck5(MessageHeaderBase header, MessageData5AttachmentRequestAck requestAck)
             throws IOException, ValidationException {
@@ -694,8 +694,8 @@ public final class AsyncGDSClient {
      * @param result      the result holder containing the attachment
      * @param eventHolder the event holder of the message
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendAttachmentResponse6(
             AttachmentResultHolder result,
@@ -711,7 +711,7 @@ public final class AsyncGDSClient {
      * @param response the response to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponse6(MessageData6AttachmentResponse response)
             throws IOException, ValidationException {
@@ -722,11 +722,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment response message
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param response  the request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponse6(String messageID, MessageData6AttachmentResponse response)
             throws IOException, ValidationException {
@@ -736,11 +736,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment response message
      *
-     * @param header   the message header
+     * @param header   the message hu.arheu.gds.message.header
      * @param response the response to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponse6(MessageHeaderBase header, MessageData6AttachmentResponse response)
             throws IOException, ValidationException {
@@ -755,8 +755,8 @@ public final class AsyncGDSClient {
      * @param data            the data for the attachment response
      * @param globalException the error in string format (if any)
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendAttachmentResponseAck7(AckStatus globalStatus,
                                                     AttachmentResponseAckResultHolder data,
@@ -771,7 +771,7 @@ public final class AsyncGDSClient {
      * @param responseAck the response to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponseAck7(MessageData7AttachmentResponseAck responseAck)
             throws IOException, ValidationException {
@@ -781,11 +781,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment response ACK message
      *
-     * @param messageID   the message ID to be used in the header
+     * @param messageID   the message ID to be used in the hu.arheu.gds.message.header
      * @param responseAck the response to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponseAck7(String messageID, MessageData7AttachmentResponseAck responseAck)
             throws IOException, ValidationException {
@@ -795,11 +795,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an attachment response ACK message
      *
-     * @param header      the message header
+     * @param header      the message hu.arheu.gds.message.header
      * @param responseAck the response to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendAttachmentResponseAck7(MessageHeaderBase header, MessageData7AttachmentResponseAck responseAck)
             throws IOException, ValidationException {
@@ -813,8 +813,8 @@ public final class AsyncGDSClient {
      * @param fieldHolders the field holder values
      * @param records      the records
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendEventDocument8(String tableName,
                                             List<FieldHolder> fieldHolders,
@@ -831,8 +831,8 @@ public final class AsyncGDSClient {
      * @param records          the records
      * @param returningOptions the returning fields
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendEventDocument8(String tableName,
                                             List<FieldHolder> fieldHolders,
@@ -848,7 +848,7 @@ public final class AsyncGDSClient {
      * @param eventDocument document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocument8(MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -858,11 +858,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event document message
      *
-     * @param messageID     the message ID to be used in the header
+     * @param messageID     the message ID to be used in the hu.arheu.gds.message.header
      * @param eventDocument document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocument8(String messageID, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -872,11 +872,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event document message
      *
-     * @param header        the message header
+     * @param header        the message hu.arheu.gds.message.header
      * @param eventDocument document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument)
             throws IOException, ValidationException {
@@ -890,8 +890,8 @@ public final class AsyncGDSClient {
      * @param result          the result of the event document request
      * @param globalException the error in string format (if any)
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendEventDocumentAck9(AckStatus globalStatus,
                                                List<EventDocumentResultHolder> result,
@@ -905,7 +905,7 @@ public final class AsyncGDSClient {
      * @param eventDocumentAck document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocumentAck9(MessageData9EventDocumentAck eventDocumentAck)
             throws IOException, ValidationException {
@@ -915,11 +915,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event document ack message
      *
-     * @param messageID        the message ID to be used in the header
+     * @param messageID        the message ID to be used in the hu.arheu.gds.message.header
      * @param eventDocumentAck document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocumentAck9(String messageID, MessageData9EventDocumentAck eventDocumentAck)
             throws IOException, ValidationException {
@@ -929,11 +929,11 @@ public final class AsyncGDSClient {
     /**
      * Sends an event document ack message
      *
-     * @param header           the message header
+     * @param header           the message hu.arheu.gds.message.header
      * @param eventDocumentAck document the event to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendEventDocumentAck9(MessageHeaderBase header, MessageData9EventDocumentAck eventDocumentAck)
             throws IOException, ValidationException {
@@ -948,8 +948,8 @@ public final class AsyncGDSClient {
      * @param consistencyType the type of consistency used for the query
      * @param timeout         the timeout used in the GDS for the query
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendQueryRequest10(
             String query,
@@ -968,8 +968,8 @@ public final class AsyncGDSClient {
      * @param pageSize        the page size used for the query
      * @param queryType       the type of the query (scroll/page)
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendQueryRequest10(
             String query,
@@ -988,7 +988,7 @@ public final class AsyncGDSClient {
      * @param request the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendQueryRequest10(MessageData10QueryRequest request)
             throws IOException, ValidationException {
@@ -998,11 +998,11 @@ public final class AsyncGDSClient {
     /**
      * Sends a query request message
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public ChannelFuture sendQueryRequest10(String messageID, MessageData10QueryRequest request)
@@ -1013,11 +1013,11 @@ public final class AsyncGDSClient {
     /**
      * Sends a query request message
      *
-     * @param header  the message header
+     * @param header  the message hu.arheu.gds.message.header
      * @param request the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public ChannelFuture sendQueryRequest10(MessageHeaderBase header, MessageData10QueryRequest request)
@@ -1031,8 +1031,8 @@ public final class AsyncGDSClient {
      * @param queryContextHolder the ContextHolder containing information about the current query status
      * @param timeout            the timeout used in the GDS for the query
      * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
+     * @throws IOException         if any of the headerfields contain illegal value(type)s
+     * @throws ValidationException if the contents of the headerviolate the class invariant
      */
     public ChannelFuture sendNextQueryPage12(
             QueryContextHolder queryContextHolder, Long timeout) throws IOException, ValidationException {
@@ -1043,27 +1043,10 @@ public final class AsyncGDSClient {
     /**
      * Sends a next query page request message
      *
-     * @param queryContextHolder the ContextHolder containing information about the current query status
-     * @param timeout            the timeout used in the GDS for the query
-     * @return the {@link ChannelFuture} instance associated with the communication channel
-     * @throws IOException         if any of the header fields contain illegal value(type)s
-     * @throws ValidationException if the contents of the header violate the class invariant
-     */
-    public ChannelFuture sendNextQueryPage12(
-            QueryContextHolderSerializable queryContextHolder,
-            Long timeout) throws IOException, ValidationException {
-        return sendNextQueryPage12(MessageManager.createMessageHeaderBase(userName, MessageDataType.NEXT_QUERY_PAGE_12),
-                MessageManager.createMessageData12NextQueryPage(queryContextHolder, timeout));
-    }
-
-
-    /**
-     * Sends a next query page request message
-     *
      * @param request the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendNextQueryPage12(MessageData12NextQueryPage request)
             throws IOException, ValidationException {
@@ -1073,11 +1056,11 @@ public final class AsyncGDSClient {
     /**
      * Sends a next query page request message
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param request   the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
 
     public ChannelFuture sendNextQueryPage12(String messageID, MessageData12NextQueryPage request)
@@ -1088,11 +1071,11 @@ public final class AsyncGDSClient {
     /**
      * Sends a next query page request message
      *
-     * @param header  the message header
+     * @param header  the message hu.arheu.gds.message.header
      * @param request the query request to be sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendNextQueryPage12(MessageHeaderBase header, MessageData12NextQueryPage request)
             throws IOException, ValidationException {
@@ -1105,41 +1088,41 @@ public final class AsyncGDSClient {
      * @param data the message data sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendMessage(MessageData data) throws ValidationException, IOException {
-        return sendMessage(MessageManager.createMessageHeaderBase(userName, data.getTypeHelper().getMessageDataType()), data);
+        return sendMessage(MessageManager.createMessageHeaderBase(userName, data.getMessageDataType()), data);
     }
 
     /**
      * Sends a message towards the GDS, notifying on the {@link AsyncGDSClient#listener} if a reply arrives.
      *
-     * @param messageID the message ID to be used in the header
+     * @param messageID the message ID to be used in the hu.arheu.gds.message.header
      * @param data      the message data sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendMessage(String messageID, MessageData data) throws ValidationException, IOException {
         MessageHeader header = MessageManager.createMessageHeaderBase(
                 userName,
                 messageID != null ? messageID : UUID.randomUUID().toString(),
-                data.getTypeHelper().getMessageDataType());
+                data.getMessageDataType());
         return sendMessage(header, data);
     }
 
     /**
      * Sends a message towards the GDS, notifying on the {@link AsyncGDSClient#listener} if a reply arrives.
      *
-     * @param header the message header
+     * @param header the message hu.arheu.gds.message.header
      * @param data   the message data sent to the GDS.
      * @return the {@link ChannelFuture} instance associated with the communication channel
      * @throws IOException         if the message cannot be packed
-     * @throws ValidationException if any value constraints the restrictions in the structure of the header or the body.
+     * @throws ValidationException if any value constraints the restrictions in the structure of the headeror the body.
      */
     public ChannelFuture sendMessage(MessageHeader header, MessageData data) throws ValidationException, IOException {
-        log.config("Sending message with ID " + header.getTypeHelper().asBaseMessageHeader().getMessageId()
-                + " of type " + data.getTypeHelper().getMessageDataType());
+        log.config("Sending message with ID " + header.asBaseMessageHeader().getMessageId()
+                + " of type " + data.getMessageDataType());
         return sendMessage(MessageManager.createMessage(header, data));
     }
 
@@ -1171,15 +1154,16 @@ public final class AsyncGDSClient {
      */
     private void handleIncomingMessage(byte[] message) {
         try {
-            MessageHeaderBase header = MessageManager.getMessageHeaderFromBinaryMessage(message).getTypeHelper().asBaseMessageHeader();
-            MessageData body = MessageManager.getMessageData(message);
+            FullGdsMessage fullGdsMessage = new FullGdsMessage(message);
+            MessageHeaderBase header = fullGdsMessage.getHeader();
+            MessageData body = fullGdsMessage.getData();
 
             log.config("Incoming message of type " + header.getDataType() + " with ID: " + header.getMessageId());
 
-            switch (body.getTypeHelper().getMessageDataType()) {
+            switch (body.getMessageDataType()) {
                 case CONNECTION_ACK_1: {
                     countDownLatch.countDown();
-                    MessageData1ConnectionAck connectionAck = body.getTypeHelper().asConnectionAckMessageData1();
+                    MessageData1ConnectionAck connectionAck = body.asConnectionAckMessageData1();
                     if (connectionAck.getGlobalStatus() != AckStatus.OK) {
                         if (!state.compareAndSet(ConnectionState.LOGGING_IN, ConnectionState.FAILED)) {
                             if (getState() != ConnectionState.DISCONNECTED) {
@@ -1204,34 +1188,34 @@ public final class AsyncGDSClient {
                 }
                 break;
                 case EVENT_ACK_3:
-                    listener.onEventAck3(header, body.getTypeHelper().asEventAckMessageData3());
+                    listener.onEventAck3(header, body.asEventAckMessageData3());
                     break;
                 case ATTACHMENT_REQUEST_4:
-                    listener.onAttachmentRequest4(header, body.getTypeHelper().asAttachmentRequestMessageData4());
+                    listener.onAttachmentRequest4(header, body.asAttachmentRequestMessageData4());
                     break;
                 case ATTACHMENT_REQUEST_ACK_5:
-                    listener.onAttachmentRequestAck5(header, body.getTypeHelper().asAttachmentRequestAckMessageData5());
+                    listener.onAttachmentRequestAck5(header, body.asAttachmentRequestAckMessageData5());
                     break;
                 case ATTACHMENT_RESPONSE_6:
-                    listener.onAttachmentResponse6(header, body.getTypeHelper().asAttachmentResponseMessageData6());
+                    listener.onAttachmentResponse6(header, body.asAttachmentResponseMessageData6());
                     break;
                 case ATTACHMENT_RESPONSE_ACK_7:
-                    listener.onAttachmentResponseAck7(header, body.getTypeHelper().asAttachmentResponseAckMessageData7());
+                    listener.onAttachmentResponseAck7(header, body.asAttachmentResponseAckMessageData7());
                     break;
                 case EVENT_DOCUMENT_8:
-                    listener.onEventDocument8(header, body.getTypeHelper().asEventDocumentMessageData8());
+                    listener.onEventDocument8(header, body.asEventDocumentMessageData8());
                     break;
                 case EVENT_DOCUMENT_ACK_9:
-                    listener.onEventDocumentAck9(header, body.getTypeHelper().asEventDocumentAckMessageData9());
+                    listener.onEventDocumentAck9(header, body.asEventDocumentAckMessageData9());
                     break;
                 case QUERY_REQUEST_ACK_11:
-                    listener.onQueryRequestAck11(header, body.getTypeHelper().asQueryRequestAckMessageData11());
+                    listener.onQueryRequestAck11(header, body.asQueryRequestAckMessageData11());
                     break;
                 default:
-                    log.warning("Received a message from the GDS that should not be sent! Type: " + body.getTypeHelper().getMessageDataType());
+                    log.warning("Received a message from the GDS that should not be sent! Type: " + body.getMessageDataType());
                     break;
             }
-        } catch (IOException | ReadException | ValidationException e) {
+        } catch (IOException | ValidationException e) {
             log.info("The format of the incoming binary message is invalid! " + e.toString());
         }
     }

@@ -1,36 +1,52 @@
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.AttachmentRequestAckDataHolder;
 import hu.arheu.gds.message.data.AttachmentResultHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Objects;
 
-public class AttachmentRequestAckDataHolderImpl implements AttachmentRequestAckDataHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 3;
-
+public class AttachmentRequestAckDataHolderImpl extends MessagePart implements AttachmentRequestAckDataHolder {
     private AckStatus status;
     private AttachmentResultHolder result;
     private Long remainedWaitTimeMillis;
 
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public AttachmentRequestAckDataHolderImpl() {
+    }
+
     public AttachmentRequestAckDataHolderImpl(AckStatus status,
                                               AttachmentResultHolder result,
-                                              Long remainedWaitTimeMillis) {
+                                              Long remainedWaitTimeMillis) throws ValidationException {
+
         this.status = status;
         this.result = result;
         this.remainedWaitTimeMillis = remainedWaitTimeMillis;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(AttachmentRequestAckDataHolder data) {
-        ExceptionHelper.requireNonNullValue(data.getStatus(), AttachmentRequestAckDataHolderImpl.class.getSimpleName(),
-                "status");
-        ExceptionHelper.requireNonNullValue(data.getResult(), AttachmentRequestAckDataHolderImpl.class.getSimpleName(),
-                "result");
+    @Override
+    public void checkContent() throws ValidationException {
+        Validator.requireNonNullValue(getStatus(), getClass().getSimpleName(), "status");
+        Validator.requireNonNullValue(getResult(), getClass().getSimpleName(), "result");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -49,41 +65,36 @@ public class AttachmentRequestAckDataHolderImpl implements AttachmentRequestAckD
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
-
-    @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, this.status == null ? null : this.status.getValue());
-        WriterHelper.packPackable(packer, this.result);
+        WriterHelper.packMessagePart(packer, this.result);
         WriterHelper.packValue(packer, this.remainedWaitTimeMillis);
     }
 
-    public static AttachmentRequestAckDataHolder unpackConent(MessageUnpacker unpacker, AttachmentResultHolderType attachmentResultHolderType)
-            throws IOException, ReadException, ValidationException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "ack data",
                 AttachmentRequestAckDataHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "ack data",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "ack data",
                     AttachmentRequestAckDataHolderImpl.class.getSimpleName());
 
-            AttachmentRequestAckDataHolder dataTemp = new AttachmentRequestAckDataHolderImpl(
-                    AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
-                            AttachmentRequestAckDataHolderImpl.class.getSimpleName())),
-                    AttachmentResultHolderImpl.unpackContent(unpacker, attachmentResultHolderType),
-                    ReaderHelper.unpackLongValue(unpacker, "remained time millis",
-                            AttachmentRequestAckDataHolderImpl.class.getSimpleName()));
+            status = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
+                    AttachmentRequestAckDataHolderImpl.class.getSimpleName()));
 
-            checkContent(dataTemp);
-            return dataTemp;
+            result = new AttachmentResultHolderImpl();
+            ((AttachmentResultHolderImpl) result).setType(AttachmentResultHolder.Type.ATTACHMENT_REQUEST_ACK);
+            result.unpackContentFrom(unpacker);
+            remainedWaitTimeMillis = ReaderHelper.unpackLongValue(unpacker, "remained time millis",
+                    AttachmentRequestAckDataHolderImpl.class.getSimpleName());
+
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -91,22 +102,13 @@ public class AttachmentRequestAckDataHolderImpl implements AttachmentRequestAckD
         if (this == o) return true;
         if (!(o instanceof AttachmentRequestAckDataHolderImpl)) return false;
         AttachmentRequestAckDataHolderImpl that = (AttachmentRequestAckDataHolderImpl) o;
-        return status == that.status &&
-                Objects.equals(result, that.result) &&
-                Objects.equals(remainedWaitTimeMillis, that.remainedWaitTimeMillis);
+        return status == that.status
+                && Objects.equals(result, that.result)
+                && Objects.equals(remainedWaitTimeMillis, that.remainedWaitTimeMillis);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(status, result, remainedWaitTimeMillis);
-    }
-
-    @Override
-    public String toString() {
-        return "AttachmentRequestAckDataHolderImpl{" +
-                "status=" + status +
-                ", result=" + result +
-                ", remainedWaitTimeMillis=" + remainedWaitTimeMillis +
-                '}';
     }
 }

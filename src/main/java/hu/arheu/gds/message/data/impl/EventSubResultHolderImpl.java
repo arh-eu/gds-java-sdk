@@ -1,42 +1,61 @@
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventSubResultHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.List;
 import java.util.Objects;
 
-public class EventSubResultHolderImpl implements EventSubResultHolder {
-    private final AckStatus subStatus;
-    private final String id;
-    private final String tableName;
-    private final Boolean created;
-    private final String version;
-    private final List<Value> recordValues;
+public class EventSubResultHolderImpl extends MessagePart implements EventSubResultHolder {
 
-    public EventSubResultHolderImpl(AckStatus subStatus,
-                                    String id,
-                                    String tableName,
-                                    Boolean created,
-                                    String version,
-                                    List<Value> recordValues) {
+    private AckStatus subStatus;
+    private String id;
+    private String tableName;
+    private Boolean created;
+    private String version;
+    private List<Value> recordValues;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public EventSubResultHolderImpl() {
+    }
+
+    public EventSubResultHolderImpl(
+            AckStatus subStatus, String id, String tableName, Boolean created, String version,
+            List<Value> recordValues) {
+
         this.subStatus = subStatus;
         this.id = id;
         this.tableName = tableName;
         this.created = created;
         this.version = version;
         this.recordValues = recordValues;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(EventSubResultHolderImpl eventSubResult) {
-        ExceptionHelper.requireNonNullValue(eventSubResult.getSubStatus(), eventSubResult.getClass().getSimpleName(),
-                "sub status");
+    @Override
+    public void checkContent() {
+
+        Validator.requireNonNullValue(getSubStatus(), getClass().getSimpleName(), "sub status");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -70,57 +89,53 @@ public class EventSubResultHolderImpl implements EventSubResultHolder {
     }
 
     @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException, ValidationException {
+
         WriterHelper.packArrayHeader(packer, 6);
         WriterHelper.packValue(packer, this.subStatus == null ? null : this.subStatus.getValue());
         WriterHelper.packValue(packer, this.id);
         WriterHelper.packValue(packer, this.tableName);
         WriterHelper.packValue(packer, this.created);
         WriterHelper.packValue(packer, version);
-        WriterHelper.packValueValues(packer, this.recordValues);
+        WriterHelper.packValueCollection(packer, this.recordValues);
     }
 
-    public static EventSubResultHolderImpl unpackContent(MessageUnpacker unpacker) throws ReadException, IOException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event sub result",
                 EventSubResultHolderImpl.class.getSimpleName())) {
 
             ReaderHelper.unpackArrayHeader(unpacker, 6, "event sub result",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            AckStatus subStatusTemp = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "sub status",
+            subStatus = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "sub status",
                     EventSubResultHolderImpl.class.getSimpleName()));
 
-            String idTemp = ReaderHelper.unpackStringValue(unpacker, "id",
+            id = ReaderHelper.unpackStringValue(unpacker, "id",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            String tableNameTemp = ReaderHelper.unpackStringValue(unpacker, "table name",
+            tableName = ReaderHelper.unpackStringValue(unpacker, "table name",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            Boolean createdTemp = ReaderHelper.unpackBooleanValue(unpacker, "created",
+            created = ReaderHelper.unpackBooleanValue(unpacker, "created",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            String versionTemp = ReaderHelper.unpackStringValue(unpacker, "version",
+            version = ReaderHelper.unpackStringValue(unpacker, "version",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            List<Value> recordValuesTemp = ReaderHelper.unpackValueValues(unpacker,
+            recordValues = ReaderHelper.unpackValueValues(unpacker,
                     null,
                     "returning record values",
                     "field value",
                     EventSubResultHolderImpl.class.getSimpleName());
 
-            EventSubResultHolderImpl eventSubResultHolderTemp = new EventSubResultHolderImpl(subStatusTemp,
-                    idTemp,
-                    tableNameTemp,
-                    createdTemp,
-                    versionTemp,
-                    recordValuesTemp);
 
-            checkContent(eventSubResultHolderTemp);
-            return eventSubResultHolderTemp;
+            checkContent();
+
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -138,18 +153,7 @@ public class EventSubResultHolderImpl implements EventSubResultHolder {
 
     @Override
     public int hashCode() {
-        return Objects.hash(subStatus, id, tableName, created, version, recordValues);
-    }
 
-    @Override
-    public String toString() {
-        return "EventSubResultHolderImpl{" +
-                "subStatus=" + subStatus +
-                ", id='" + id + '\'' +
-                ", tableName='" + tableName + '\'' +
-                ", created=" + created +
-                ", version=" + version +
-                ", recordValues=" + recordValues +
-                '}';
+        return Objects.hash(subStatus, id, tableName, created, version, recordValues);
     }
 }

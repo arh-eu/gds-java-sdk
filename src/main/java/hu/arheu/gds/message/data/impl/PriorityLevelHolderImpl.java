@@ -1,28 +1,49 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.PriorityLevelHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class PriorityLevelHolderImpl implements PriorityLevelHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 1;
+
+public class PriorityLevelHolderImpl extends MessagePart implements PriorityLevelHolder {
+
     private Map<Integer, Boolean> operations;
 
-    public PriorityLevelHolderImpl(Map<Integer, Boolean> operations) {
-        this.operations = operations;
-        checkContent(this);
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public PriorityLevelHolderImpl() {
     }
 
-    private static void checkContent(PriorityLevelHolder priorityLevel) {
-        ExceptionHelper.requireNonNullValue(priorityLevel.getOperations(), priorityLevel.getClass().getSimpleName(),
-                "operations");
+    public PriorityLevelHolderImpl(Map<Integer, Boolean> operations) {
+
+        this.operations = operations;
+
+        checkContent();
+    }
+
+    @Override
+    public void checkContent() {
+        Validator.requireNonNullValue(getOperations(), getClass().getSimpleName(), "operations");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -31,39 +52,38 @@ public class PriorityLevelHolderImpl implements PriorityLevelHolder {
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
-
-    @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
-        if(this.operations.size() == 0) {
-            throw new ValidationException("Operation priorities cannot be empty!");
-        }
-        if(this.operations != null) {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException, ValidationException {
+        if (this.operations != null) {
+            if (this.operations.size() == 0) {
+                throw new ValidationException("Operation priorities cannot be empty!");
+            }
             WriterHelper.packArrayHeader(packer, operations.size());
             for (Map.Entry<Integer, Boolean> entry : this.operations.entrySet()) {
-                if(entry.getValue() == null) {
-                    throw new ValidationException("Adming log write cannot be null");
+                if (entry.getValue() == null) {
+                    throw new ValidationException("Admin log write cannot be null!");
                 }
                 WriterHelper.packMapHeader(packer, 1);
                 WriterHelper.packValue(packer, entry.getKey());
                 WriterHelper.packValue(packer, entry.getValue());
             }
+
         } else {
-            packer.packNil();
+            WriterHelper.packNil(packer);
         }
+
     }
 
-    public static PriorityLevelHolder unpackContent(MessageUnpacker unpacker) throws IOException, ReadException, ValidationException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "priority level",
                 PriorityLevelHolderImpl.class.getSimpleName())) {
 
             int arrayHeader = ReaderHelper.unpackArrayHeader(unpacker, null, "operations",
                     PriorityLevelHolderImpl.class.getSimpleName());
 
-            Map<Integer, Boolean> operationsTemp = new HashMap<>();
-            for(int i = 0; i < arrayHeader; ++i) {
+            operations = new HashMap<>();
+            for (int i = 0; i < arrayHeader; ++i) {
                 if (!ReaderHelper.nextExpectedValueTypeIsNil(
                         unpacker, ValueType.MAP, "operation", PriorityLevelHolderImpl.class.getSimpleName())) {
 
@@ -71,23 +91,21 @@ public class PriorityLevelHolderImpl implements PriorityLevelHolder {
                     Integer mapKeyTemp = ReaderHelper.unpackIntegerValue(unpacker, "operation map key", PriorityLevelHolderImpl.class.getSimpleName());
                     Boolean mapValueTemp = ReaderHelper.unpackBooleanValue(unpacker, "operation map value", PriorityLevelHolderImpl.class.getSimpleName());
 
-                    operationsTemp.put(mapKeyTemp, mapValueTemp);
+                    operations.put(mapKeyTemp, mapValueTemp);
+
                 } else {
-                    unpacker.unpackNil();
+                    ReaderHelper.unpackNil(unpacker);
                 }
             }
 
-            if(operationsTemp.size() == 0) {
+            if (operations.size() == 0) {
                 throw new ValidationException("Operation priorities cannot be empty!");
             }
+            checkContent();
 
-            PriorityLevelHolder priorityLevelDescriptorTemp = new PriorityLevelHolderImpl(operationsTemp);
-            checkContent(priorityLevelDescriptorTemp);
-            return priorityLevelDescriptorTemp;
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -101,12 +119,5 @@ public class PriorityLevelHolderImpl implements PriorityLevelHolder {
     @Override
     public int hashCode() {
         return Objects.hash(operations);
-    }
-
-    @Override
-    public String toString() {
-        return "PriorityLevelHolderImpl{" +
-                "operations=" + operations +
-                '}';
     }
 }

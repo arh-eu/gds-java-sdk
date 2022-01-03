@@ -1,60 +1,51 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.AttachmentResultHolder;
 import hu.arheu.gds.message.data.EventHolder;
 import hu.arheu.gds.message.data.MessageData6AttachmentResponse;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Objects;
 
-public class MessageData6AttachmentResponseImpl extends MessageData6AttachmentResponse {
+
+public class MessageData6AttachmentResponseImpl extends MessagePart implements MessageData6AttachmentResponse {
+
     private AttachmentResultHolder result;
     private EventHolder eventHolder;
 
-    public MessageData6AttachmentResponseImpl(boolean cache,
-                                              AttachmentResultHolder result,
-                                              EventHolder eventHolder) throws IOException, ValidationException {
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData6AttachmentResponseImpl() {
+    }
+
+    public MessageData6AttachmentResponseImpl(AttachmentResultHolder result,
+                                              EventHolder eventHolder) throws ValidationException {
+
         this.result = result;
         this.eventHolder = eventHolder;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData6AttachmentResponseImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData6AttachmentResponseImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData6AttachmentResponseImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.ATTACHMENT_RESPONSE_6;
-            }
-
-            @Override
-            public MessageData6AttachmentResponseImpl asAttachmentResponseMessageData6() {
-                return MessageData6AttachmentResponseImpl.this;
-            }
-            @Override
-            public boolean isAttachmentResponseMessageData6() {
-                return true;
-            }
-        };
+    public MessageData6AttachmentResponseImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -67,37 +58,42 @@ public class MessageData6AttachmentResponseImpl extends MessageData6AttachmentRe
         return this.eventHolder;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.result, this.getClass().getSimpleName(), "result");
+    public void checkContent() {
+
+        Validator.requireNonNullValue(this.result, this.getClass().getSimpleName(), "result");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
         WriterHelper.packArrayHeader(packer, 2);
-        WriterHelper.packPackable(packer, this.result);
-        WriterHelper.packPackable(packer, this.eventHolder);
+        WriterHelper.packMessagePart(packer, this.result);
+        WriterHelper.packMessagePart(packer, this.eventHolder);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException, ValidationException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "attachment response data",
                 this.getClass().getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, null, "attachemnt respose data",
+            ReaderHelper.unpackArrayHeader(unpacker, null, "attachment response data",
                     this.getClass().getSimpleName());
 
-            this.result = AttachmentResultHolderImpl.unpackContent(unpacker, AttachmentResultHolderType.ATTACHMENT_RESPONSE);
-            if(this.eventHolder != null) {
-                this.eventHolder = EventHolderImpl.unpackContent(unpacker);
+            this.result = new AttachmentResultHolderImpl();
+            ((AttachmentResultHolderImpl) result).setType(AttachmentResultHolder.Type.ATTACHMENT_RESPONSE);
+            result.unpackContentFrom(unpacker);
+            if (!ReaderHelper.isNextNil(unpacker)) {
+                this.eventHolder = new EventHolderImpl();
+                this.eventHolder.unpackContentFrom(unpacker);
             }
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -113,13 +109,17 @@ public class MessageData6AttachmentResponseImpl extends MessageData6AttachmentRe
 
     @Override
     public int hashCode() {
+
         return Objects.hash(result, eventHolder);
     }
 
     @Override
     public String toString() {
         return "MessageData6AttachmentResponseImpl{" +
-                "result=" + result +
+                "result.table=" + (null != result ? result.getOwnerTable() : "null") +
+                ", result.attachmentId=" + (null != result ? result.getAttachmentId() : "null") +
+                ", result.attachmentSize=" + ((null != result && null != result.getAttachment())
+                    ? result.getAttachment().length : "null") +
                 ", eventHolder=" + eventHolder +
                 '}';
     }

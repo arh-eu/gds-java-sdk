@@ -3,6 +3,7 @@
 With [JitPack](https://jitpack.io/), you can easily add this project as a maven dependency:
 
 ```XML
+
 <project>
     <!--
         any additional info for your maven project.
@@ -11,11 +12,11 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
     -->
     <repositories>
         <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
-    
+
     <dependencies>
         <dependency>
             <groupId>com.github.arh-eu</groupId>
@@ -28,16 +29,21 @@ With [JitPack](https://jitpack.io/), you can easily add this project as a maven 
 
 JitPack gives you a flexible, virtual maven repository which can work with GitHub projects.
 
-The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You can use the latest release of this - `1.6.2` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
+project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
+can use the latest release of this - `1.6.2` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
-If you want to download this and install it manually in your local repository without using JitPack, you should use the following dependency after installation:
+If you want to download this and install it manually in your local repository without using JitPack, you should use the
+following dependency after installation:
+
 ```XML
+
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>1.6.2</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -45,48 +51,51 @@ If you want to download this and install it manually in your local repository wi
 
 # Usage
 
-Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a "messages" library with serialization/deserialization functionality and with a WebSocket client, so you can use this to send and receive messages.
-The SDK also includes a console client that allows you to send and receive messages without writing any code.
-You can also find a GDS Server Simulator written in Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real GDS instance. 
+Messages can be sent to the GDS via [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol. The SDK contains a "
+messages" library with serialization/deserialization functionality and with a WebSocket client, so you can use this to
+send and receive messages. The SDK also includes a console client that allows you to send and receive messages without
+writing any code. You can also find a GDS Server Simulator written in
+Java [here](https://github.com/arh-eu/gds-server-simulator). With this simulator you can test your client without a real
+GDS instance.
 
-  * [Console client](#console-client)
+* [Console client](#console-client)
     + [Arguments](#arguments)
-      - [Options](#options)
-        * [Help](#help)
-        * [URL](#url)
-        * [Username](#username)
-        * [Password](#password)
-        * [Cert, secret](#cert-secret)
-        * [Timeout](#timeout)
-        * [Hex](#hex)
-        * [Export](#export)
-      - [Commands](#commands)
-        * [EVENT command](#event-command)
-        * [ATTACHMENT-REQUEST command](#attachment-request-command)
-        * [QUERY command](#query-command)
-  * [Library](#library)
+        - [Options](#options)
+            * [Help](#help)
+            * [URL](#url)
+            * [Username](#username)
+            * [Password](#password)
+            * [Cert, secret](#cert-secret)
+            * [Timeout](#timeout)
+            * [Hex](#hex)
+            * [Export](#export)
+        - [Commands](#commands)
+            * [EVENT command](#event-command)
+            * [ATTACHMENT-REQUEST command](#attachment-request-command)
+            * [QUERY command](#query-command)
+* [Library](#library)
     + [TL;DR method summary](#tldr-method-summary)
     + [Creating the client](#creating-the-client)
-      - [Client Factory](#client-factory)
-      - [Constructor and value restrictions](#constructor-and-value-restrictions)
+        - [Client Factory](#client-factory)
+        - [Constructor and value restrictions](#constructor-and-value-restrictions)
     + [Subscribing with the listener](#subscribing-with-the-listener)
     + [Connecting to the GDS](#connecting-to-the-gds)
     + [Create messages](#create-messages)
     + [Send and receive messages](#send-and-receive-messages)
-      - [INSERT](#insert)
-      - [UPDATE](#update)
-      - [MERGE](#merge)
-      - [ACK MESSAGE for the INSERT, UPDATE and MERGE](#ack-message-for-the-insert-update-and-merge)
-      - [SELECT](#select)
-        * [QUERY](#query)
-        * [ATTACHMENT REQUEST](#attachment-request)
-      - [AUTOMATIC PUSHING](#automatic-pushing)
+        - [INSERT](#insert)
+        - [UPDATE](#update)
+        - [MERGE](#merge)
+        - [ACK MESSAGE for the INSERT, UPDATE and MERGE](#ack-message-for-the-insert-update-and-merge)
+        - [SELECT](#select)
+            * [QUERY](#query)
+            * [ATTACHMENT REQUEST](#attachment-request)
+        - [AUTOMATIC PUSHING](#automatic-pushing)
     + [Close the connection](#close-the-connection)
     + [Reusing the client](#reusing-the-client)
     + [Thread-safety](#thread-safety)
     + [Working with custom messages](#working-with-custom-messages)
     + [Full example](#Async-client-example)
-  * [Synchronous Client](#synchronous-client)
+* [Synchronous Client](#synchronous-client)
     + [Client creation](#client-creation)
     + [Methods](#methods)
     + [Connecting](#connecting)
@@ -96,14 +105,18 @@ You can also find a GDS Server Simulator written in Java [here](https://github.c
 
 ## Console client
 
-The console client is used with the SDK executable jar file. 
-This jar file can be found in the [Releases](https://github.com/arh-eu/gds-java-sdk/releases) (of course, this jar file can also be created by building the project).
+The console client is used with the SDK executable jar file. This jar file can be found in
+the [Releases](https://github.com/arh-eu/gds-java-sdk/releases) (of course, this jar file can also be created by
+building the project).
 
-The console client will send the message you specify, and will await for the corresponding ACK messages and print them to your console. 
-You can also export the response messages in JSON format and in case of an attachment request you can save the attachments to your local drive.
+The console client will send the message you specify, and will await for the corresponding ACK messages and print them
+to your console. You can also export the response messages in JSON format and in case of an attachment request you can
+save the attachments to your local drive.
 
+In the future, we will assume that the client is saved as `gds-console-client.jar`.
 
 If you need help about the usage, the syntax can be printed by the -help flag.
+
 ```shell
 java -jar gds-console-client.jar -help
 ```
@@ -111,11 +124,12 @@ java -jar gds-console-client.jar -help
 ### Arguments
 
 The syntax is as follows:
+
 ```shell
 java -jar gds-console-client.jar [options] [command] [command options]
 ```
 
- - [Options](#options)
+- [Options](#options)
     * [Help](#help)
     * [URL](#url)
     * [Username](#username)
@@ -124,11 +138,10 @@ java -jar gds-console-client.jar [options] [command] [command options]
     * [Timeout](#timeout)
     * [Hex](#hex)
     * [Export](#export)
-  - [Commands](#commands)
+- [Commands](#commands)
     * [EVENT command](#event-command)
     * [ATTACHMENT-REQUEST command](#attachment-request-command)
     * [QUERY command](#query-command)
-
 
 #### Options
 
@@ -142,7 +155,8 @@ java -jar gds-console-client.jar -help
 
 ##### URL
 
-The URL of the GDS instance you would like to connect to. By default, "`ws://127.0.0.1:8888/gate`" will be used (this assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
+The URL of the GDS instance you would like to connect to. By default, "`ws://127.0.0.1:8888/gate`" will be used (this
+assumes that your local computer has a GDS instance or the server simulator running on the port 8888).
 
 ```shell
 java -jar gds-console-client.jar -url "ws://192.168.222.111:9999/gate" query "SELECT * FROM multi_event"
@@ -158,7 +172,8 @@ java -jar gds-console-client.jar -username "some_other_user" query "SELECT * FRO
 
 ##### Password
 
-The password you would like to use to log in into the GDS. By default, there is no authentication. Usually you want to specify the username as well!
+The password you would like to use to log in into the GDS. By default, there is no authentication. Usually you want to
+specify the username as well!
 
 ```shell
 java -jar gds-console-client.jar -username "some_other_user" -password "my_secret_password" query "SELECT * FROM multi_event"
@@ -166,9 +181,12 @@ java -jar gds-console-client.jar -username "some_other_user" -password "my_secre
 
 ##### Cert, secret
 
-The name of the file containing the certificate chain, and your private key that should be used for secure (TLS) connection to the GDS should be given by the `-cert` option (it should be in PKCS12 format - a `*.p12` file). TLS will only be used if the scheme in the URL is `wss`, therefore the url should be specified as well (the GDS uses different port (and endpoint) for default and for encrypted connection).
+The name of the file containing the certificate chain, and your private key that should be used for secure (TLS)
+connection to the GDS should be given by the `-cert` option (it should be in PKCS12 format - a `*.p12` file). TLS will
+only be used if the scheme in the URL is `wss`, therefore the url should be specified as well (the GDS uses different
+port (and endpoint) for default and for encrypted connection).
 
-The password that was used to generate and encrypt the cert file should be given by the `-secret` flag. 
+The password that was used to generate and encrypt the cert file should be given by the `-secret` flag.
 
 ```shell
 java -jar gds-console-client.jar -url "wss://192.168.222.111:8443/gates" -cert "my_cert_file.p12" -secret "password_for_cert" query "SELECT * FROM multi_event"
@@ -184,8 +202,8 @@ java -jar gds-console-client.jar -timeout 10000 query "SELECT * FROM multi_event
 
 ##### Hex
 
-Convert strings to hexadecimal. You can enter multiple strings separated by commas (`,`). The client will print the results without any connection to a GDS.
-
+Convert strings to hexadecimal. You can enter multiple strings separated by commas (`,`). The client will print the
+results without any connection to a GDS.
 
 ```shell
 java -jar gds-console-client.jar -hex "picture1.jpg,image2.png"
@@ -197,7 +215,6 @@ image2.png = 0x696d616765322e706e67
 
 Export all response messages to JSON. The JSON files will be saved in the folder named 'exports' next to the jar file.
 
-
 ```shell
 java -jar gds-console-client.jar -export query "SELECT * FROM multi_event"
 ```
@@ -208,27 +225,35 @@ java -jar gds-console-client.jar -export query "SELECT * FROM multi_event"
 
 The INSERT/UPDATE/MERGE statement you would like to use.
 
-With the **-attachments** *command option*, you can enter multiple attachments separated by commas (`,`). 
-The files must be in the folder named `attachments` next to the jar file.
-Hexadecimal representations of these file names must be referenced in the SQL statement.
+With the **-attachments** *command option*, you can enter multiple attachments separated by commas (`,`). The files must
+be in the folder named `attachments` next to the jar file. Hexadecimal representations of these file names must be
+referenced in the SQL statement.
 
 About hex:
 
-The attachments you specify are stored in a different table in the GDS than the event's data (to increase performance, and one attachment might be used for multiple events).
-To create a connection between the two we have to reference the attachment ID in your event record. The attachment itself can have multiple fields connected to it (like meta descriptors). The binary part of the attachment usually cannot be inserted into a query easily, therefore a unique ID is used in the SQL string to resolve this issue.
- This is usually generated from the attachment's filename, but you can use any name you want. Because of how things are stored in the background we have to use hexadecimal format for these IDs (with the `0x` prefix), thus it leads to converting the filename into a hex format (conversion can be done by the `-hex` option, see it [above](#Hex)).
- 
- This is the reason our SQL for the attachment part will have these hexes in them.
- 
- The binaries themselves are sent with the event data, in a map (associative array), where the keys are these IDs, and the values are the binary data themselves (`Map<String, byte[]>`).
- 
- These binaries are generated from the files you specify with the `-attachments` flag by the client itself.
+The attachments you specify are stored in a different table in the GDS than the event's data (to increase performance,
+and one attachment might be used for multiple events). To create a connection between the two we have to reference the
+attachment ID in your event record. The attachment itself can have multiple fields connected to it (like meta
+descriptors). The binary part of the attachment usually cannot be inserted into a query easily, therefore a unique ID is
+used in the SQL string to resolve this issue. This is usually generated from the attachment's filename, but you can use
+any name you want. Because of how things are stored in the background we have to use hexadecimal format for these IDs (
+with the `0x` prefix), thus it leads to converting the filename into a hex format (conversion can be done by the `-hex`
+option, see it [above](#Hex)).
 
-This makes the event statements use two tables, named `multi_event` and `multi_event-@attachment`. The event data will be inserted into the `multi_event`, the binary attachment into the `multi_event-@attachments`.
+This is the reason our SQL for the attachment part will have these hexes in them.
+
+The binaries themselves are sent with the event data, in a map (associative array), where the keys are these IDs, and
+the values are the binary data themselves (`Map<String, byte[]>`).
+
+These binaries are generated from the files you specify with the `-attachments` flag by the client itself.
+
+This makes the event statements use two tables, named `multi_event` and `multi_event-@attachment`. The event data will
+be inserted into the `multi_event`, the binary attachment into the `multi_event-@attachments`.
 
 INSERT
 
-The following command assumes that there is a folder named 'attachments' next to the jar file with a file named `picture.png`. 
+The following command assumes that there is a folder named 'attachments' next to the jar file with a file
+named `picture.png`.
 
 ```shell
 java -jar gds-console-client.jar event "INSERT INTO multi_event (id, plate, speed, images) VALUES('TEST2006301005294810', 'ABC123', 90, array('TEST2006301005294740'));INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('TEST2006301005294740', 'image/png', 0x706963747572652e706e67)" -attachments "picture.png"
@@ -271,23 +296,24 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 ```
 
 ## Library
- * [TL;DR method summary](#tldr-method-summary)
- * [Library](#library)
+
+* [TL;DR method summary](#tldr-method-summary)
+* [Library](#library)
     + [Creating the client](#creating-the-client)
-      - [Client Factory](#client-factory)
-      - [Constructor and value restrictions](#constructor-and-value-restrictions)
+        - [Client Factory](#client-factory)
+        - [Constructor and value restrictions](#constructor-and-value-restrictions)
     + [Subscribing with the listener](#subscribing-with-the-listener)
     + [Connecting to the GDS](#connecting-to-the-gds)
     + [Create messages](#create-messages)
     + [Send and receive messages](#send-and-receive-messages)
-      - [INSERT](#insert)
-      - [UPDATE](#update)
-      - [MERGE](#merge)
-      - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert-update-and-merge)
-      - [SELECT](#select)
-        * [QUERY](#query)
-        * [ATTACHMENT REQUEST](#attachment-request)
-      - [AUTOMATIC PUSHING](#automatic-pushing)
+        - [INSERT](#insert)
+        - [UPDATE](#update)
+        - [MERGE](#merge)
+        - [ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE](#ack-message-for-the-insert-update-and-merge)
+        - [SELECT](#select)
+            * [QUERY](#query)
+            * [ATTACHMENT REQUEST](#attachment-request)
+        - [AUTOMATIC PUSHING](#automatic-pushing)
     + [Close the connection](#close-the-connection)
     + [Reusing the client](#reusing-the-client)
     + [Thread-safety](#thread-safety)
@@ -298,8 +324,8 @@ java -jar gds-console-client.jar query -all "SELECT * FROM multi_event"
 
 The specification can be read on the [GDS Wiki page](https://github.com/arh-eu/gds/wiki/Message-Data).
 
-Only the most important types, and their methods are listed here, we rely on your IDE's support for code completion and documentation.
-Their inheritance and custom hierarchy is not always present for readability.  
+Only the most important types, and their methods are listed here, we rely on your IDE's support for code completion and
+documentation. Their inheritance and custom hierarchy is not always present for readability.
 
 Classes already listed will not be expanded again.
 
@@ -307,15 +333,16 @@ The `Value` class is from the `MessagePack` standard library, it will not be fur
 
 #### All ACK Messages:
 
-Every ACK message implements this interface, therefore accessing the status, or the exception on error is the same for all of them.
+Every ACK message implements this interface, therefore accessing the status, or the exception on error is the same for
+all of them.
 
 ```java
 interface Ack {
     AckStatus getGlobalStatus();
+
     String getGlobalException();
 }
 ```
-
 
 #### Event Request ACK 3:
 
@@ -328,17 +355,25 @@ public interface MessageData3EventAckDescriptor extends Ack {
 
 public interface EventResultHolder {
     AckStatus getStatus();
+
     String getNotification();
+
     List<FieldHolder> getFieldHolders();
+
     List<EventSubResultHolder> getFieldValues();
 }
 
 public interface EventSubResultHolder {
     AckStatus getSubStatus();
+
     String getId();
+
     String getTableName();
+
     Boolean getCreated();
+
     String getVersion();
+
     List<Value> getRecordValues(); //Value is the MessagePack value type
 }
 
@@ -354,17 +389,27 @@ public interface MessageData5AttachmentRequestAckDescriptor extends Ack {
 
 public interface AttachmentRequestAckDataHolder {
     AckStatus getStatus();
+
     AttachmentResultHolder getResult();
+
     Long getRemainedWaitTimeMillis();
 }
+
 public interface AttachmentResultHolder extends Packable {
     List<String> getRequestIds();
+
     String getOwnerTable();
+
     String getAttachmentId();
+
     List<String> getOwnerIds();
+
     String getMeta();
+
     Long getTtl();
+
     Long getToValid();
+
     byte[] getAttachment();
 }
 
@@ -375,6 +420,7 @@ public interface AttachmentResultHolder extends Packable {
 ```java
 public interface MessageData6AttachmentResponseDescriptor {
     AttachmentResultHolder getResult();
+
     EventHolder getEventHolder();
 }
 
@@ -389,7 +435,9 @@ public interface MessageData9EventDocumentAckDescriptor extends Ack {
 
 public interface EventDocumentResultHolder {
     AckStatus getStatus();
+
     String getNotification();
+
     Map<String, Value> getReturnValues(); //Value is the MessagePack value type
 }
 
@@ -397,26 +445,34 @@ public interface EventDocumentResultHolder {
 
 #### Query Request ACK 11:
 
-The structure explained in the [Wiki](https://github.com/arh-eu/gds/wiki/Message-Data#query-request-ack---data-type-11) 
-is represented by the `QueryResponseHolder` class.
-The `QueryContextHolder` and `QueryContextHolderSerializable` fields are the same but with different internal representations
-to allow faster serialization. 
+The structure explained in the [Wiki](https://github.com/arh-eu/gds/wiki/Message-Data#query-request-ack---data-type-11)
+is represented by the `QueryResponseHolder` class. The `QueryContextHolder` and `QueryContextHolderSerializable` fields
+are the same but with different internal representations to allow faster serialization.
 
 ```java
 public interface QueryResponseHolder {
     Long getNumberOfHits();
+
     Long getNumberOfFilteredHits();
+
     Boolean getMorePage();
+
     QueryContextHolder getQueryContextHolder();
+
     QueryContextHolderSerializable getQueryContextHolderSerializable();
+
     List<FieldHolder> getFieldHolders();
+
     List<List<Value>> getHits(); //Value is the MessagePack value type
+
     Long getNumberOfTotalHits();
 }
 
 public interface FieldHolder {
     FieldValueType getFieldType();
+
     String getMimeType();
+
     String getFieldName();
 }
 
@@ -446,64 +502,79 @@ public enum FieldValueType {
 
 
 ```
+
 ### Creating the client
 
 #### Client Factory
 
-First, we create the client object. To make things easier, a `AsyncGDSClientBuilder` class is available as a static class nested in the `AsyncGDSClient` class, making the creation of the client easier.
+First, we create the client object. To make things easier, a `AsyncGDSClientBuilder` class is available as a static
+class nested in the `AsyncGDSClient` class, making the creation of the client easier.
 
 This (and the listener interface) can be found in the `hu.arheu.gds.client` package.
- 
- The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way you don't have to specify every value in the constructor. The methods can be chained, as they all return the builder instance. The methods found in the factory are the following (for value restrictions see the constructor below):
-   - `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
-   - `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
-   - `withServeOnTheSameConnection(boolean value)` - sets whether replies should be sent on the same connection as this.
-   - `withNioEventLoopGroup(NioEventLoopGroup nioEventLoopGroup)` - sets the NioEventLoopGroup to be used.
-   - `withShutdownByClose(boolean value)` - sets whether the Nio event loop should be shut down on close.
-   - `withURI(String URI)` - sets the GDS URI.
-   - `withUserName(String userName)` - sets the username used in the GDS communication.
-   - `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
-   - `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this, the value will be set to `3000` (ms).
-   - `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert first parameter be used as a path to a file containing the certification.
-   - `build()` - creates the `AsyncGDSClient` instance.
- 
- #### Constructor and value restrictions
- 
- If you want to avoid using the builder, you can invoke the constructor directly, which has the following signature:
+
+The factory class provides multiple methods to set the initial parameters for the client you wish to create, this way
+you don't have to specify every value in the constructor. The methods can be chained, as they all return the builder
+instance. The methods found in the factory are the following (for value restrictions see the constructor below):
+
+- `withListener(GDSMessageListener listener)` - sets the callback listener to the given value.
+- `withLogger(Logger logger)` - sets the `Logger` instance used for logging messages.
+- `withServeOnTheSameConnection(boolean value)` - sets whether replies should be sent on the same connection as this.
+- `withNioEventLoopGroup(NioEventLoopGroup nioEventLoopGroup)` - sets the NioEventLoopGroup to be used.
+- `withShutdownByClose(boolean value)` - sets whether the Nio event loop should be shut down on close.
+- `withURI(String URI)` - sets the GDS URI.
+- `withUserName(String userName)` - sets the username used in the GDS communication.
+- `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
+- `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this,
+  the value will be set to `3000` (ms).
+- `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for
+  connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert
+  first parameter be used as a path to a file containing the certification.
+- `build()` - creates the `AsyncGDSClient` instance.
+
+#### Constructor and value restrictions
+
+If you want to avoid using the builder, you can invoke the constructor directly, which has the following signature:
+
  ```java
 public AsyncGDSClient(
-    String uri,
-     String userName, 
-     String userPassword, 
-     long timeout, 
-     Logger log,
-    GDSMessageListener listener,
-    SslContext sslCtx,
-    NioEventLoopGroup eventLoopGroup,
-    boolean shutdownByClose,
-boolean serveOnTheSameConnection) {
+        String uri,
+        String userName,
+        String userPassword,
+        long timeout,
+        Logger log,
+        GDSMessageListener listener,
+        SslContext sslCtx,
+        NioEventLoopGroup eventLoopGroup,
+        boolean shutdownByClose,
+        boolean serveOnTheSameConnection){
         //...
-    }
+        }
 ```
- 
- As mentioned above, restrictions to some of these parameters apply:
- 
-  - `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
-  - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
-  - `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
-  - `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client drops the connection and login request and raises an exception if it does not arrive (or if the GDS is unavailable).
-  - `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.AsyncGDSClient::methodName | Some error message, that will be in the log.`
-  - `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
-  - `sslCtx` - the SSLContext used to set up the TLS for the client. If TLS is not used, the value should be set to `null`.
-  The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
- 
- 
-```java
-String URI = "ws://127.0.0.1:8888/gate";
-String USERNAME = "user";
-GDSMessageListener listener = new GDSMessageListener();
 
-AsyncGDSClient client = AsyncGDSClient.getBuilder()
+As mentioned above, restrictions to some of these parameters apply:
+
+- `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the
+  WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
+- `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
+- `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should
+  be set to `null`.
+- `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the
+  client drops the connection and login request and raises an exception if it does not arrive (or if the GDS is
+  unavailable).
+- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created
+  with the name `"AsyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default
+  log will use the standard error (`System.err`) as its output stream. The log format will be the
+  following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.AsyncGDSClient::methodName | Some error message, that will be in the log.`
+- `listener` - the `GDSMessageListener` instance used for callbacks. Value cannot be `null`.
+- `sslCtx` - the SSLContext used to set up the TLS for the client. If TLS is not used, the value should be set to `null`
+  . The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
+
+```java
+String URI="ws://127.0.0.1:8888/gate";
+        String USERNAME="user";
+        GDSMessageListener listener=new GDSMessageListener();
+
+        AsyncGDSClient client=AsyncGDSClient.getBuilder()
         .withURI(URI)
         .withUserName(USERNAME)
         .withListener(listener).build();
@@ -513,34 +584,53 @@ AsyncGDSClient client = AsyncGDSClient.getBuilder()
 
 The messages sent to the client, and the changes of the connection status can be accessed via listeners.
 
-The listener you pass will be used and called without any changes by the WebSocketClient after you connect successfully. Since login message is sent automatically; when the connection is ready, the `ConnectionACK` message will be processed before any of your handler method is called with the data (but it will be called with the login ACK as well).
+The listener you pass will be used and called without any changes by the WebSocketClient after you connect successfully.
+Since login message is sent automatically; when the connection is ready, the `ConnectionACK` message will be processed
+before any of your handler method is called with the data (but it will be called with the login ACK as well).
 
-The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous. The `Channel` object, that is used by netty will be passed in the main methods.
+The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous.
+The `Channel` object, that is used by netty will be passed in the main methods.
 
-The `GDSMessageListener` interface has methods that do not have to be overridden, and others that _should be_. The signature for these methods can be seen below.
+The `GDSMessageListener` interface has methods that do not have to be overridden, and others that _should be_. The
+signature for these methods can be seen below.
 
- - `onConnectionSuccess(..)` this method is called when the WebSocket connection is established, and the ACK for the login message is received with an OK status (`AckStatus.OK - code 200`). The received header and login body is passed to the method. By default, this method does not do anything, therefore it does not _need_ to be overridden (but it _should be_, as this indicates that your client is ready to be used).
- - `onConnectionFailure(..)` if the connection or the login fails for any reason (network error, error in the login credentials or timeout) this method will be called. The `Either` class indicates that it is not predetermined which value will be set, so the error can be _either_ a `Throwable` or a `Pair` of header and connection ACK message. the `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value. If you do not override this, the method will throw an `AbstractMethodError` if invoked (otherwise if the connection is established, it will never be called).
-  - `onDisconnect(..)` when your connection to the GDS is closed this handler will be called. If the connection (and login) is not successful, the `onConnectionFailure(..)` method will be invoked, not this. Otherwise, if the GDS or the client closes the connection for any reason, this callback will be used. By default, this does not do anything.
-  
-  The callbacks for the actual messages will always receive the `MessageHeaderBase` and the appropriate `MessageData` sent by the GDS. Since your client might only send (and receive) one kind of message (i.e. you're only using your client for querying data, but never insert or update), the listener does not require you to override its methods for every possible type. This can make your client more compact, without having to worry about overriding methods that will never be invoked.
-  
-  However, if you receive any of those, but you do not implement your logic for it, the listener will throw an `AbstractMethodError` by default.
+- `onConnectionSuccess(..)` this method is called when the WebSocket connection is established, and the ACK for the
+  login message is received with an OK status (`AckStatus.OK - code 200`). The received header and login body is passed
+  to the method. By default, this method does not do anything, therefore it does not _need_ to be overridden (but it _
+  should be_, as this indicates that your client is ready to be used).
+- `onConnectionFailure(..)` if the connection or the login fails for any reason (network error, error in the login
+  credentials or timeout) this method will be called. The `Either` class indicates that it is not predetermined which
+  value will be set, so the error can be _either_ a `Throwable` or a `Pair` of header and connection ACK message.
+  the `isLeftSet() / isRightSet()` and `getLeft() / getRight()` methods can be used to access the proper value. If you
+  do not override this, the method will throw an `AbstractMethodError` if invoked (otherwise if the connection is
+  established, it will never be called).
+- `onDisconnect(..)` when your connection to the GDS is closed this handler will be called. If the connection (and
+  login) is not successful, the `onConnectionFailure(..)` method will be invoked, not this. Otherwise, if the GDS or the
+  client closes the connection for any reason, this callback will be used. By default, this does not do anything.
+
+The callbacks for the actual messages will always receive the `MessageHeaderBase` and the appropriate `MessageData` sent
+by the GDS. Since your client might only send (and receive) one kind of message (i.e. you're only using your client for
+querying data, but never insert or update), the listener does not require you to override its methods for every possible
+type. This can make your client more compact, without having to worry about overriding methods that will never be
+invoked.
+
+However, if you receive any of those, but you do not implement your logic for it, the listener will throw
+an `AbstractMethodError` by default.
 
 ```java
 public interface GDSMessageListener {
     default void onConnectionSuccess(Channel ch, MessageHeaderBase header, MessageData1ConnectionAck response) {
 
     }
-    
+
     default void onConnectionFailure(Channel channel, Either<Throwable, Pair<MessageHeaderBase, MessageData1ConnectionAck>> reason) {
-            throw new AbstractMethodError();
+        throw new AbstractMethodError();
     }
-    
-   default void onDisconnect(Channel channel) {
+
+    default void onDisconnect(Channel channel) {
 
     }
-    
+
     default void onEventAck3(MessageHeaderBase header, MessageData3EventAck response) {
         throw new AbstractMethodError();
     }
@@ -560,7 +650,7 @@ public interface GDSMessageListener {
     default void onAttachmentResponseAck7(MessageHeaderBase header, MessageData7AttachmentResponseAck responseAck) {
         throw new AbstractMethodError();
     }
-    
+
     default void onEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument) {
         throw new AbstractMethodError();
     }
@@ -575,7 +665,8 @@ public interface GDSMessageListener {
 }
 ```
 
-You probably want to reference the client from the listener, so you can send messages when they arrive (i.e. a `NextQueryPage` request). There are multiple ways to do this, one is through a final `AtomicReference`.
+You probably want to reference the client from the listener, so you can send messages when they arrive (i.e.
+a `NextQueryPage` request). There are multiple ways to do this, one is through a final `AtomicReference`.
 
 ```java
  final AtomicReference<AsyncGDSClient> clientReference = new AtomicReference<>();
@@ -613,15 +704,20 @@ Connecting to the GDS after you set up your client is a simple method invocation
 client.connect();
 ```
 
-During the connection, a login message is automatically sent after the websocket connection is established. Please keep in mind that the `connect()` method will not block the current (main) thread. If the given timeout occurs or any error happens during the connection or the login, you will be notified on the listener you specified and not here.
+During the connection, a login message is automatically sent after the websocket connection is established. Please keep
+in mind that the `connect()` method will not block the current (main) thread. If the given timeout occurs or any error
+happens during the connection or the login, you will be notified on the listener you specified and not here.
 
-If a positive ACK message arrives, the client will be in connected state, the `onConnectionSuccess(..)` listener triggers and the `client.isConnected()` method will return `true`. The client state can be always checked by the `getState()` method.
+If a positive ACK message arrives, the client will be in connected state, the `onConnectionSuccess(..)` listener
+triggers and the `client.isConnected()` method will return `true`. The client state can be always checked by
+the `getState()` method.
 
 The possible status values are:
+
 ```java
 public enum ConnectionState {
     NOT_CONNECTED, //The client is instantiated but connect() was not yet called.
-    INITIALIZING,  //The connect() was called, the underlying Netty channels are being created
+    INITIALIZING,  //connect() was called, the underlying Netty channels are being created
     CONNECTING, // Netty initialized, trying to establish the TCP/WebSocket Connection
     CONNECTED, //The connection is established
     LOGGING_IN, //The login message was successfully sent
@@ -633,20 +729,26 @@ public enum ConnectionState {
 
 After that, you can send any type of messages to the GDS.
 
-Please keep in mind that you should not send any messages until you have received the (positive) ACK for your login, otherwise the GDS will drop your connection as the authentication and authorization processes did not finish yet but your client is trying to send messages (which is invalid without a positive login ACK).
+Please keep in mind that you should not send any messages until you have received the (positive) ACK for your login,
+otherwise the GDS will drop your connection as the authentication and authorization processes did not finish yet but
+your client is trying to send messages (which is invalid without a positive login ACK).
 
 ### Create messages
 
-A message consists of two parts, a header and a data.
-With this SDK, it is usually enough to create only the data part, because the header part is created automatically when the message is sent.
+A message consists of two parts, a header and a data. With this SDK, it is usually enough to create only the data part,
+because the header part is created automatically when the message is sent.
 
 Let's see how to create an attachment request type message data.
 
-To create the messages you can use the `MessageManager` class, which provides many overloads for the types you want to create and includes automatic validation for the values you specified.
+To create the messages you can use the `MessageManager` class, which provides many overloads for the types you want to
+create and includes automatic validation for the values you specified.
 
-If any of the values violate the rules of the specified message (i.e. if the `isFragmented` flag is set to `false`, the `firstFragment` should be set to `null` and so), the `MessageManager` will throw a (checked) `ValidationException`.
+If any of the values violate the rules of the specified message (i.e. if the `isFragmented` flag is set to `false`,
+the `firstFragment` should be set to `null` and so), the `MessageManager` will throw a (checked) `ValidationException`.
 
-As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is serialized (which is invoked automatically upon construction). Therefore, an `IOException` can also raise during creation.
+As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is
+serialized (which is invoked automatically upon construction). Therefore, an `IOException` can also raise during
+creation.
 
 ```java
 try {
@@ -660,29 +762,38 @@ These `try-catch` blocks will not be included for most of the examples in the re
 
 ### Send and receive messages
 
-After you connected, you can send your messages to the GDS. The method names used for sending always contain the types of messages you are about to send to lead you. For example, sending attachment requests can be done by invoking the `sendAttachmentRequest4(..)` methods. The `4` in the name stands for the internal type of the message.
+After you connected, you can send your messages to the GDS. The method names used for sending always contain the types
+of messages you are about to send to lead you. For example, sending attachment requests can be done by invoking
+the `sendAttachmentRequest4(..)` methods. The `4` in the name stands for the internal type of the message.
 
-Methods used for sending always contain multiple overloads (based on what values can be passed as their data), but they share these three overloads across the types:
+Methods used for sending always contain multiple overloads (based on what values can be passed as their data), but they
+share these three overloads across the types:
 
- - One with the appropriate `MessageData`, using default values for the header with a randomly generated message ID.
- - One with a `String` and the `MessageData`, which sets the message ID to the specified string value.
- - One with a `MessageHeader` and a `MessageData`, allowing you to fully customise the message you want to send. 
+- One with the appropriate `MessageData`, using default values for the header with a randomly generated message ID.
+- One with a `String` and the `MessageData`, which sets the message ID to the specified string value.
+- One with a `MessageHeader` and a `MessageData`, allowing you to fully customise the message you want to send.
 
 This translates for the `AttachmentRequest` as the following:
- - `sendAttachmentRequest4(MessageData4AttachmentRequest request);`
- - `sendAttachmentRequest4(String messageID, MessageData4AttachmentRequest request);`
- - `sendAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request);`
- 
-As `AttachmentRequest` messages need a `String` parameter to describe their query, there is also an overload to accept a single string parameter: 
- - `sendAttachmentRequest4(String request);`
 
+- `sendAttachmentRequest4(MessageData4AttachmentRequest request);`
+- `sendAttachmentRequest4(String messageID, MessageData4AttachmentRequest request);`
+- `sendAttachmentRequest4(MessageHeaderBase hu.arheu.gds.message.header, MessageData4AttachmentRequest request);`
 
-If any of the values passed to these methods violate the rules of the specified message (i.e. if you create your own header, and set the `isFragmented` flag to `true`, but leave the `firstFragment` as `null`), the `MessageManager`, and therefore the `send..()` will throw a (checked) `ValidationException`.
+As `AttachmentRequest` messages need a `String` parameter to describe their query, there is also an overload to accept a
+single string parameter:
 
-As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is serialized (which is invoked automatically upon construction). Therefore, an `IOException` can also raise during creation.
+- `sendAttachmentRequest4(String request);`
 
+If any of the values passed to these methods violate the rules of the specified message (i.e. if you create your own
+header, and set the `isFragmented` flag to `true`, but leave the `firstFragment` as `null`),
+the `MessageManager`, and therefore the `send..()` will throw a (checked) `ValidationException`.
+
+As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is
+serialized (which is invoked automatically upon construction). Therefore, an `IOException` can also raise during
+creation.
 
 This means that this code can raise these exceptions without sending anything while trying to create the messages:
+
 ```java
 try {
     client.sendAttachmentRequest4("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400");
@@ -691,11 +802,14 @@ try {
 }
 ```
 
-For the rest of our guides, the `try-catch` blocks around the creation and sending will be omitted, so they are easier to read, but you should not forget them.
+For the rest of our guides, the `try-catch` blocks around the creation and sending will be omitted, so they are easier
+to read, but you should not forget them.
 
-The default header means that there is no fragmentation set, the creation and request times are set to the current system time. The message data type is determined automatically by the method you call.
+The default header means that there is no fragmentation set, the creation and request times are set to the current system
+time. The message data type is determined automatically by the method you call.
 
-To see how to send a message by specifying the header part too, go to the [Working with custom messages](#Working-with-custom-messages) section.
+To see how to send a message by specifying the header part too, go to
+the [Working with custom messages](#Working-with-custom-messages) section.
 
 In the following, take a look at what sending and receiving messages look like for different message types.
 
@@ -704,16 +818,18 @@ In the following, take a look at what sending and receiving messages look like f
 - [MERGE](#MERGE)
 - [ACK message for the INSERT, UPDATE and MERGE](#ack-message-for-the-insert-update-and-merge)
 - [SELECT](#select)
-	- [QUERY](#query)
-	- [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
+    - [QUERY](#query)
+    - [ATTACHMENT REQUEST](#ATTACHMENT-REQUEST)
 - [Automatic pushing](#AUTOMATIC-PUSHING)
 
+You might want to read the hex part from the [EVENT command](#event-command) to understand why and how we use these in
+the attachments.
 
-You might want to read the hex part from the [EVENT command](#event-command) to understand why and how we use these in the attachments.
-
-The hex values for a string can be retrieved via the `hu.arheu.gds.message.util.Utils` class, by a `static` method with a signature of `String stringToUTF8Hex(String)`.
+The hex values for a string can be retrieved via the `hu.arheu.gds.message.hu.arheu.gds.message.util.Utils` class, by
+a `static` method with a signature of `String stringToUTF8Hex(String)`.
 
 #### INSERT
+
 ```java
 MessageIdGenerator messageIdGenerator = new MessageIdGenerator("TEST", "yyMMddhhmmssSSS");
 String eventId = messageIdGenerator.nextId();
@@ -759,6 +875,7 @@ client.sendEvent2(data);
 ```
 
 #### UPDATE
+
 ```java
 MessageData2Event data = MessageManager.createMessageData2Event(
         new ArrayList<String>() {{
@@ -772,6 +889,7 @@ client.sendEvent2(data);
 ```
 
 #### MERGE
+
 ```java
 MessageData2Event data = MessageManager.createMessageData2Event(
         new ArrayList<String>() {{
@@ -790,6 +908,7 @@ client.sendEvent2(data);
 #### ACK MESSAGE FOR THE INSERT, UPDATE AND MERGE
 
 The ack for these messages is available through the subscribed listener.
+
 ```java
 GDSMessageListener listener = new GDSMessageListener() {
     
@@ -818,7 +937,10 @@ MessageData10QueryRequest data = MessageManager.createMessageData10QueryRequest(
 client.sendQueryRequest10(data);
 ```
 
-The ack for this message is available through the subscribed listener. After you received the ack, you can send a 'next query page' type message. (To see how the `clientReference`is created or why is it used, check the [Subscribing with the listener](#subscribing-with-the-listener) part.)
+The ack for this message is available through the subscribed listener. After you received the ack, you can send a 'next
+query page' type message. (To see how the `clientReference`is created or why is it used, check
+the [Subscribing with the listener](#subscribing-with-the-listener) part.)
+
 ```java
 GDSMessageListener listener = new GDSMessageListener() {
 
@@ -841,7 +963,7 @@ GDSMessageListener listener = new GDSMessageListener() {
 
 ##### ATTACHMENT REQUEST
 
-Sending an attachment request goes the same way as anything else so far. 
+Sending an attachment request goes the same way as anything else so far.
 
 ```java
 MessageData4AttachmentRequest data = MessageManager.createMessageData4AttachmentRequest(
@@ -849,11 +971,13 @@ MessageData4AttachmentRequest data = MessageManager.createMessageData4Attachment
 client.sendAttachmentRequest4(data);
 ```
 
-The ack for this message is available through the subscribed listener.
-The ack may contain the attachment if you also requested the binary.
-If it does not contain it, yet you requested the binary, the attachment is not yet available and will be sent as an 'attachment response' type message at a later time.
+The ack for this message is available through the subscribed listener. The ack may contain the attachment if you also
+requested the binary. If it does not contain it, yet you requested the binary, the attachment is not yet available and
+will be sent as an 'attachment response' type message at a later time.
 
-You should not forget, that if you receive the attachment in an `AttachmentResponse6` type of message, you're required to send the appropriate ACK back to the GDS, otherwise it will send the attachment again and again unless the ACK arrives for it.
+You should not forget, that if you receive the attachment in an `AttachmentResponse6` type of message, you're required
+to send the appropriate ACK back to the GDS, otherwise it will send the attachment again and again unless the ACK
+arrives for it.
 
 ```java
 GDSMessageListener listener = new GDSMessageListener() {
@@ -892,14 +1016,16 @@ GDSMessageListener listener = new GDSMessageListener() {
 };
 ```
 
-Note: the GDS may also send an attachment request - `onAttachmentRequest4(MessageHeaderBase header, MessageData4AttachmentRequest request)` - to the client.
+Note: the GDS may also send an attachment request
 
+- `onAttachmentRequest4(MessageHeaderBase hu.arheu.gds.message.header, MessageData4AttachmentRequest request)` - to the
+  client.
 
-#### AUTOMATIC PUSHING 
+#### AUTOMATIC PUSHING
 
-A user may be interested in data or changes in specific data. 
-The criteria system, based on which data may be of interest to the user, is included in the configuration of the delivered system. 
-This data is sent automatically by the GDS. For these, you should also send an ACK back for the same reason.
+A user may be interested in data or changes in specific data. The criteria system, based on which data may be of
+interest to the user, is included in the configuration of the delivered system. This data is sent automatically by the
+GDS. For these, you should also send an ACK back for the same reason.
 
 ```java
 GDSMessageListener listener = new GDSMessageListener() {
@@ -935,7 +1061,8 @@ GDSMessageListener listener = new GDSMessageListener() {
 
 ### Close the connection
 
-The client is simply closed by the `close()` method. This should be always called, otherwise the event loop in the background is never stopped, and the WebSocket connection might not be closed properly, either.
+The client is simply closed by the `close()` method. This should be always called, otherwise the event loop in the
+background is never stopped, and the WebSocket connection might not be closed properly, either.
 
 ```java
 client.close();
@@ -943,24 +1070,31 @@ client.close();
 
 ### Reusing the client
 
-The client is not reusable, meaning that if the connection (login) fails, or the client is closed, the `connect()` method cannot be invoked and will throw an `IllegalStateException`. If you want to use the client again, you have to create a new instance.
+The client is not reusable, meaning that if the connection (login) fails, or the client is closed, the `connect()`
+method cannot be invoked and will throw an `IllegalStateException`. If you want to use the client again, you have to
+create a new instance.
 
 ### Thread-safety
 
-The `AsyncGDSClient` is created with a thread-safe approach, meaning you can send messages from multiple threads without having to worry about race conditions or deadlocks. If multiple threads try to invoke the `connect()` method on the client, only the first one will be successful, the client will raise an `IllegalStateException` for the other threads.
+The `AsyncGDSClient` is created with a thread-safe approach, meaning you can send messages from multiple threads without
+having to worry about race conditions or deadlocks. If multiple threads try to invoke the `connect()` method on the
+client, only the first one will be successful, the client will raise an `IllegalStateException` for the other threads.
 
 ### Working with custom messages
 
-A message consists of two parts, a header and a data. 
-With this SDK, it is usually enough to create only the data part because the header part is created automatically when the message is sent using the `send..()` method (see above). However, it is also possible to explicitly define the header part with customized values.
+A message consists of two parts, a header and a data. With this SDK, it is usually enough to create only the data part
+because the header part is created automatically when the message is sent using the `send..()` method (see above).
+However, it is also possible to explicitly define the header part with customized values.
 
-To create the header, you should use the `MessageManager` here as well. 
-If you do not want to specify every parameter for the header, these overloads for the `CreateMessageHeaderBase(..)` method might come in handy for you:
+To create the header, you should use the `MessageManager` here as well. If you do not want to
+specify every parameter for the header, these overloads for the `CreateMessageHeaderBase(..)`
+method might come in handy for you:
 
- - `CreateMessageHeaderBase(String userName, MessageDataType dataType)`
- - `CreateMessageHeaderBase(String userName, String messageID, MessageDataType dataType)`
+- `CreateMessageHeaderBase(String userName, MessageDataType dataType)`
+- `CreateMessageHeaderBase(String userName, String messageID, MessageDataType dataType)`
 
-Both methods can throw `IOException` and `ValidationException`, so you want to use a `try-catch` block around these as well.
+Both methods can throw `IOException` and `ValidationException`, so you want to use a `try-catch` block around these as
+well.
 
 ```java
 try{
@@ -971,7 +1105,9 @@ try{
 ```
 
 ### Async client example
+
 This is a simple class demonstrating how can you send queries to the GDS using the async client.
+
 ```java
 import hu.arheu.gds.client.AsyncGDSClient;
 import hu.arheu.gds.client.Either;
@@ -980,12 +1116,12 @@ import hu.arheu.gds.client.Pair;
 import hu.arheu.gds.message.data.ConsistencyType;
 import hu.arheu.gds.message.data.MessageData11QueryRequestAck;
 import hu.arheu.gds.message.data.MessageData1ConnectionAck;
-import hu.arheu.gds.message.header.MessageHeaderBase;
-import hu.arheu.gds.message.util.ValidationException;
+import hu.arheu.gds.message.hu.arheu.gds.message.header.MessageHeaderBase;
+import hu.arheu.gds.message.hu.arheu.gds.message.util.ValidationException;
 import io.netty.channel.Channel;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.hu.arheu.gds.message.util.concurrent.atomic.AtomicReference;
 
 public class AsyncExample {
 
@@ -1072,28 +1208,32 @@ public class AsyncExample {
 }
 ```
 
-
 ## Synchronous Client
 
+Sometimes you do not want to suffer with the problems of the asynchronous world, and want to use your client with _
+return values_ instead of callbacks and handlers.
 
-Sometimes you do not want to suffer with the problems of the asynchronous world, and want to use your client with _return values_ instead of callbacks and handlers.
+For this scenario, a built-in wrapper around the async client specified above is available, by the `SyncGDSClient`
+class.
 
-For this scenario, a built-in wrapper around the async client specified above is available, by the `SyncGDSClient` class.
+This is a wrapper around the async client, making it thread-safe as well. The method calls will block until the reply
+arrive, then giving the result as their return value.
 
-This is a wrapper around the async client, making it thread-safe as well. The method calls will block until the reply arrive, then giving the result as their return value.
-
-If you need to, multiple threads can use the same client, as the blocking in the background uses the messageID to await replies. This means that IDs must be unique across the threads (as long as their reply does not arrive), otherwise the synchronous client will throw an `IllegalStateException`.
-
+If you need to, multiple threads can use the same client, as the blocking in the background uses the messageID to await
+replies. This means that IDs must be unique across the threads (as long as their reply does not arrive), otherwise the
+synchronous client will throw an `IllegalStateException`.
 
 ### Client creation
 
-The synchronous client uses a builder with the same methods as the async client (excluding the `withListener(..)`, as it cannot be defined here), but its name is `SyncGDSClientBuilder`. It can be invoked with the static `getBuilder()` method as well in the `SyncGDSClient`.
+The synchronous client uses a builder with the same methods as the async client (excluding the `withListener(..)`, as it
+cannot be defined here), but its name is `SyncGDSClientBuilder`. It can be invoked with the static `getBuilder()` method
+as well in the `SyncGDSClient`.
 
 ```java
-final String URI = "ws://127.0.0.1:8888/gate";
-final String USERNAME = "user";
+final String URI="ws://127.0.0.1:8888/gate";
+final String USERNAME="user";
 
-SyncGDSClient client = SyncGDSClient.getBuilder()
+        SyncGDSClient client=SyncGDSClient.getBuilder()
         .withURI(URI)
         .withUserName(USERNAME)
         .withTimeout(5_000L) //5 seconds for a request before the timeout occurs
@@ -1104,81 +1244,96 @@ SyncGDSClient client = SyncGDSClient.getBuilder()
 - `withURI(String URI)` - sets the GDS URI.
 - `withUserName(String userName)` - sets the username used in the GDS communication.
 - `withUserPassword(String userPassword)` - sets the password used for _password authentication_.
-- `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this, the value will be set to `3000` (ms).
-- `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert first parameter be used as a path to a file containing the certification.
+- `withTimeout(long timeout)` - sets the timeout (in milliseconds) for the login procedure. If you do not specify this,
+  the value will be set to `3000` (ms).
+- `withTLS(InputStream cert, String secret)` -sets the credentials from a PKCS12 formatted cert (file) used for
+  connecting via TLS. This method has an overload for `(String cert,String secret)` parameters, in this case the cert
+  first parameter be used as a path to a file containing the certification.
 - `build()` - creates the `SyncGDSClient` instance.
 
 The restrictions for these values are the same as specified in the async client, but here is a reminder:
 
-- `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
+- `URI` - cannot be `null`, and has to represent a valid URI to the GDS. Since the connection is established through the
+  WebSocket protocol, the URI scheme must start with either `ws` or `wss` to be accepted.
 - `userName` - the username cannot be null or set to an empty string (or a string containing only whitespaces).
-- `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should be set to `null`. 
-- `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the client raises an exception if a response does not arrive (including the login).
-- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default log will use the standard error (`System.err`) as its output stream. The log format will be the following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
-- `sslCtx` - the SSLContext used to set up the TLS for the client. If TLS is not used, the value should be set to `null`.
-  The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
-  
+- `userPassword` - if the user wishes to use _password authentication_, this will be used. Otherwise, the value should
+  be set to `null`.
+- `timeout` - the timeout must be a positive number, representing the maximum wait time (in milliseconds) before the
+  client raises an exception if a response does not arrive (including the login).
+- `log` - the Logger instance used to track and debug the client. if the value is `null`, a default one will be created
+  with the name `"SyncGDSClient"` and the log level set to `SEVERE`. Otherwise, the given one will be used. The default
+  log will use the standard error (`System.err`) as its output stream. The log format will be the
+  following: `[2020-10-19 08:15:39] [SEVERE] | hu.arheu.gds.client.SyncGDSClient::methodName | Some error message, that will be in the log.`
+- `sslCtx` - the SSLContext used to set up the TLS for the client. If TLS is not used, the value should be set to `null`
+  . The context can be created via the static `AsyncGDSClient.createSSLContext(..)` method.
+
 The client also implements the `AutoClosable` interface, so you can use it in `try-with-resources` statements as well.
 
 ### Methods
 
-Since the synchronous client uses a request-reply scheme, not all type of messages are supported. You can invoke the following methods (send these types):
+Since the synchronous client uses a request-reply scheme, not all type of messages are supported. You can invoke the
+following methods (send these types):
 
- - `EventResponse sendEvent2(..)`
- - `AttachmentResult sendAttachmentRequest4(..)`
- - `EventDocumentResponse sendEventDocument8(..)`
- - `QueryResponse sendQueryRequest10(..)`
- - `QueryResponse sendNextQueryPage12(..)`
-
+- `EventResponse sendEvent2(..)`
+- `AttachmentResult sendAttachmentRequest4(..)`
+- `EventDocumentResponse sendEventDocument8(..)`
+- `QueryResponse sendQueryRequest10(..)`
+- `QueryResponse sendNextQueryPage12(..)`
 
 The parameters (and overloads) for these messages are the same as specified on the async client.
 
-The returning types inherit from the same class, the `GDSMessage` (found in the `hu.arheu.gds.message.clienttypes` package).
+The returning types inherit from the same class, the `GDSMessage` (found in the `hu.arheu.gds.message.clienttypes`
+package).
 
 This class has two methods:
- - `MessageHeaderBase getHeader();` which returns the header from the message, 
- - `T getData();` which returns the data part of the message.
 
- The generic type `T` is substituted for each subclass as the following:
+- `MessageHeaderBase getHeader();` which returns the header from the message,
+- `T getData();` which returns the data part of the message.
 
-  - `EventResponse -> MessageData3EventAck`
-  - `AttachmentResult -> Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>`
-  - `EventDocumentResponse -> MessageData9EventDocumentAck`
-  - `QueryResponse -> MessageData11QueryRequestAck`
+The generic type `T` is substituted for each subclass as the following:
 
-As the type of the message the attachment result arrives in is not predetermined, it returns an _either_ object.
-To make things easier the `AttachmentResult` class has additional methods to check for the proper type:
+- `EventResponse -> MessageData3EventAck`
+- `AttachmentResult -> Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>`
+- `EventDocumentResponse -> MessageData9EventDocumentAck`
+- `QueryResponse -> MessageData11QueryRequestAck`
 
-The `isAttachmentRequestAck()` and the `isAttachmentResponse()` will return boolean values to indicate the message content, while the `getDataAsAttachmentRequestAck()` and `getDataAsAttachmentResponse()` methods will return the proper types from the underlying data structure.
+As the type of the message the attachment result arrives in is not predetermined, it returns an _either_ object. To make
+things easier the `AttachmentResult` class has additional methods to check for the proper type:
 
-
+The `isAttachmentRequestAck()` and the `isAttachmentResponse()` will return boolean values to indicate the message
+content, while the `getDataAsAttachmentRequestAck()` and `getDataAsAttachmentResponse()` methods will return the proper
+types from the underlying data structure.
 
 ### Connecting
 
-The client's `connect()` method will return a `boolean` value, indicating its success. If it is `false`, the reason can be retrieved with the `hasConnectionFailed()` or the `hasLoginFailed()` methods and the `getConnectionError()` or the `getLoginFailureReason()` which will return a `Throwable` or a `Pair<MessageHeaderBase, MessageData1ConnectionAck>`.
+The client's `connect()` method will return a `boolean` value, indicating its success. If it is `false`, the reason can
+be retrieved with the `hasConnectionFailed()` or the `hasLoginFailed()` methods and the `getConnectionError()` or
+the `getLoginFailureReason()` which will return a `Throwable` or a `Pair<MessageHeaderBase, MessageData1ConnectionAck>`.
+
 ```java
- SyncGDSClient client = SyncGDSClient.getBuilder()
+ SyncGDSClient client=SyncGDSClient.getBuilder()
         .withURI(URI)
         .withUserName(USERNAME)
         .build();
 
-    if (client.connect()) {
+        if(client.connect()){
         // ... client logic
-        
+
         client.close();
-        
-    } else {
-        if (client.hasConnectionFailed()) {
-            System.err.println("Could not connect to the GDS! Reason: " + client.getConnectionError());
-        } else if (client.hasLoginFailed()) {
-            System.err.println("Could not log in to the GDS! Reason: " + client.getLoginFailureReason().getSecond());
-        } else {
-            //this should never happen
+
+        }else{
+        if(client.hasConnectionFailed()){
+        System.err.println("Could not connect to the GDS! Reason: "+client.getConnectionError());
+        }else if(client.hasLoginFailed()){
+        System.err.println("Could not log in to the GDS! Reason: "+client.getLoginFailureReason().getSecond());
+        }else{
+        //this should never happen
         }
-    }
+        }
 ```
 
-If for any reason you need the login response, the `getLoginResponse()` method will return the appropriate value (`Pair<MessageHeaderBase, MessageData1ConnectionAck>`).
+If for any reason you need the login response, the `getLoginResponse()` method will return the appropriate
+value (`Pair<MessageHeaderBase, MessageData1ConnectionAck>`).
 
 ### Closing
 
@@ -1188,36 +1343,45 @@ Same as in the async version, closing can simply be done with the `close()` meth
 client.close();
 ```
 
-### Sending (sync) messages 
+### Sending (sync) messages
 
+As mentioned, these methods use return values. To make life easier, special classes were introduced (found in
+the `hu.arheu.gds.message.clienttypes` package) with the received `MessageHeaderBase` and proper subclass of
+the `MessageData`.
 
-As mentioned, these methods use return values. To make life easier, special classes were introduced (found in the `hu.arheu.gds.message.clienttypes` package) with the received `MessageHeaderBase` and proper subclass of the `MessageData`.
-
-The header can be accessed by the `getHeader()` and the data part with the `getData()` getter method (as explained above).
+The header can be accessed by the `getHeader()` and the data part with the `getData()` getter method (as explained above)
+.
 
 Example:
-```java
-QueryResponse response =
-    client.sendQueryRequest10(
-        MessageManager.createMessageData10QueryRequest(
-            "SELECT * FROM multi_event LIMIT 1000",
-            ConsistencyType.NONE,
-            3_000L
-        )
-    );
 
-System.out.println("Received: " + response.getData().getQueryResponseHolder().getNumberOfHits() + " records.");
+```java
+QueryResponse response=
+        client.sendQueryRequest10(
+        MessageManager.createMessageData10QueryRequest(
+        "SELECT * FROM multi_event LIMIT 1000",
+        ConsistencyType.NONE,
+        3_000L
+        )
+        );
+
+        System.out.println("Received: "+response.getData().getQueryResponseHolder().getNumberOfHits()+" records.");
 ```
 
 The only exception to this scheme is the `sendAttachmentRequest4(..)` method.
 
-Since the GDS might not have the attachment stored, it is possible that the first reply will not contain any binaries, and the GDS will send it later in another message, so the attachment itself will be sent in either a `MessageData5AttachmentRequestAck` or an `MessageData6AttachmentResponse` type of message.
-Since the sync client awaits the binary itself, the type of the returned result will mirror this: the return value `AttachmentResult` will contain as data an `Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>` object.
+Since the GDS might not have the attachment stored, it is possible that the first reply will not contain any binaries,
+and the GDS will send it later in another message, so the attachment itself will be sent in either
+a `MessageData5AttachmentRequestAck` or an `MessageData6AttachmentResponse` type of message. Since the sync client
+awaits the binary itself, the type of the returned result will mirror this: the return value `AttachmentResult` will
+contain as data an `Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>` object.
 
-The `Either` class indicates that it is not predetermined which value will be set, so the result is _either_ a  `MessageData5AttachmentRequestAck` or a `MessageData6AttachmentResponse`. The "either" object has methods like `isLeftSet() / isRightSet()` and `getLeft() / getRight()`, but the `AttachmentResult` class has more flexibility. 
+The `Either` class indicates that it is not predetermined which value will be set, so the result is _either_
+a  `MessageData5AttachmentRequestAck` or a `MessageData6AttachmentResponse`. The "either" object has methods
+like `isLeftSet() / isRightSet()` and `getLeft() / getRight()`, but the `AttachmentResult` class has more flexibility.
 
-The `isAttachmentRequestAck()` and the `isAttachmentResponse()` methods will return boolean values to indicate the message content, while the `getDataAsAttachmentRequestAck()` and `getDataAsAttachmentResponse()` methods will return the proper types from the underlying data structure.
-
+The `isAttachmentRequestAck()` and the `isAttachmentResponse()` methods will return boolean values to indicate the
+message content, while the `getDataAsAttachmentRequestAck()` and `getDataAsAttachmentResponse()` methods will return the
+proper types from the underlying data structure.
 
 ```java
 AttachmentResult result = client.sendAttachmentRequest4(MessageManager.createMessageData4AttachmentRequest("SELECT * FROM \"multi_event-@attachment\" WHERE id='TEST2006301005294740' and ownerid='TEST2006301005294810' FOR UPDATE WAIT 86400"));
@@ -1241,23 +1405,23 @@ if (result.isAttachmentRequestAck()) {
 
 A full example of a synchronous client can be seen below.
 
-You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator) if you have no access to a GDS instance.
+You can test your application with the [GDS Server simulator](https://github.com/arh-eu/gds-server-simulator) if you
+have no access to a GDS instance.
 
 ```java
 import hu.arheu.gds.client.SyncGDSClient;
 import hu.arheu.gds.message.clienttypes.QueryResponse;
 import hu.arheu.gds.message.data.ConsistencyType;
-import hu.arheu.gds.message.util.MessageManager;
+import hu.arheu.gds.message.hu.arheu.gds.message.util.MessageManager;
 
 public class SimpleExample {
     public static void main(String[] args) throws Throwable {
-        SyncGDSClient syncGDSClient = SyncGDSClient.getBuilder()
+
+        try (SyncGDSClient syncGDSClient = SyncGDSClient.getBuilder()
                 .withURI("ws://127.0.0.1:8888/gate")
                 .withUserName("user")
                 .withTimeout(10_000L)
-                .build();
-
-        try {
+                .build()) {
             if (syncGDSClient.connect()) {
                 long timeout = 6_000L;
                 QueryResponse response =
@@ -1278,14 +1442,13 @@ public class SimpleExample {
                     System.err.println("Could not log in to the GDS! Reason: " + syncGDSClient.getLoginResponse().getSecond().getGlobalException());
                 }
             }
-        } finally {
-            syncGDSClient.close();
         }
     }
 }
 ```
 
 The output can be the following:
+
 ```txt
 Received a total of 300 records.
 Received an additional 300 records.

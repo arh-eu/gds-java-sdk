@@ -34,7 +34,7 @@ public class MessageIdGenerator {
         } else {
             i = Instant.ofEpochMilli(myTime >> 6);
             z = ZonedDateTime.ofInstant(i, this.zoneId);
-            return this.vrsIdPrefix + z.format(this.df) + (char)((int)(48L + (myTime & 63L)));
+            return this.vrsIdPrefix + z.format(this.df) + (char) ((int) (48L + (myTime & 63L)));
         }
     }
 }

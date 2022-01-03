@@ -1,19 +1,37 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
+public interface MessageData0Connection extends MessageData {
 
-import java.io.IOException;
+    Boolean getServeOnTheSameConnection();
 
-public abstract class MessageData0Connection extends MessageData implements MessageData0ConnectionDescriptor {
-    
-    public MessageData0Connection(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    String getClusterName();
+
+    Integer getProtocolVersionNumber();
+
+    Boolean getFragmentationSupported();
+
+    Long getFragmentTransmissionUnit();
+
+    String getPassword();
+
+    @Override
+    default MessageData0Connection asConnectionMessageData0() throws ClassCastException {
+        return this;
     }
 
-    public MessageData0Connection(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isConnectionMessageData0() {
+        return true;
     }
-    
-    public MessageData0Connection() throws IOException { }
+
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.CONNECTION_0;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 6;
+    }
 }

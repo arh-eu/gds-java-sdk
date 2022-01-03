@@ -1,36 +1,55 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventHolder;
-import hu.arheu.gds.message.util.ExceptionHelper;
-import hu.arheu.gds.message.util.ReadException;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
 import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
 import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Map;
+import java.util.Objects;
 
-public class EventHolderImpl implements EventHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 2;
 
-    private final String tableName;
-    private final Map<String, Value> fields;
+public class EventHolderImpl extends MessagePart implements EventHolder {
 
+    private String tableName;
+    private Map<String, Value> fields;
+
+    
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+     public EventHolderImpl(){}
+    
     public EventHolderImpl(String tableName,
                            Map<String, Value> fields) {
+
         this.tableName = tableName;
         this.fields = fields;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(EventHolder descriptorEvent) {
-        ExceptionHelper.requireNonNullValue(descriptorEvent.getTableName(), descriptorEvent.getClass().getSimpleName(),
-                "tableName");
-        ExceptionHelper.requireNonNullValue(descriptorEvent.getFields(), descriptorEvent.getClass().getSimpleName(),
-                "fields");
+    @Override
+    public void checkContent() throws ValidationException {
+
+        Validator.requireNonNullValue(getTableName(), getClass().getSimpleName(), "tableName");
+
+        Validator.requireNonNullValue(getFields(), getClass().getSimpleName(), "fields");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -44,41 +63,36 @@ public class EventHolderImpl implements EventHolder {
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
-    @Override
-    public void packContent(MessageBufferPacker packer) throws IOException {
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, this.tableName);
         WriterHelper.packMapStringValueValues(packer, this.fields);
     }
 
-    public static EventHolder unpackContent(MessageUnpacker unpacker) throws ReadException, IOException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event descriptor",
                 EventHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "event descriptor",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "event descriptor",
                     EventHolderImpl.class.getSimpleName());
 
-            String tableNameTemp = ReaderHelper.unpackStringValue(unpacker, "table name",
+            tableName = ReaderHelper.unpackStringValue(unpacker, "table name",
                     EventHolderImpl.class.getSimpleName());
 
-            Map<String, Value> fieldsTemp = ReaderHelper.unpackMapStringValueValues(unpacker,
+            fields = ReaderHelper.unpackMapStringValueValues(unpacker,
                     null,
                     "field names and values",
                     "field names and values map key (fieldname)",
                     "field names and values map value (fieldvalue)",
                     EventHolderImpl.class.getSimpleName());
 
-            EventHolderImpl eventHolderTemp = new EventHolderImpl(tableNameTemp, fieldsTemp);
-            checkContent(eventHolderTemp);
-            return eventHolderTemp;
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -86,22 +100,19 @@ public class EventHolderImpl implements EventHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         EventHolderImpl that = (EventHolderImpl) o;
-        if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) return false;
-        return fields != null ? fields.equals(that.fields) : that.fields == null;
+        return Objects.equals(tableName, that.tableName) && Objects.equals(fields, that.fields);
     }
 
     @Override
     public int hashCode() {
-        int result = tableName != null ? tableName.hashCode() : 0;
-        result = 31 * result + (fields != null ? fields.hashCode() : 0);
-        return result;
+        return Objects.hash(tableName, fields);
     }
 
     @Override
     public String toString() {
         return "EventHolderImpl{" +
                 "tableName='" + tableName + '\'' +
-                ", fields=" + fields +
+                ", noOfFields=" + fields.size() +
                 '}';
     }
 }

@@ -1,28 +1,44 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.ConsistencyType;
 import hu.arheu.gds.message.data.GDSHolder;
 import hu.arheu.gds.message.data.QueryContextHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.List;
+import java.util.Objects;
 
-public class QueryContextHolderImpl implements QueryContextHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 9;
-    private final String scrollId;
-    private final String query;
-    private final Long deliveredNumberOfHits;
-    private final Long queryStartTime;
-    private final ConsistencyType consistencyType;
-    private final String lastBucketId;
-    private final GDSHolder gdsHolder;
-    private final List<Value> fieldValues;
-    private final List<String> partitionNames;
+
+public class QueryContextHolderImpl extends MessagePart implements QueryContextHolder {
+
+    private String scrollId;
+    private String query;
+    private Long deliveredNumberOfHits;
+    private Long queryStartTime;
+    private ConsistencyType consistencyType;
+    private String lastBucketId;
+    private GDSHolder gdsHolder;
+    private List<Value> fieldValues;
+    private List<String> partitionNames;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public QueryContextHolderImpl() {
+    }
 
     public QueryContextHolderImpl(String scrollId,
                                   String query,
@@ -32,7 +48,8 @@ public class QueryContextHolderImpl implements QueryContextHolder {
                                   String lastBucketId,
                                   GDSHolder gdsHolder,
                                   List<Value> fieldValues,
-                                  List<String> partitionNames) {
+                                  List<String> partitionNames) throws ValidationException {
+
         this.scrollId = scrollId;
         this.query = query;
         this.deliveredNumberOfHits = deliveredNumberOfHits;
@@ -42,29 +59,37 @@ public class QueryContextHolderImpl implements QueryContextHolder {
         this.gdsHolder = gdsHolder;
         this.fieldValues = fieldValues;
         this.partitionNames = partitionNames;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(QueryContextHolder queryContext) {
-        ExceptionHelper.requireNonNullValue(queryContext.getScrollId(), queryContext.getClass().getSimpleName(),
+    @Override
+    public void checkContent() throws ValidationException {
+
+        Validator.requireNonNullValue(getScrollId(), getClass().getSimpleName(),
                 "scrollId");
-        ExceptionHelper.requireNonNullValue(queryContext.getQuery(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getQuery(), getClass().getSimpleName(),
                 "query");
-        ExceptionHelper.requireNonNullValue(queryContext.getDeliveredNumberOfHits(),
-                queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getDeliveredNumberOfHits(),
+                getClass().getSimpleName(),
                 "deliveredNumberOfHits");
-        ExceptionHelper.requireNonNullValue(queryContext.getQueryStartTime(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getQueryStartTime(), getClass().getSimpleName(),
                 "queryStartTime");
-        ExceptionHelper.requireNonNullValue(queryContext.getConsistencyType(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getConsistencyType(), getClass().getSimpleName(),
                 "consistencyType");
-        ExceptionHelper.requireNonNullValue(queryContext.getLastBucketId(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getLastBucketId(), getClass().getSimpleName(),
                 "lastBucketId");
-        ExceptionHelper.requireNonNullValue(queryContext.getGDSHolder(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getGDSHolder(), getClass().getSimpleName(),
                 "gdsDescriptor");
-        ExceptionHelper.requireNonNullValue(queryContext.getFieldValues(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getFieldValues(), getClass().getSimpleName(),
                 "fieldValues");
-        ExceptionHelper.requireNonNullValue(queryContext.getPartitionNames(), queryContext.getClass().getSimpleName(),
+        Validator.requireNonNullValue(getPartitionNames(), getClass().getSimpleName(),
                 "partitionNames");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -113,12 +138,8 @@ public class QueryContextHolderImpl implements QueryContextHolder {
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
-    @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
         WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
         WriterHelper.packValue(packer, getScrollId());
         WriterHelper.packValue(packer, getQuery());
@@ -126,67 +147,58 @@ public class QueryContextHolderImpl implements QueryContextHolder {
         WriterHelper.packValue(packer, getQueryStartTime());
         WriterHelper.packValue(packer, getConsistencyType().toString());
         WriterHelper.packValue(packer, getLastBucketId());
-        WriterHelper.packPackable(packer, this.gdsHolder);
-        WriterHelper.packValueValues(packer, this.fieldValues);
-        WriterHelper.packStringValues(packer, this.partitionNames);
+        WriterHelper.packMessagePart(packer, this.gdsHolder);
+        WriterHelper.packValueCollection(packer, this.fieldValues);
+        WriterHelper.packStringCollection(packer, this.partitionNames);
     }
 
-    public static QueryContextHolder unpackContent(MessageUnpacker unpacker) throws ReadException, IOException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "query context descriptor",
                 QueryContextHolderImpl.class.getSimpleName())) {
 
-            ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS, "query context descriptor",
+            ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements(), "query context descriptor",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            String scrollIdTemp = ReaderHelper.unpackStringValue(unpacker, "scroll id",
+            scrollId = ReaderHelper.unpackStringValue(unpacker, "scroll id",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            String queryTemp = ReaderHelper.unpackStringValue(unpacker, "query",
+            query = ReaderHelper.unpackStringValue(unpacker, "query",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            Long deliveredNumberOfHitsTemp = ReaderHelper.unpackLongValue(unpacker, "delivered number of hits",
+            deliveredNumberOfHits = ReaderHelper.unpackLongValue(unpacker, "delivered number of hits",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            Long queryStartTimeTemp = ReaderHelper.unpackLongValue(unpacker, "query start time",
+            queryStartTime = ReaderHelper.unpackLongValue(unpacker, "query start time",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            ConsistencyType consistencyTypeTemp = ReaderHelper.unpackEnumValueAsString(unpacker, ConsistencyType.class,
+            consistencyType = ReaderHelper.unpackEnumValueAsString(unpacker, ConsistencyType.class,
                     "consistency type",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            String lastBucketIdTemp = ReaderHelper.unpackStringValue(unpacker, "last bucket id",
+            lastBucketId = ReaderHelper.unpackStringValue(unpacker, "last bucket id",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            GDSHolder gdsHolderTemp = GDSHolderImpl.unpackContent(unpacker);
+            gdsHolder = new GDSHolderImpl();
+            gdsHolder.unpackContentFrom(unpacker);
 
-            List<Value> fieldValuesTemp = ReaderHelper.unpackValueValues(unpacker,
+            fieldValues = ReaderHelper.unpackValueValues(unpacker,
                     null,
                     "field values",
                     "field value",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            List<String> partitionNamesTemp = ReaderHelper.unpackStringValues(unpacker,
+            partitionNames = ReaderHelper.unpackStringValues(unpacker,
                     null,
                     "partition names",
                     "partition name",
                     QueryContextHolderImpl.class.getSimpleName());
 
-            QueryContextHolder queryContextTemp = new QueryContextHolderImpl(scrollIdTemp,
-                    queryTemp,
-                    deliveredNumberOfHitsTemp,
-                    queryStartTimeTemp,
-                    consistencyTypeTemp,
-                    lastBucketIdTemp,
-                    gdsHolderTemp,
-                    fieldValuesTemp,
-                    partitionNamesTemp);
-
-            checkContent(queryContextTemp);
-            return queryContextTemp;
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -194,45 +206,20 @@ public class QueryContextHolderImpl implements QueryContextHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         QueryContextHolderImpl that = (QueryContextHolderImpl) o;
-        if (scrollId != null ? !scrollId.equals(that.scrollId) : that.scrollId != null) return false;
-        if (query != null ? !query.equals(that.query) : that.query != null) return false;
-        if (deliveredNumberOfHits != null ? !deliveredNumberOfHits.equals(that.deliveredNumberOfHits) : that.deliveredNumberOfHits != null)
-            return false;
-        if (queryStartTime != null ? !queryStartTime.equals(that.queryStartTime) : that.queryStartTime != null)
-            return false;
-        if (consistencyType != that.consistencyType) return false;
-        if (lastBucketId != null ? !lastBucketId.equals(that.lastBucketId) : that.lastBucketId != null) return false;
-        if (gdsHolder != null ? !gdsHolder.equals(that.gdsHolder) : that.gdsHolder != null) return false;
-        if (fieldValues != null ? !fieldValues.equals(that.fieldValues) : that.fieldValues != null) return false;
-        return partitionNames != null ? partitionNames.equals(that.partitionNames) : that.partitionNames == null;
+        return Objects.equals(scrollId, that.scrollId)
+                && Objects.equals(query, that.query)
+                && Objects.equals(deliveredNumberOfHits, that.deliveredNumberOfHits)
+                && Objects.equals(queryStartTime, that.queryStartTime)
+                && consistencyType == that.consistencyType
+                && Objects.equals(lastBucketId, that.lastBucketId)
+                && Objects.equals(gdsHolder, that.gdsHolder)
+                && Objects.equals(fieldValues, that.fieldValues)
+                && Objects.equals(partitionNames, that.partitionNames);
     }
 
     @Override
     public int hashCode() {
-        int result = scrollId != null ? scrollId.hashCode() : 0;
-        result = 31 * result + (query != null ? query.hashCode() : 0);
-        result = 31 * result + (deliveredNumberOfHits != null ? deliveredNumberOfHits.hashCode() : 0);
-        result = 31 * result + (queryStartTime != null ? queryStartTime.hashCode() : 0);
-        result = 31 * result + (consistencyType != null ? consistencyType.hashCode() : 0);
-        result = 31 * result + (lastBucketId != null ? lastBucketId.hashCode() : 0);
-        result = 31 * result + (gdsHolder != null ? gdsHolder.hashCode() : 0);
-        result = 31 * result + (fieldValues != null ? fieldValues.hashCode() : 0);
-        result = 31 * result + (partitionNames != null ? partitionNames.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "QueryContextHolderImpl{" +
-                "scrollId='" + scrollId + '\'' +
-                ", query='" + query + '\'' +
-                ", deliveredNumberOfHits=" + deliveredNumberOfHits +
-                ", queryStartTime=" + queryStartTime +
-                ", consistencyType=" + consistencyType +
-                ", lastBucketId='" + lastBucketId + '\'' +
-                ", gdsHolder=" + gdsHolder +
-                ", fieldValues=" + fieldValues +
-                ", partitionNames=" + partitionNames +
-                '}';
+        return Objects.hash(scrollId, query, deliveredNumberOfHits, queryStartTime,
+                consistencyType, lastBucketId, gdsHolder, fieldValues, partitionNames);
     }
 }

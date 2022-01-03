@@ -1,30 +1,41 @@
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.FieldHolder;
 import hu.arheu.gds.message.data.QueryContextHolder;
-import hu.arheu.gds.message.data.QueryContextHolderSerializable;
 import hu.arheu.gds.message.data.QueryResponseHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class QueryResponseHolderImpl implements QueryResponseHolder {
-    private static final int NUMBER_OF_PUBLIC_ELEMENTS = 7;
-    private final Long numberOfHits;
-    private final Long numberOfFilteredHits;
-    private final Boolean morePage;
-    private QueryContextHolderSerializable queryContextHolderSerializable;
-    private final QueryContextHolder queryContextHolder;
-    private final List<FieldHolder> fieldHolders;
-    private final List<List<Value>> hits;
-    private final Long numberOfTotalHits;
+public class QueryResponseHolderImpl extends MessagePart implements QueryResponseHolder {
+
+    private Long numberOfHits;
+    private Long numberOfFilteredHits;
+    private Boolean morePage;
+    private QueryContextHolder queryContextHolder;
+    private List<FieldHolder> fieldHolders;
+    private List<List<Value>> hits;
+    private Long numberOfTotalHits;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public QueryResponseHolderImpl() {
+    }
 
     public QueryResponseHolderImpl(Long numberOfHits,
                                    Long numberOfFilteredHits,
@@ -32,6 +43,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                                    QueryContextHolder queryContextHolder,
                                    List<FieldHolder> fieldHolders,
                                    List<List<Value>> hits) {
+
         this(numberOfHits, numberOfFilteredHits, morePage, queryContextHolder, fieldHolders, hits, null);
     }
 
@@ -42,6 +54,7 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                                    List<FieldHolder> fieldHolders,
                                    List<List<Value>> hits,
                                    Long numberOfTotalHits) {
+
         this.numberOfHits = numberOfHits;
         this.numberOfFilteredHits = numberOfFilteredHits;
         this.morePage = morePage;
@@ -49,24 +62,23 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         this.fieldHolders = fieldHolders;
         this.hits = hits;
         this.numberOfTotalHits = numberOfTotalHits;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(QueryResponseHolder queryResponse) {
-        ExceptionHelper.requireNonNullValue(queryResponse.getNumberOfHits(), queryResponse.getClass().getSimpleName(),
-                "queryResponse");
-        ExceptionHelper.requireNonNullValue(queryResponse.getNumberOfFilteredHits(),
-                queryResponse.getClass().getSimpleName(),
-                "numberOfFilteredHits");
-        ExceptionHelper.requireNonNullValue(queryResponse.getMorePage(), queryResponse.getClass().getSimpleName(),
-                "morePage");
-        ExceptionHelper.requireNonNullValue(queryResponse.getQueryContextHolder(),
-                queryResponse.getClass().getSimpleName(),
-                "queryContextDescriptor");
-        ExceptionHelper.requireNonNullValue(queryResponse.getFieldHolders(), queryResponse.getClass().getSimpleName(),
-                "fieldDescriptors");
-        ExceptionHelper.requireNonNullValue(queryResponse.getHits(), queryResponse.getClass().getSimpleName(),
-                "hits");
+    @Override
+    public void checkContent() {
+        Validator.requireNonNullValue(getNumberOfHits(), getClass().getSimpleName(), "queryResponse");
+        Validator.requireNonNullValue(getNumberOfFilteredHits(), getClass().getSimpleName(), "numberOfFilteredHits");
+        Validator.requireNonNullValue(getMorePage(), getClass().getSimpleName(), "morePage");
+        Validator.requireNonNullValue(getQueryContextHolder(), getClass().getSimpleName(), "queryContextDescriptor");
+        Validator.requireNonNullValue(getFieldHolders(), getClass().getSimpleName(), "fieldDescriptors");
+        Validator.requireNonNullValue(getHits(), getClass().getSimpleName(), "hits");
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
@@ -90,15 +102,6 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
     }
 
     @Override
-    public QueryContextHolderSerializable getQueryContextHolderSerializable() {
-        if (queryContextHolderSerializable == null) {
-            queryContextHolderSerializable = Converters
-                    .getQueryContextDescriptorSerializable(queryContextHolder);
-        }
-        return queryContextHolderSerializable;
-    }
-
-    @Override
     public List<FieldHolder> getFieldHolders() {
         return this.fieldHolders;
     }
@@ -109,65 +112,69 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
     }
 
     @Override
-    public int getNumberOfPublicElements() {
-        return NUMBER_OF_PUBLIC_ELEMENTS;
-    }
-
-    @Override
     public Long getNumberOfTotalHits() {
-        return numberOfTotalHits;
+        return this.numberOfTotalHits;
     }
 
     @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
-        WriterHelper.packArrayHeader(packer, getNumberOfPublicElements());
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
+        int elements = numberOfTotalHits == null ? getNumberOfPublicElements() - 1 : getNumberOfPublicElements();
+
+        WriterHelper.packArrayHeader(packer, elements);
         WriterHelper.packValue(packer, this.numberOfHits);
         WriterHelper.packValue(packer, this.numberOfFilteredHits);
         WriterHelper.packValue(packer, this.morePage);
-        WriterHelper.packPackable(packer, this.queryContextHolder);
-        WriterHelper.packPackables(packer, this.fieldHolders);
+        WriterHelper.packMessagePart(packer, this.queryContextHolder);
+        WriterHelper.packMessagePartCollection(packer, this.fieldHolders);
         WriterHelper.packValueListListValues(packer, this.hits);
-        WriterHelper.packValue(packer, this.numberOfTotalHits);
+
+        if (numberOfTotalHits != null) {
+            WriterHelper.packValue(packer, this.numberOfTotalHits);
+        }
     }
 
-    public static QueryResponseHolderImpl unpackContent(MessageUnpacker unpacker) throws IOException, ReadException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "query ack data",
                 QueryResponseHolderImpl.class.getSimpleName())) {
 
-            int headerSize = ReaderHelper.unpackArrayHeader(unpacker, NUMBER_OF_PUBLIC_ELEMENTS - 1, "query ack data",
+            int arrayHeaderSize = ReaderHelper.unpackArrayHeader(unpacker, getNumberOfPublicElements() - 1, "query ack data",
                     QueryResponseHolderImpl.class.getSimpleName());
 
-            Long numberOfHitsTemp = ReaderHelper.unpackLongValue(unpacker, "number of hits",
+            numberOfHits = ReaderHelper.unpackLongValue(unpacker, "number of hits",
                     QueryResponseHolderImpl.class.getSimpleName());
 
-            Long numberOfFilteredHits = ReaderHelper.unpackLongValue(unpacker, "number of filtered hits",
+            numberOfFilteredHits = ReaderHelper.unpackLongValue(unpacker, "number of filtered hits",
                     QueryResponseHolderImpl.class.getSimpleName());
 
-            Boolean morePage = ReaderHelper.unpackBooleanValue(unpacker, "more page",
+            morePage = ReaderHelper.unpackBooleanValue(unpacker, "more page",
                     QueryResponseHolderImpl.class.getSimpleName());
 
-            QueryContextHolder queryContextHolderTemp = QueryContextHolderImpl.unpackContent(unpacker);
-
-            List<FieldHolder> fieldHoldersTemp = null;
+            queryContextHolder = new QueryContextHolderImpl();
+            queryContextHolder.unpackContentFrom(unpacker);
 
             if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "field descriptors",
                     QueryResponseHolderImpl.class.getSimpleName())) {
 
-                fieldHoldersTemp = new ArrayList<>();
+                fieldHolders = new ArrayList<>();
 
                 int fieldDescriptorsSize = ReaderHelper.unpackArrayHeader(unpacker, null,
                         "field descriptors",
                         QueryResponseHolderImpl.class.getSimpleName());
 
                 for (int i = 0; i < fieldDescriptorsSize; i++) {
-                    fieldHoldersTemp.add(FieldHolderImpl.unpackContent(unpacker));
+                    FieldHolderImpl fieldHolder = new FieldHolderImpl();
+                    fieldHolder.unpackContentFrom(unpacker);
+                    fieldHolders.add(fieldHolder);
                 }
 
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
 
-            List<List<Value>> hitsTemp = ReaderHelper.unpackValueListListValues(unpacker,
+            hits = ReaderHelper.unpackValueListListValues(unpacker,
                     null,
                     null,
                     "records",
@@ -175,28 +182,17 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
                     "fieldvalue",
                     QueryResponseHolderImpl.class.getSimpleName());
 
-            Long totalHits = null;
-            if (headerSize >= NUMBER_OF_PUBLIC_ELEMENTS) {
-                totalHits = ReaderHelper.unpackLongValue(unpacker, "numberOfTotalHits", QueryResponseHolderImpl.class.getSimpleName());
-                for (int ii = NUMBER_OF_PUBLIC_ELEMENTS + 1; ii < headerSize; ++ii) {
-                    unpacker.unpackValue();
-                }
+            if (arrayHeaderSize >= getNumberOfPublicElements()) {
+                numberOfTotalHits =
+                        ReaderHelper.unpackLongValue(unpacker, "number of total hits", QueryResponseHolderImpl.class.getSimpleName());
+            } else {
+                numberOfTotalHits = null;
             }
 
-
-            QueryResponseHolderImpl queryResponseTemp = new QueryResponseHolderImpl(numberOfHitsTemp,
-                    numberOfFilteredHits,
-                    morePage,
-                    queryContextHolderTemp,
-                    fieldHoldersTemp,
-                    hitsTemp,
-                    totalHits);
-            checkContent(queryResponseTemp);
-            return queryResponseTemp;
+            checkContent();
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -204,12 +200,18 @@ public class QueryResponseHolderImpl implements QueryResponseHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         QueryResponseHolderImpl that = (QueryResponseHolderImpl) o;
-        return Objects.equals(numberOfHits, that.numberOfHits) && Objects.equals(numberOfFilteredHits, that.numberOfFilteredHits) && Objects.equals(morePage, that.morePage) && Objects.equals(queryContextHolderSerializable, that.queryContextHolderSerializable) && Objects.equals(queryContextHolder, that.queryContextHolder) && Objects.equals(fieldHolders, that.fieldHolders) && Objects.equals(hits, that.hits) && Objects.equals(numberOfTotalHits, that.numberOfTotalHits);
+        return Objects.equals(numberOfHits, that.numberOfHits) &&
+                Objects.equals(numberOfFilteredHits, that.numberOfFilteredHits) &&
+                Objects.equals(morePage, that.morePage) &&
+                Objects.equals(queryContextHolder, that.queryContextHolder) &&
+                Objects.equals(fieldHolders, that.fieldHolders) &&
+                Objects.equals(hits, that.hits) &&
+                Objects.equals(numberOfTotalHits, that.numberOfTotalHits);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(numberOfHits, numberOfFilteredHits, morePage, queryContextHolderSerializable, queryContextHolder, fieldHolders, hits, numberOfTotalHits);
+        return Objects.hash(numberOfHits, numberOfFilteredHits, morePage, queryContextHolder, fieldHolders, hits, numberOfTotalHits);
     }
 
     @Override

@@ -7,38 +7,48 @@
 package hu.arheu.gds.message.clienttypes;
 
 import hu.arheu.gds.client.Either;
-import hu.arheu.gds.client.Pair;
 import hu.arheu.gds.message.data.MessageData5AttachmentRequestAck;
 import hu.arheu.gds.message.data.MessageData6AttachmentResponse;
 import hu.arheu.gds.message.header.MessageHeaderBase;
+
+import java.io.Externalizable;
 
 /**
  * Represents the result for an Attachment Request.
  * Since the reply can arrive in either a type 5 or a type 6 message, the data part is an either object.
  */
-public class AttachmentResult extends GDSMessage<Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> {
+public class AttachmentResult {
+    private MessageHeaderBase header;
+    private Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse> data;
 
-    public AttachmentResult(Pair<MessageHeaderBase, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse>> response) {
-        super(response);
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public AttachmentResult() {
     }
 
     public AttachmentResult(MessageHeaderBase header, Either<MessageData5AttachmentRequestAck, MessageData6AttachmentResponse> data) {
-        super(header, data);
+        this.header = header;
+        this.data = data;
+    }
+
+    public MessageHeaderBase getHeader() {
+        return header;
     }
 
     public boolean isAttachmentRequestAck() {
-        return getData().isLeftSet();
+        return data.isLeftSet();
     }
 
     public MessageData5AttachmentRequestAck getDataAsAttachmentRequestAck() {
-        return getData().getLeft();
+        return data.getLeft();
     }
 
     public boolean isAttachmentResponse() {
-        return getData().isRightSet();
+        return data.isRightSet();
     }
 
     public MessageData6AttachmentResponse getDataAsAttachmentResponse() {
-        return getData().getRight();
+        return data.getRight();
     }
 }

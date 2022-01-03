@@ -1,91 +1,85 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.ConsistencyType;
 import hu.arheu.gds.message.data.MessageData10QueryRequest;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.Objects;
 
-public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
+
+public class MessageData10QueryRequestImpl extends MessagePart implements MessageData10QueryRequest {
+
     private String query;
     private ConsistencyType consistencyType;
     private Long timeout;
     private Integer pageSize;
     private Integer queryType;
 
-    public MessageData10QueryRequestImpl(boolean cache,
-                                         String query,
-                                         ConsistencyType consistencyType,
-                                         Long timeout) throws IOException, NullPointerException, ValidationException {
-
-        this(cache, query, consistencyType, timeout, null, null);
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData10QueryRequestImpl() {
     }
 
-    public MessageData10QueryRequestImpl(boolean cache,
-                                         String query,
+    public MessageData10QueryRequestImpl(String query,
+                                         ConsistencyType consistencyType,
+                                         Long timeout) throws ValidationException {
+
+        this(query, consistencyType, timeout, null, null);
+    }
+
+    public MessageData10QueryRequestImpl(String query,
                                          ConsistencyType consistencyType,
                                          Long timeout,
                                          Integer pageSize,
-                                         Integer queryType) throws IOException, NullPointerException, ValidationException {
+                                         Integer queryType) throws ValidationException {
+
         this.query = query;
         this.consistencyType = consistencyType;
         this.timeout = timeout;
         this.pageSize = pageSize;
         this.queryType = queryType;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    protected void checkContent() throws NullPointerException {
-        if(pageSize == null) {
-            ExceptionHelper.requireNullValue(queryType, this.getClass().getSimpleName(), "queryType");
+    public MessageData10QueryRequestImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
+    }
+
+    public MessageData10QueryRequestImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
+    }
+
+    public void checkContent() throws ValidationException {
+
+        if (pageSize == null) {
+            Validator.requireNullValue(queryType, this.getClass().getSimpleName(), "queryType");
         }
-        if(queryType == null) {
-            ExceptionHelper.requireNullValue(pageSize, this.getClass().getSimpleName(), "pageSize");
+
+        if (queryType == null) {
+            Validator.requireNullValue(pageSize, this.getClass().getSimpleName(), "pageSize");
         }
-        ExceptionHelper.requireNonNullValue(query, this.getClass().getSimpleName(),
+
+        Validator.requireNonNullValue(query, this.getClass().getSimpleName(),
                 "query");
-        ExceptionHelper.requireNonNullValue(consistencyType, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(consistencyType, this.getClass().getSimpleName(),
                 "consistencyType");
-        ExceptionHelper.requireNonNullValue(timeout, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(timeout, this.getClass().getSimpleName(),
                 "timeout");
     }
 
-    public MessageData10QueryRequestImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
-    }
-
-    public MessageData10QueryRequestImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.QUERY_REQUEST_10;
-            }
-            @Override
-            public MessageData10QueryRequestImpl asQueryRequestMessageData10() {
-                return MessageData10QueryRequestImpl.this;
-            }
-            @Override
-            public boolean isQueryRequestMessageData10() {
-                return true;
-            }
-        };
-    }
 
     @Override
     public String getQuery() {
@@ -108,30 +102,37 @@ public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
     }
 
     @Override
-    public Integer getQueryType() { return this.queryType; }
+    public Integer getQueryType() {
+        return this.queryType;
+    }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException {
-        if(pageSize == null && queryType == null) {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
+
+
+        if (pageSize == null && queryType == null) {
             WriterHelper.packArrayHeader(packer, 3);
         } else {
             WriterHelper.packArrayHeader(packer, 5);
         }
+
         WriterHelper.packValue(packer, this.query);
         WriterHelper.packValue(packer, this.consistencyType.toString());
         WriterHelper.packValue(packer, this.timeout);
-        if(pageSize != null && queryType != null) {
+
+        if (pageSize != null && queryType != null) {
             WriterHelper.packValue(packer, this.pageSize);
             WriterHelper.packValue(packer, this.queryType);
         }
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "query request",
                 this.getClass().getSimpleName())) {
 
@@ -146,14 +147,21 @@ public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
 
             this.timeout = ReaderHelper.unpackLongValue(unpacker, "timeout", this.getClass().getSimpleName());
 
-            if(arraySize == 5) {
+            if (arraySize == 5) {
                 this.pageSize = ReaderHelper.unpackIntegerValue(unpacker, "pageSize", this.getClass().getSimpleName());
                 this.queryType = ReaderHelper.unpackIntegerValue(unpacker, "queryType", this.getClass().getSimpleName());
             }
+
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
+    }
+
+    @Override
+    public String toString() {
+        return "MessageData10QueryRequestImpl{" +
+                "" + "query=" + query + ", consistencyType=" + consistencyType + ", timeout=" + timeout + ", pageSize=" + pageSize + ", queryType=" + queryType + '}';
     }
 
     @Override
@@ -161,31 +169,15 @@ public class MessageData10QueryRequestImpl extends MessageData10QueryRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MessageData10QueryRequestImpl that = (MessageData10QueryRequestImpl) o;
-        return Objects.equals(query, that.query) &&
-                consistencyType == that.consistencyType &&
-                Objects.equals(timeout, that.timeout) &&
-                Objects.equals(pageSize, that.pageSize) &&
-                Objects.equals(queryType, that.queryType);
+        return Objects.equals(query, that.query)
+                && consistencyType == that.consistencyType
+                && Objects.equals(timeout, that.timeout)
+                && Objects.equals(pageSize, that.pageSize)
+                && Objects.equals(queryType, that.queryType);
     }
 
     @Override
     public int hashCode() {
-        int result = query != null ? query.hashCode() : 0;
-        result = 31 * result + (consistencyType != null ? consistencyType.hashCode() : 0);
-        result = 31 * result + (timeout != null ? timeout.hashCode() : 0);
-        result = 31 * result + (pageSize != null ? pageSize.hashCode() : 0);
-        result = 31 * result + (queryType != null ? queryType.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "MessageData10QueryRequestImpl{" +
-                "query='" + query + '\'' +
-                ", consistencyType=" + consistencyType +
-                ", timeout=" + timeout +
-                ", pageSize=" + pageSize +
-                ", queryType=" + queryType +
-                '}';
+        return Objects.hash(query, consistencyType, timeout, pageSize, queryType);
     }
 }

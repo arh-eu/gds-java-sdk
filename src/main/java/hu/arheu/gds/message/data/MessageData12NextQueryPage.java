@@ -1,19 +1,31 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 
-import java.io.IOException;
 
-public abstract class MessageData12NextQueryPage extends MessageData implements MessageData12NextQueryPageDescriptor {
-    
-    public MessageData12NextQueryPage(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+public interface MessageData12NextQueryPage extends MessageData {
+
+    QueryContextHolder getQueryContextHolder();
+
+    Long getTimeout();
+
+    @Override
+    default MessageData12NextQueryPage asNextQueryPageMessageData12() throws ClassCastException {
+        return this;
     }
 
-    public MessageData12NextQueryPage(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isNextQueryPageMessageData12() {
+        return true;
     }
-    
-    public MessageData12NextQueryPage() throws IOException { }
+
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.NEXT_QUERY_PAGE_12;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 2;
+    }
 }

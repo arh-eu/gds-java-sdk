@@ -13,10 +13,9 @@ import hu.arheu.gds.message.clienttypes.EventResponse;
 import hu.arheu.gds.message.clienttypes.QueryResponse;
 import hu.arheu.gds.message.data.*;
 import hu.arheu.gds.message.data.impl.AckStatus;
-import hu.arheu.gds.message.data.impl.AttachmentResultHolderImpl;
+import hu.arheu.gds.message.errors.ValidationException;
 import hu.arheu.gds.message.header.MessageHeaderBase;
 import hu.arheu.gds.message.util.MessageManager;
-import hu.arheu.gds.message.util.ValidationException;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,19 +1,28 @@
+
 package hu.arheu.gds.message.data;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 
-import java.io.IOException;
+public interface MessageData7AttachmentResponseAck extends Ack, MessageData {
 
-public abstract class MessageData7AttachmentResponseAck extends MessageData implements MessageData7AttachmentResponseAckDescriptor {
+    AttachmentResponseAckResultHolder getData();
 
-    public MessageData7AttachmentResponseAck(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    @Override
+    default MessageData7AttachmentResponseAck asAttachmentResponseAckMessageData7() throws ClassCastException {
+        return this;
     }
 
-    public MessageData7AttachmentResponseAck(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default boolean isAttachmentResponseAckMessageData7() {
+        return true;
     }
 
-    public MessageData7AttachmentResponseAck() throws IOException { }
+    @Override
+    default MessageDataType getMessageDataType() {
+        return MessageDataType.ATTACHMENT_RESPONSE_ACK_7;
+    }
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return 3;
+    }
 }

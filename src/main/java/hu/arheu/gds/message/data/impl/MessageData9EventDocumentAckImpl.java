@@ -1,62 +1,54 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventDocumentResultHolder;
 import hu.arheu.gds.message.data.MessageData9EventDocumentAck;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class MessageData9EventDocumentAckImpl extends MessageData9EventDocumentAck {
+
+public class MessageData9EventDocumentAckImpl extends MessagePart implements MessageData9EventDocumentAck {
+
     private AckStatus globalStatus;
     private List<EventDocumentResultHolder> result;
     private String globalException;
 
-    public MessageData9EventDocumentAckImpl(boolean cache,
-                                            AckStatus globalStatus,
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData9EventDocumentAckImpl() {
+    }
+
+    public MessageData9EventDocumentAckImpl(AckStatus globalStatus,
                                             List<EventDocumentResultHolder> result,
-                                            String globalException) throws IOException, ValidationException {
+                                            String globalException) throws ValidationException {
+
         this.globalStatus = globalStatus;
         this.result = result;
         this.globalException = globalException;
-        this.cache = cache;
+
         checkContent();
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData9EventDocumentAckImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    public MessageData9EventDocumentAckImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData9EventDocumentAckImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.EVENT_DOCUMENT_ACK_9;
-            }
-            @Override
-            public MessageData9EventDocumentAckImpl asEventDocumentAckMessageData9() {
-                return MessageData9EventDocumentAckImpl.this;
-            }
-            @Override
-            public boolean isEventDocumentAckMessageData9() {
-                return true;
-            }
-        };
+    public MessageData9EventDocumentAckImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -74,35 +66,35 @@ public class MessageData9EventDocumentAckImpl extends MessageData9EventDocumentA
         return this.globalException;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
+    public void checkContent() {
+        Validator.requireNonNullValue(this.globalStatus, this.getClass().getSimpleName(),
                 "globalStatus");
-        ExceptionHelper.requireNonEmptyCollection(this.result, this.getClass().getSimpleName(),
+        Validator.requireNonEmptyCollection(this.result, this.getClass().getSimpleName(),
                 "result");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
         WriterHelper.packArrayHeader(packer, 3);
         WriterHelper.packValue(packer, this.globalStatus == null ? null : this.globalStatus.getValue());
         if (this.result != null) {
             WriterHelper.packArrayHeader(packer, this.result.size());
-            for(EventDocumentResultHolder eventDocumentResultHolder: this.result) {
-                eventDocumentResultHolder.packContent(packer);
+            for (EventDocumentResultHolder eventDocumentResultHolder : this.result) {
+                eventDocumentResultHolder.packContentTo(packer);
             }
         } else {
-            packer.packNil();
+            WriterHelper.packNil(packer);
         }
         WriterHelper.packValue(packer, this.globalException);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event document ack data",
                 this.getClass().getSimpleName())) {
             ReaderHelper.unpackArrayHeader(unpacker, 3, "event document ack data",
@@ -115,15 +107,17 @@ public class MessageData9EventDocumentAckImpl extends MessageData9EventDocumentA
                         this.getClass().getSimpleName());
                 this.result = new ArrayList<>();
                 for (int i = 0; i < arrayHeaderSize; ++i) {
-                    this.result.add(EventDocumentResultHolderImpl.unpackContent(unpacker));
+                    EventDocumentResultHolderImpl holder = new EventDocumentResultHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    this.result.add(holder);
                 }
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
             this.globalException = ReaderHelper.unpackStringValue(unpacker, "global exception",
                     this.getClass().getSimpleName());
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
         checkContent();
     }
@@ -133,25 +127,21 @@ public class MessageData9EventDocumentAckImpl extends MessageData9EventDocumentA
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MessageData9EventDocumentAckImpl that = (MessageData9EventDocumentAckImpl) o;
-        if (globalStatus != that.globalStatus) return false;
-        if (result != null ? !result.equals(that.result) : that.result != null) return false;
-        return globalException != null ? globalException.equals(that.globalException) : that.globalException == null;
+        return globalStatus == that.globalStatus
+                && Objects.equals(result, that.result)
+                && Objects.equals(globalException, that.globalException);
     }
 
     @Override
     public int hashCode() {
-        int result1 = globalStatus != null ? globalStatus.hashCode() : 0;
-        result1 = 31 * result1 + (result != null ? result.hashCode() : 0);
-        result1 = 31 * result1 + (globalException != null ? globalException.hashCode() : 0);
-        return result1;
+        return Objects.hash(globalStatus, result, globalException);
     }
 
     @Override
     public String toString() {
         return "MessageData9EventDocumentAckImpl{" +
                 "globalStatus=" + globalStatus +
-                ", result=" + result +
-                ", globalException='" + globalException + '\'' +
+                ", resultLen=" + result.size() +
                 '}';
     }
 }

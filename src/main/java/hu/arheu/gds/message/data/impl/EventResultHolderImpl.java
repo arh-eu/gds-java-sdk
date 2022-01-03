@@ -1,41 +1,61 @@
+
 package hu.arheu.gds.message.data.impl;
 
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.EventResultHolder;
 import hu.arheu.gds.message.data.EventSubResultHolder;
 import hu.arheu.gds.message.data.FieldHolder;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class EventResultHolderImpl implements EventResultHolder {
-    private final AckStatus status;
-    private final String notification;
-    private final List<FieldHolder> fieldHolders;
-    private final List<EventSubResultHolder> fieldValues;
+
+public class EventResultHolderImpl extends MessagePart implements EventResultHolder {
+
+    private AckStatus status;
+    private String notification;
+    private List<FieldHolder> fieldHolders;
+    private List<EventSubResultHolder> fieldValues;
+
+
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public EventResultHolderImpl() {
+    }
 
     public EventResultHolderImpl(AckStatus status,
                                  String notification,
                                  List<FieldHolder> fieldHolders,
                                  List<EventSubResultHolder> fieldValues) {
+
         this.status = status;
         this.notification = notification;
         this.fieldHolders = fieldHolders;
         this.fieldValues = fieldValues;
-        checkContent(this);
+
+        checkContent();
     }
 
-    private static void checkContent(EventResultHolder eventResult) {
-        ExceptionHelper.requireNonNullValue(eventResult.getStatus(), eventResult.getClass().getSimpleName(),
-                "status");
-        ExceptionHelper.requireNonNullValue(eventResult.getFieldHolders(), eventResult.getClass().getSimpleName(),
-                "fieldHolders");
-        ExceptionHelper.requireNonNullValue(eventResult.getFieldValues(), eventResult.getClass().getSimpleName(),
-                "fieldValues");
+    @Override
+    public void checkContent() {
+
+        Validator.requireNonNullValue(getStatus(), getClass().getSimpleName(), "status");
+
+        Validator.requireNonNullValue(getFieldHolders(), getClass().getSimpleName(), "fieldHolders");
+
+        Validator.requireNonNullValue(getFieldValues(), getClass().getSimpleName(), "fieldValues");
     }
 
     @Override
@@ -59,73 +79,74 @@ public class EventResultHolderImpl implements EventResultHolder {
     }
 
     @Override
-    public void packContent(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException, ValidationException {
+
         WriterHelper.packArrayHeader(packer, 4);
         WriterHelper.packValue(packer, this.status == null ? null : this.status.getValue());
         WriterHelper.packValue(packer, this.notification);
-        WriterHelper.packPackables(packer, this.fieldHolders);
-        WriterHelper.packPackables(packer, this.fieldValues);
+        WriterHelper.packMessagePartCollection(packer, this.fieldHolders);
+        WriterHelper.packMessagePartCollection(packer, this.fieldValues);
     }
 
-    public static EventResultHolder unpackContent(MessageUnpacker unpacker) throws ReadException, IOException {
+    @Override
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
+
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event response",
                 EventResultHolderImpl.class.getSimpleName())) {
 
             ReaderHelper.unpackArrayHeader(unpacker, 4, "event response",
                     EventResultHolderImpl.class.getSimpleName());
 
-            AckStatus statusTemp = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
+            status = AckStatus.valueOf(ReaderHelper.unpackIntegerValue(unpacker, "status",
                     EventResultHolderImpl.class.getSimpleName()));
 
-            String notificationTemp = ReaderHelper.unpackStringValue(unpacker, "notification",
+            notification = ReaderHelper.unpackStringValue(unpacker, "notification",
                     EventResultHolderImpl.class.getSimpleName());
 
-            List<FieldHolder> fieldHoldersTemp = null;
+            fieldHolders = null;
 
             if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "field descriptors",
                     EventResultHolderImpl.class.getSimpleName())) {
 
-                fieldHoldersTemp = new ArrayList<>();
+                fieldHolders = new ArrayList<>();
 
                 int arrayHeaderSize = ReaderHelper.unpackArrayHeader(unpacker, null, "fieldescriptors",
                         EventResultHolderImpl.class.getSimpleName());
 
                 for (int i = 0; i < arrayHeaderSize; i++) {
-                    fieldHoldersTemp.add(FieldHolderImpl.unpackContent(unpacker));
+                    FieldHolderImpl holder = new FieldHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    fieldHolders.add(holder);
                 }
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
 
-            List<EventSubResultHolder> fieldValuesTemp = null;
+            fieldValues = null;
 
             if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "field values",
                     EventResultHolderImpl.class.getSimpleName())) {
 
-                fieldValuesTemp = new ArrayList<>();
+                fieldValues = new ArrayList<>();
 
                 int arrayHeaderSize = ReaderHelper.unpackArrayHeader(unpacker, null, "field values",
                         EventResultHolderImpl.class.getSimpleName());
 
                 for (int i = 0; i < arrayHeaderSize; i++) {
-                    fieldValuesTemp.add(EventSubResultHolderImpl.unpackContent(unpacker));
+                    EventSubResultHolderImpl holder = new EventSubResultHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    fieldValues.add(holder);
                 }
 
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
 
-            EventResultHolderImpl eventResultTemp = new EventResultHolderImpl(statusTemp,
-                    notificationTemp,
-                    fieldHoldersTemp,
-                    fieldValuesTemp);
+            checkContent();
 
-            checkContent(eventResultTemp);
-            return eventResultTemp;
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
-        return null;
     }
 
     @Override
@@ -133,28 +154,26 @@ public class EventResultHolderImpl implements EventResultHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         EventResultHolderImpl that = (EventResultHolderImpl) o;
-        if (status != that.status) return false;
-        if (notification != null ? !notification.equals(that.notification) : that.notification != null) return false;
-        if (fieldHolders != null ? !fieldHolders.equals(that.fieldHolders) : that.fieldHolders != null) return false;
-        return fieldValues != null ? fieldValues.equals(that.fieldValues) : that.fieldValues == null;
+        return status == that.status
+                && Objects.equals(notification, that.notification)
+                && Objects.equals(fieldHolders, that.fieldHolders)
+                && Objects.equals(fieldValues, that.fieldValues);
     }
 
     @Override
     public int hashCode() {
-        int result = status != null ? status.hashCode() : 0;
-        result = 31 * result + (notification != null ? notification.hashCode() : 0);
-        result = 31 * result + (fieldHolders != null ? fieldHolders.hashCode() : 0);
-        result = 31 * result + (fieldValues != null ? fieldValues.hashCode() : 0);
-        return result;
+        return Objects.hash(status, notification, fieldHolders, fieldValues);
+    }
+
+    @Override
+    protected Type getMessagePartType() {
+        return Type.OTHER;
     }
 
     @Override
     public String toString() {
-        return "EventResultHolderImpl{" +
-                "status=" + status +
-                ", notification='" + notification + '\'' +
-                ", fieldHolders=" + fieldHolders +
-                ", fieldValues=" + fieldValues +
-                '}';
+        return String.format("EventResultHolderImpl{status=%1$s, noOfFieldValues=%2$d}",
+                status,
+                fieldValues.size());
     }
 }

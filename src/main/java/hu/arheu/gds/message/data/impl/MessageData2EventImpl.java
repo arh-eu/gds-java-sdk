@@ -1,46 +1,68 @@
+
 package hu.arheu.gds.message.data.impl;
 
-import hu.arheu.gds.message.MessagePartType;
+import hu.arheu.gds.message.MessagePart;
 import hu.arheu.gds.message.data.MessageData2Event;
-import hu.arheu.gds.message.data.MessageDataTypeHelper;
 import hu.arheu.gds.message.data.PriorityLevelHolder;
-import hu.arheu.gds.message.header.MessageDataType;
-import hu.arheu.gds.message.util.*;
+import hu.arheu.gds.message.errors.ReadException;
+import hu.arheu.gds.message.errors.ValidationException;
+import hu.arheu.gds.message.errors.WriteException;
+import hu.arheu.gds.message.util.Converters;
+import hu.arheu.gds.message.util.ReaderHelper;
+import hu.arheu.gds.message.util.Validator;
+import hu.arheu.gds.message.util.WriterHelper;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
-import java.io.IOException;
+import java.io.Externalizable;
 import java.util.*;
 
-public class MessageData2EventImpl extends MessageData2Event {
+
+public class MessageData2EventImpl extends MessagePart implements MessageData2Event {
+
     private String operations;
     private Map<String, byte[]> binaryContents;
     private List<PriorityLevelHolder> priorityLevels;
 
-    public MessageData2EventImpl(boolean cache,
-                                 String operations,
-                                 Map<String, byte[]> binaryContents,
-                                 List<PriorityLevelHolder> priorityLevels) throws IOException, ValidationException {
+    /**
+     * Do not remove, as it's needed for the serialization through {@link Externalizable}
+     */
+    public MessageData2EventImpl() {
+    }
 
-        this.operations = operations;
+    public MessageData2EventImpl(String operations,
+                                 Map<String, byte[]> binaryContents,
+                                 List<PriorityLevelHolder> priorityLevels) throws ValidationException {
+        this(Collections.singletonList(operations), binaryContents, priorityLevels);
+    }
+
+    public MessageData2EventImpl(List<String> operations,
+                                 Map<String, byte[]> binaryContents,
+                                 List<PriorityLevelHolder> priorityLevels) throws ValidationException {
+
+        Validator.requireNonEmptyCollection(operations, this.getClass().getSimpleName(),
+                "operations");
+
+        StringJoiner joiner = new StringJoiner(";");
+        operations.forEach(joiner::add);
+        this.operations = joiner.toString();
+
         if (binaryContents != null) {
             this.binaryContents = new HashMap<>();
             for (Map.Entry<String, byte[]> binaryContent : binaryContents.entrySet()) {
                 this.binaryContents.put(
-                        Utils.stringToUTF8Hex(
-                                binaryContent.getKey()),
+                        Converters.stringToUTF8Hex(binaryContent.getKey()),
                         binaryContent.getValue());
             }
         }
         this.priorityLevels = priorityLevels;
-        this.cache = cache;
 
         //Priority validation
         Set<Integer> operationIndexes = new HashSet<>();
-        for(PriorityLevelHolder priorityLevel: priorityLevels) {
-            for(Integer operationIndex: priorityLevel.getOperations().keySet()) {
-                if(operationIndexes.contains(operationIndex)) {
+        for (PriorityLevelHolder priorityLevel : priorityLevels) {
+            for (Integer operationIndex : priorityLevel.getOperations().keySet()) {
+                if (operationIndexes.contains(operationIndex)) {
                     throw new ValidationException("The operational priority can not be included twice");
                 } else {
                     operationIndexes.add(operationIndex);
@@ -49,85 +71,14 @@ public class MessageData2EventImpl extends MessageData2Event {
         }
 
         checkContent();
-
-        if (cache) {
-            Serialize();
-        }
     }
 
-    public MessageData2EventImpl(boolean cache,
-                                 List<String> operations,
-                                 Map<String, byte[]> binaryContents,
-                                 List<PriorityLevelHolder> priorityLevels) throws IOException, ValidationException {
-
-        ExceptionHelper.requireNonEmptyCollection(operations, this.getClass().getSimpleName(),
-                "operations");
-
-        this.operations = "";
-        for(int i = 0; i < operations.size(); ++i) {
-            this.operations += operations.get(i);
-            if(i != operations.size() -1) {
-                if(!operations.get(i).endsWith(";")) {
-                    this.operations += ";";
-                }
-            }
-        }
-
-        if (binaryContents != null) {
-            this.binaryContents = new HashMap<>();
-            for (Map.Entry<String, byte[]> binaryContent : binaryContents.entrySet()) {
-                this.binaryContents.put(
-                        Utils.stringToUTF8Hex(
-                                binaryContent.getKey()),
-                                binaryContent.getValue());
-            }
-        }
-        this.priorityLevels = priorityLevels;
-        this.cache = cache;
-
-        //Priority validation
-        Set<Integer> operationIndexes = new HashSet<>();
-        for(PriorityLevelHolder priorityLevel: priorityLevels) {
-            for(Integer operationIndex: priorityLevel.getOperations().keySet()) {
-                if(operationIndexes.contains(operationIndex)) {
-                    throw new ValidationException("The operational priority can not be included twice");
-                } else {
-                    operationIndexes.add(operationIndex);
-                }
-            }
-        }
-
-        checkContent();
-
-        if (cache) {
-            Serialize();
-        }
+    public MessageData2EventImpl(byte[] binary) throws ReadException, ValidationException {
+        deserialize(binary);
     }
 
-    public MessageData2EventImpl(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
-    }
-
-    public MessageData2EventImpl(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
-    }
-
-    @Override
-    protected void init() {
-        this.typeHelper = new MessageDataTypeHelper() {
-            @Override
-            public MessageDataType getMessageDataType() {
-                return MessageDataType.EVENT_2;
-            }
-            @Override
-            public MessageData2Event asEventMessageData2() {
-                return MessageData2EventImpl.this;
-            }
-            @Override
-            public boolean isEventMessageData2() {
-                return true;
-            }
-        };
+    public MessageData2EventImpl(byte[] binary, boolean isFullMessage) throws ReadException, ValidationException {
+        deserialize(binary, isFullMessage);
     }
 
     @Override
@@ -145,37 +96,38 @@ public class MessageData2EventImpl extends MessageData2Event {
         return this.priorityLevels;
     }
 
-    protected MessagePartType getMessagePartType() {
-        return MessagePartType.DATA;
+    protected Type getMessagePartType() {
+        return Type.DATA;
     }
 
     @Override
-    protected void checkContent() {
-        ExceptionHelper.requireNonNullValue(this.operations, this.getClass().getSimpleName(),
+    public void checkContent() {
+
+        Validator.requireNonNullValue(this.operations, this.getClass().getSimpleName(),
                 "operations");
 
-        ExceptionHelper.requireNonNullValue(this.binaryContents, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.binaryContents, this.getClass().getSimpleName(),
                 "binaryContents");
 
-        ExceptionHelper.requireNonNullValue(this.priorityLevels, this.getClass().getSimpleName(),
+        Validator.requireNonNullValue(this.priorityLevels, this.getClass().getSimpleName(),
                 "priorityLevels");
     }
 
     @Override
-    protected void PackValues(MessageBufferPacker packer) throws IOException, ValidationException {
+    public void packContentTo(MessageBufferPacker packer) throws WriteException {
 
         WriterHelper.packArrayHeader(packer, 3);
-        if(this.operations != null) {
+        if (this.operations != null) {
             WriterHelper.packValue(packer, operations);
         } else {
-            packer.packNil();
+            WriterHelper.packNil(packer);
         }
         WriterHelper.packMapStringByteArrayValues(packer, this.binaryContents);
-        WriterHelper.packPackables(packer, this.priorityLevels);
+        WriterHelper.packMessagePartCollection(packer, this.priorityLevels);
     }
 
     @Override
-    protected void UnpackValues(MessageUnpacker unpacker) throws ReadException, IOException, ValidationException {
+    public void unpackContentFrom(MessageUnpacker unpacker) throws ReadException, ValidationException {
 
         if (!ReaderHelper.nextExpectedValueTypeIsNil(unpacker, ValueType.ARRAY, "event data",
                 this.getClass().getSimpleName())) {
@@ -201,20 +153,22 @@ public class MessageData2EventImpl extends MessageData2Event {
                         this.getClass().getSimpleName());
 
                 for (int j = 0; j < arrayHeaderSize; j++) {
-                    this.priorityLevels.add(PriorityLevelHolderImpl.unpackContent(unpacker));
+                    PriorityLevelHolderImpl holder = new PriorityLevelHolderImpl();
+                    holder.unpackContentFrom(unpacker);
+                    this.priorityLevels.add(holder);
                 }
             } else {
-                unpacker.unpackNil();
+                ReaderHelper.unpackNil(unpacker);
             }
         } else {
-            unpacker.unpackNil();
+            ReaderHelper.unpackNil(unpacker);
         }
 
         //Priority validation
         Set<Integer> operationIndexes = new HashSet<>();
-        for(PriorityLevelHolder priorityLevel: priorityLevels) {
-            for(Integer operationIndex: priorityLevel.getOperations().keySet()) {
-                if(operationIndexes.contains(operationIndex)) {
+        for (PriorityLevelHolder priorityLevel : priorityLevels) {
+            for (Integer operationIndex : priorityLevel.getOperations().keySet()) {
+                if (operationIndexes.contains(operationIndex)) {
                     throw new ValidationException("The operational priority can not be included twice");
                 } else {
                     operationIndexes.add(operationIndex);
@@ -242,10 +196,18 @@ public class MessageData2EventImpl extends MessageData2Event {
 
     @Override
     public String toString() {
-        return "MessageData2EventImpl{" +
-                "operations='" + operations + '\'' +
-                ", binaryContents=" + binaryContents +
-                ", priorityLevels=" + priorityLevels +
-                '}';
+        long sumBinaryContents = 0L;
+        if (null != binaryContents) {
+            for(byte[] by : binaryContents.values()) {
+                sumBinaryContents += (null != by) ? by.length : 0L;
+            }
+        }
+        return String.format("MessageData2EventImpl{operationsStringLen:%1$s, noOfBinaryContents:%2$s, " +
+                        "sumOfBinaryContentsDataSize:%3$d, noOfPriorityLevels:%4$s, operations:%5$s",
+                null != operations ? operations.length() : "null",
+                null != binaryContents ? binaryContents.size() : "null",
+                sumBinaryContents,
+                null != priorityLevels ? priorityLevels.size() : "null",
+                operations);
     }
 }

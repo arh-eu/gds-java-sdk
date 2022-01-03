@@ -1,31 +1,28 @@
-/*
-* To change this license header, choose License Headers in Project Properties.
-* To change this template file, choose Tools | Templates
-* and open the template in the editor.
-*/
+
 package hu.arheu.gds.message.header;
 
-import hu.arheu.gds.message.util.ReadException;
-import hu.arheu.gds.message.util.ValidationException;
 
-import java.io.IOException;
+public interface MessageHeaderBase extends MessageHeader {
 
-/**
- *
- * @author oliver.nagy
- */
-public abstract class MessageHeaderBase extends MessageHeader implements MessageHeaderBaseDescriptor {
-    
-    public MessageHeaderBase(byte[] binary, boolean cache) throws IOException, ReadException, ValidationException {
-        super(binary, cache);
+    int NUMBER_OF_FIELDS = 10;
+
+    @Override
+    default Type getMessageHeaderType() {
+        return Type.BASE;
     }
 
-    public MessageHeaderBase(byte[] binary, boolean cache, boolean isFullMessage) throws IOException, ReadException, ValidationException {
-        super(binary, cache, isFullMessage);
+    @Override
+    default MessageHeaderBase asBaseMessageHeader() throws ClassCastException {
+        return this;
     }
-    
-    public MessageHeaderBase() throws IOException {
-        
+
+    @Override
+    default boolean isBaseMessageHeader() {
+        return true;
     }
-    
+
+    @Override
+    default int getNumberOfPublicElements() {
+        return NUMBER_OF_FIELDS;
+    }
 }
