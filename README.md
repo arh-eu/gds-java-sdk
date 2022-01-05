@@ -459,8 +459,8 @@ public interface EventDocumentResultHolder extends GdsMessagePart {
 #### Query Request ACK 11:
 
 The structure explained in the [Wiki](https://github.com/arh-eu/gds/wiki/Message-Data#query-request-ack---data-type-11)
-is represented by the `QueryResponseHolder` class. The `QueryContextHolder` and `QueryContextHolderSerializable` fields
-are the same but with different internal representations to allow faster serialization.
+is represented by the `QueryResponseHolder` class. The `QueryContextHolder` is usually not needed by clients so its 
+structure is not listed here.
 
 ```java
 public interface QueryResponseHolder extends GdsMessagePart {
