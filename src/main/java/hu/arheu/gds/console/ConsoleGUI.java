@@ -18,6 +18,7 @@ import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.screen.VirtualScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.swing.*;
 import hu.arheu.gds.message.data.FieldValueType;
@@ -59,7 +60,7 @@ public class ConsoleGUI {
 
     public void display() throws IOException {
         try (Screen createdScreen = createScreen()) {
-            this.screen = createdScreen;
+            this.screen = new VirtualScreen(createdScreen);
             screen.startScreen();
             textGUI = new MultiWindowTextGUI(screen);
 
@@ -135,12 +136,14 @@ public class ConsoleGUI {
 
                 if (keyStroke.isCtrlDown()) {
                     Character pressedChar = keyStroke.getCharacter();
-                    if (pressedChar.equals('s')) {
-                        exportTableToCSV();
-                    } else if (pressedChar.equals('f')) {
-                        searchRecordValue();
-                    } else if (pressedChar.equals('g')) {
-                        goToLine();
+                    if(pressedChar != null) {
+                        if (pressedChar.equals('s')) {
+                            exportTableToCSV();
+                        } else if (pressedChar.equals('f')) {
+                            searchRecordValue();
+                        } else if (pressedChar.equals('g')) {
+                            goToLine();
+                        }
                     }
                 }
             }

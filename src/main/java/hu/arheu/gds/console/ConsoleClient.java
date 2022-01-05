@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static hu.arheu.gds.console.MessageType.QUERYALL;
+import static hu.arheu.gds.console.MessageType.QUERY_ALL;
 
 public class ConsoleClient implements Runnable {
 
@@ -130,7 +130,7 @@ public class ConsoleClient implements Runnable {
 
             exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
 
-            if (argumentsHolder.getMessageType().equals(QUERYALL)) {
+            if (argumentsHolder.getMessageType().equals(QUERY_ALL)) {
                 while (queryResponse.getData().getGlobalStatus() == AckStatus.OK &&
                         queryResponse.getData().getQueryResponseHolder().getMorePage()) {
                     queryResponse = syncGDSClient.sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(
@@ -173,7 +173,7 @@ public class ConsoleClient implements Runnable {
                         sendAttachmentRequest();
                         break;
                     case QUERY:
-                    case QUERYALL:
+                    case QUERY_ALL:
                         sendQuery();
                         break;
                 }

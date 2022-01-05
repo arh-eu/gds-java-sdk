@@ -17,8 +17,8 @@ import java.util.EnumSet;
 
 public class TableWindowThemeDefinition implements Theme {
     private final TextGraphics textGraphics;
-    private Theme defaultTheme = LanternaThemes.getDefaultTheme();
-    private ThemeDefinition defaultThemeDefinition = defaultTheme.getDefaultDefinition();
+    private final Theme defaultTheme = LanternaThemes.getDefaultTheme();
+    private final ThemeDefinition defaultThemeDefinition = defaultTheme.getDefaultDefinition();
 
     public TableWindowThemeDefinition(Screen screen) {
         this.textGraphics = screen.newTextGraphics();

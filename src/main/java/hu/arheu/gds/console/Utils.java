@@ -1,8 +1,9 @@
 package hu.arheu.gds.console;
 
 import com.google.gson.*;
+import hu.arheu.gds.message.FullGdsMessage;
 import hu.arheu.gds.message.data.MessageData;
-import hu.arheu.gds.message.header.MessageHeader;
+import hu.arheu.gds.message.header.MessageHeaderBase;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.msgpack.value.Value;
@@ -31,10 +32,6 @@ public class Utils {
         skippedAttributes.add("binary");
         skippedAttributes.add("cache");
         skippedAttributes.add("messageSize");
-        /*
-        skippedClasses.add(MessageHeaderTypeHelper.class);
-        skippedClasses.add(MessageDataTypeHelper.class);
-        */
 
 
         GsonBuilder gsonBuilder = new GsonBuilder().setLenient();
@@ -64,6 +61,7 @@ public class Utils {
     private static void createFolder(String name) {
         File folder = new File(name);
         if (!folder.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             folder.mkdir();
         }
     }
@@ -86,8 +84,8 @@ public class Utils {
         return EXPORTS_FOLDER_NAME + "/" + messageId + "-" + counter + "-csv.csv";
     }
 
-    public static String getJsonFromMessage(MessageHeader header, MessageData data) {
-        return gson.toJson(new Message(header, data));
+    public static String getJsonFromMessage(MessageHeaderBase header, MessageData data) {
+        return gson.toJson(new FullGdsMessage(header, data));
     }
 
     public static void exportJson(String messageId, String json) throws IOException {

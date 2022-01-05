@@ -46,7 +46,7 @@ public class ArgumentParser {
             statement = eventCommand.event;
         } else if (queryCommand.query != null) {
             if (queryCommand.queryAll) {
-                messageType = MessageType.QUERYALL;
+                messageType = MessageType.QUERY_ALL;
             } else {
                 messageType = MessageType.QUERY;
             }

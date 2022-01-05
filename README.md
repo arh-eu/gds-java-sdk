@@ -31,7 +31,7 @@ JitPack gives you a flexible, virtual maven repository which can work with GitHu
 
 The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
 project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
-can use the latest release of this - `2.0.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+can use the latest release of this - `2.0.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -102,7 +102,7 @@ GDS instance.
     + [Closing](#closing)
     + [Sending (sync) messages](#sending-sync-messages)
     + [Full example](#Sync-client-example)
-
+* [Changelog](#changelog)
 ## Console client
 
 The console client is used with the SDK executable jar file. This jar file can be found in
@@ -1455,3 +1455,15 @@ Received an additional 300 records.
 Received an additional 300 records.
 Received an additional 100 records.
 ```
+
+## Changelog
+
+We're including the change logs since `2.x.y` in this file as well.
+
+ - `2.0.1`
+   - A bug has been fixed that could cause `NullPointerException` in the GUI upon pressing `CTRL` and another
+  key at the same time which combination had no command assigned.
+   - The scroll bar should be present if the content cannot fit the screen to move the window with `Alt`+arrow keys.
+ - `2.0.0`
+   - The underlying message API got refactored, which boosts performance in a great way while also simplifying 
+     the code.
