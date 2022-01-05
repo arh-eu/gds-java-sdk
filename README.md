@@ -331,6 +331,9 @@ Classes already listed will not be expanded again.
 
 The `Value` class is from the `MessagePack` standard library, it will not be further expanded here.
 
+Many interfaces have utility methods based on the `is/as` pattern (`boolean isDog(); Dog asDog();`), which are not listed
+either to make things easier to read.
+
 #### All ACK Messages:
 
 Every ACK message implements this interface, therefore accessing the status, or the exception on error is the same for
@@ -349,11 +352,13 @@ interface Ack {
 Event reply follows the (wiki)[https://github.com/arh-eu/gds/wiki/Message-Data#event-ack---data-type-3] format as well.
 
 ```java
-public interface MessageData3EventAckDescriptor extends Ack {
+import hu.arheu.gds.message.util.GdsMessagePart;
+
+public interface MessageData3EventAck extends Ack, MessageData {
     List<EventResultHolder> getEventResult();
 }
 
-public interface EventResultHolder {
+public interface EventResultHolder extends GdsMessagePart {
     AckStatus getStatus();
 
     String getNotification();
@@ -363,7 +368,7 @@ public interface EventResultHolder {
     List<EventSubResultHolder> getFieldValues();
 }
 
-public interface EventSubResultHolder {
+public interface EventSubResultHolder extends GdsMessagePart {
     AckStatus getSubStatus();
 
     String getId();
@@ -382,12 +387,11 @@ public interface EventSubResultHolder {
 #### Attachment Request ACK 5:
 
 ```java
-
-public interface MessageData5AttachmentRequestAckDescriptor extends Ack {
+public interface MessageData5AttachmentRequestAck extends Ack, MessageData {
     AttachmentRequestAckDataHolder getData();
 }
 
-public interface AttachmentRequestAckDataHolder {
+public interface AttachmentRequestAckDataHolder extends GdsMessagePart {
     AckStatus getStatus();
 
     AttachmentResultHolder getResult();
@@ -395,7 +399,14 @@ public interface AttachmentRequestAckDataHolder {
     Long getRemainedWaitTimeMillis();
 }
 
-public interface AttachmentResultHolder extends Packable {
+public interface AttachmentResultHolder extends GdsMessagePart {
+
+    enum Type {
+        ATTACHMENT_REQUEST_ACK,
+        ATTACHMENT_RESPONSE,
+        ATTACHMENT_RESPONSE_ACK
+    }
+
     List<String> getRequestIds();
 
     String getOwnerTable();
@@ -411,14 +422,16 @@ public interface AttachmentResultHolder extends Packable {
     Long getToValid();
 
     byte[] getAttachment();
+
 }
 
 ```
 
-#### Attachment Response 7:
+#### Attachment Response 6:
 
 ```java
-public interface MessageData6AttachmentResponseDescriptor {
+public interface MessageData6AttachmentResponse extends MessageData {
+
     AttachmentResultHolder getResult();
 
     EventHolder getEventHolder();
@@ -429,11 +442,13 @@ public interface MessageData6AttachmentResponseDescriptor {
 #### Event Document Request ACK 9:
 
 ```java
-public interface MessageData9EventDocumentAckDescriptor extends Ack {
+public interface MessageData9EventDocumentAck extends Ack, MessageData {
+
     List<EventDocumentResultHolder> getResults();
+
 }
 
-public interface EventDocumentResultHolder {
+public interface EventDocumentResultHolder extends GdsMessagePart {
     AckStatus getStatus();
 
     String getNotification();
@@ -450,7 +465,7 @@ is represented by the `QueryResponseHolder` class. The `QueryContextHolder` and 
 are the same but with different internal representations to allow faster serialization.
 
 ```java
-public interface QueryResponseHolder {
+public interface QueryResponseHolder extends GdsMessagePart {
     Long getNumberOfHits();
 
     Long getNumberOfFilteredHits();
@@ -459,8 +474,6 @@ public interface QueryResponseHolder {
 
     QueryContextHolder getQueryContextHolder();
 
-    QueryContextHolderSerializable getQueryContextHolderSerializable();
-
     List<FieldHolder> getFieldHolders();
 
     List<List<Value>> getHits(); //Value is the MessagePack value type
@@ -468,7 +481,7 @@ public interface QueryResponseHolder {
     Long getNumberOfTotalHits();
 }
 
-public interface FieldHolder {
+public interface FieldHolder extends GdsMessagePart {
     FieldValueType getFieldType();
 
     String getMimeType();
@@ -492,10 +505,12 @@ public enum FieldValueType {
     BOOLEAN_ARRAY(12),
     LONG_ARRAY(13),
     STRING_MAP(14),
-    GEO_DATA(15),
-    GEO_DATA_ARRAY(16),
-    DATE_TIME(17),
-    DATE_TIME_ARRAY(18)
+    GEO_POINT(15),
+    GEO_POINT_ARRAY(16),
+    GEO_SHAPE(17),
+    GEO_SHAPE_ARRAY(18),
+    DATE_TIME(19),
+    DATE_TIME_ARRAY(20)
     //...
 }
 
