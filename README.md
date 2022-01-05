@@ -349,11 +349,9 @@ interface Ack {
 
 #### Event Request ACK 3:
 
-Event reply follows the (wiki)[https://github.com/arh-eu/gds/wiki/Message-Data#event-ack---data-type-3] format as well.
+Event reply follows the [Wiki](https://github.com/arh-eu/gds/wiki/Message-Data#event-ack---data-type-3) format as well.
 
 ```java
-import hu.arheu.gds.message.util.GdsMessagePart;
-
 public interface MessageData3EventAck extends Ack, MessageData {
     List<EventResultHolder> getEventResult();
 }
