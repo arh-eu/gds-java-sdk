@@ -31,7 +31,7 @@ JitPack gives you a flexible, virtual maven repository which can work with GitHu
 
 The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
 project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
-can use the latest release of this - `2.0.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+can use the latest release of this - `2.1.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -43,7 +43,7 @@ following dependency after installation:
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -183,7 +183,7 @@ java -jar gds-console-client.jar -username "some_other_user" -password "my_secre
 
 The name of the file containing the certificate chain, and your private key that should be used for secure (TLS)
 connection to the GDS should be given by the `-cert` option (it should be in PKCS12 format - a `*.p12` file). TLS will
-only be used if the scheme in the URL is `wss`, therefore the url should be specified as well (the GDS uses different
+only be used if the scheme in the URL is `wss`, Therefore, the url should be specified as well (the GDS uses different
 port (and endpoint) for default and for encrypted connection).
 
 The password that was used to generate and encrypt the cert file should be given by the `-secret` flag.
@@ -234,7 +234,7 @@ About hex:
 The attachments you specify are stored in a different table in the GDS than the event's data (to increase performance,
 and one attachment might be used for multiple events). To create a connection between the two we have to reference the
 attachment ID in your event record. The attachment itself can have multiple fields connected to it (like meta
-descriptors). The binary part of the attachment usually cannot be inserted into a query easily, therefore a unique ID is
+descriptors). The binary part of the attachment usually cannot be inserted into a query easily, Therefore, a unique ID is
 used in the SQL string to resolve this issue. This is usually generated from the attachment's filename, but you can use
 any name you want. Because of how things are stored in the background we have to use hexadecimal format for these IDs (
 with the `0x` prefix), thus it leads to converting the filename into a hex format (conversion can be done by the `-hex`
@@ -336,7 +336,7 @@ either to make things easier to read.
 
 #### All ACK Messages:
 
-Every ACK message implements this interface, therefore accessing the status, or the exception on error is the same for
+Every ACK message implements this interface, Therefore, accessing the status, or the exception on error is the same for
 all of them.
 
 ```java
@@ -601,7 +601,7 @@ The listener you pass will be used and called without any changes by the WebSock
 Since login message is sent automatically; when the connection is ready, the `ConnectionACK` message will be processed
 before any of your handler method is called with the data (but it will be called with the login ACK as well).
 
-The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, therefore the communication is asynchronous.
+The `WebSocketClient` uses `netty`'s `NioEventLoop` in the background, Therefore, the communication is asynchronous.
 The `Channel` object, that is used by netty will be passed in the main methods.
 
 The `GDSMessageListener` interface has methods that do not have to be overridden, and others that _should be_. The
@@ -609,7 +609,7 @@ signature for these methods can be seen below.
 
 - `onConnectionSuccess(..)` this method is called when the WebSocket connection is established, and the ACK for the
   login message is received with an OK status (`AckStatus.OK - code 200`). The received header and login body is passed
-  to the method. By default, this method does not do anything, therefore it does not _need_ to be overridden (but it _
+  to the method. By default, this method does not do anything, Therefore, it does not _need_ to be overridden (but it _
   should be_, as this indicates that your client is ready to be used).
 - `onConnectionFailure(..)` if the connection or the login fails for any reason (network error, error in the login
   credentials or timeout) this method will be called. The `Either` class indicates that it is not predetermined which
@@ -799,7 +799,7 @@ single string parameter:
 
 If any of the values passed to these methods violate the rules of the specified message (i.e. if you create your own
 header, and set the `isFragmented` flag to `true`, but leave the `firstFragment` as `null`),
-the `MessageManager`, and therefore the `send..()` will throw a (checked) `ValidationException`.
+the `MessageManager`, and Therefore, the `send..()` will throw a (checked) `ValidationException`.
 
 As the messages are serialized into `MessagePack` packets, it is possible that something fails while the message is
 serialized (which is invoked automatically upon construction). Therefore, an `IOException` can also raise during
@@ -1473,6 +1473,9 @@ Received an additional 100 records.
 
 We're including the change logs since `2.x.y` in this file as well.
 
+ - `2.1.0`
+   - If an exception was thrown in the client, the websocket connection was not always properly closed. This got fixed.  
+   - Many typos and grammar mistakes throughout the documentation got fixed. 
  - `2.0.1`
    - A bug has been fixed that could cause `NullPointerException` in the GUI upon pressing `CTRL` and another
   key at the same time which combination had no command assigned.

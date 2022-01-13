@@ -20,12 +20,13 @@ import io.netty.channel.Channel;
  * The rest of the methods, however if called without an active override will throw {@link AbstractMethodError} as
  * they were not handled by the client code.
  * <p>
- * This is useful if the client only wants to send and receive specific messages (i.e. only interested in SELECT
- * queries, therefore it only overrides (implements) the {@link GDSMessageListener#onQueryRequestAck11(MessageHeaderBase, MessageData11QueryRequestAck)}
+ * This is useful if the client only wants to send and receive specific messages (i.e. only interested in SELECT queries),
+ * therefore, it only overrides (implements) the {@link GDSMessageListener#onQueryRequestAck11(MessageHeaderBase, MessageData11QueryRequestAck)}
  * method.
  * <p>
  * Any other is not expected by them, meaning they do not want to give any method definitions for those.
  */
+@SuppressWarnings("unused") //API class, not all methods are used across the project.
 public interface GDSMessageListener {
     /**
      * Called when the underlying WebSocket (TCP) connection is successfully established and the login is ACKd by the

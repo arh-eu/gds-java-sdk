@@ -31,23 +31,19 @@ public class ConsoleHandler {
         logger.addHandler(sh);
         logger.setUseParentHandlers(false);
 
-        SyncGDSClient client;
-        try {
-            client = new SyncGDSClient(
-                    argumentsHolder.getUrl(),
-                    argumentsHolder.getUsername(),
-                    argumentsHolder.getPassword(),
-                    logger,
-                    argumentsHolder.getTimeout(),
-                    AsyncGDSClient.createSSLContext(
-                            argumentsHolder.getCert(),
-                            argumentsHolder.getSecret())
-            );
+        try (SyncGDSClient client = new SyncGDSClient(
+                argumentsHolder.getUrl(),
+                argumentsHolder.getUsername(),
+                argumentsHolder.getPassword(),
+                logger,
+                argumentsHolder.getTimeout(),
+                AsyncGDSClient.createSSLContext(
+                        argumentsHolder.getCert(),
+                        argumentsHolder.getSecret())
+        )) {
+            new ConsoleClient(argumentsHolder, client, logger).run();
         } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException sslExc) {
             logger.severe(sslExc.toString());
-            return;
         }
-
-        new ConsoleClient(argumentsHolder, client, logger).run();
     }
 }

@@ -29,7 +29,7 @@ public abstract class MessagePart implements GdsMessagePart {
          */
         OTHER,
         /**
-         * Full message with headerand data
+         * Full message with header and data
          */
         FULL
     }

@@ -7,7 +7,7 @@
 package hu.arheu.gds.client;
 
 import java.util.Objects;
-
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public class Tuple<U, V, W> extends Pair<U, V> {
     private W third;
 

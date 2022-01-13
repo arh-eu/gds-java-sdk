@@ -15,8 +15,9 @@ import java.util.Objects;
  * @param <L> type of the Left value
  * @param <R> type of the Right value
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public final class Either<L, R> {
-    private Pair<L, R> pair;
+    private final Pair<L, R> pair;
     private boolean isLeftSet;
     private boolean isRightSet;
 

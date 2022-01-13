@@ -218,7 +218,7 @@ public class ConsoleGUI {
                     }
 
                     if (match) {
-                        //if we are searching for the same value again, we gotta go to the next result
+                        //if we are searching for the same value again, we have to go to the next result
                         if (i < selectedRow || (i == selectedRow && j <= selectedColumn)) {
                             continue;
                         }

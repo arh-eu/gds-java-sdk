@@ -15,6 +15,7 @@ import java.io.ObjectOutput;
  * by the GDS.
  * As internal serialization is used to forward messages between modules, utility methods are included as well.
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public interface GdsMessagePart extends Externalizable {
 
     long serialVersionUID = 1629726509221L; //2021.08.23. - 15:48

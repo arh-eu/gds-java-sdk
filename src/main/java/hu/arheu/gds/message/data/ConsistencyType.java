@@ -9,7 +9,7 @@ public enum ConsistencyType {
     /**
      * Absolute consistency (one page consistency). Returns the result specified by the condition,
      * but the result set must fit into one page. This type runs on a consistent snapshot of the internal store.
-     * Therefore if the result cannot fit into one page it raises an error as the consistency between queries
+     * Therefore, if the result cannot fit into one page it raises an error as the consistency between queries
      * cannot be guaranteed (records might be modified).
      */
     PAGE(0),

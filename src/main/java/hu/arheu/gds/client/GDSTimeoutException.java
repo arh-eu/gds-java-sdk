@@ -6,6 +6,7 @@
 
 package hu.arheu.gds.client;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across this project.
 public class GDSTimeoutException extends RuntimeException {
     public GDSTimeoutException() {
     }

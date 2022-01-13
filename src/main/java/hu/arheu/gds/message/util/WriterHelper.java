@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public class WriterHelper {
 
     public static void packArrayHeader(MessageBufferPacker packer, int size) throws WriteException {

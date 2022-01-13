@@ -23,6 +23,7 @@ import java.util.UUID;
 /**
  * Used to validate the messages that are created to/from the GDS, raising exceptions is any constraint gets violated.
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public class MessageManager {
     public static final int DATA_FIELD_COUNT = 1;
 
@@ -34,13 +35,13 @@ public class MessageManager {
     }
 
     /**
-     * Packs the given headerand data to a full message by MessagePack, returning the raw bytes from the created message.
+     * Packs the given header and data to a full message by MessagePack, returning the raw bytes from the created message.
      *
-     * @param header The headerof the message.
+     * @param header The header of the message.
      * @param data   The data (content) of the message.
      * @return the binary array containing the message packed by {@code MessagePack}
-     * @throws IOException         if any of the headerfields contain illegal value(type)s
-     * @throws ValidationException if the contents of the headerviolate the class invariant (ie. if {@code is_fragmented}
+     * @throws IOException         if any of the header fields contain illegal value(type)s
+     * @throws ValidationException if the contents of the header violate the class invariant (i.e. if {@code is_fragmented}
      *                             is given, {@code first_fragment} cannot be {@code null} and so.)
      */
     public static byte[] createMessage(MessageHeader header, MessageData data) throws IOException, ValidationException {
@@ -59,7 +60,7 @@ public class MessageManager {
                         (MessageHeaderBase.NUMBER_OF_FIELDS + MessageHeaderExtended.NUMBER_OF_FIELDS + DATA_FIELD_COUNT)));
                 break;
             default:
-                throw new ValidationException(String.format("%s: Unknown message headertype (%s)",
+                throw new ValidationException(String.format("%s: Unknown message header type (%s)",
                         MessageManager.class.getSimpleName(),
                         header.getMessageHeaderType()));
         }
@@ -71,12 +72,12 @@ public class MessageManager {
     }
 
     /**
-     * Returns the data type from the binary message, parsing it as a hu.arheu.gds.message.header
+     * Returns the data type from the binary message, parsing its header part for the type
      *
      * @param binary the binary content
      * @return the data type for the binary message
      * @throws ReadException       if IO exception occurs
-     * @throws ValidationException if the headeris invalid
+     * @throws ValidationException if the header is invalid
      */
     public static MessageDataType getMessageDataType(byte[] binary) throws ReadException, ValidationException {
         try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(binary)) {
@@ -91,15 +92,15 @@ public class MessageManager {
 
 
     /**
-     * Creates a headerfor a message based on the username, and data type.
+     * Creates a header for a message based on the username, and data type.
      * The message ID will be randomly generated.
      * Throws exception if any value(type) is illegal or if the validating fails.
      *
      * @param userName the name of the user
      * @param dataType the type of the message body
      * @return the created {@link MessageHeaderBase} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -119,15 +120,15 @@ public class MessageManager {
     }
 
     /**
-     * Creates a headerfor a message based on the username, messageID and data type.
+     * Creates a header for a message based on the username, messageID and data type.
      * Throws exception if any value(type) is illegal or if the validating fails.
      *
      * @param userName  the name of the user
      * @param messageId the messageID used to identify the message
      * @param dataType  the type of the message body
      * @return the created {@link MessageHeaderBase} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -148,7 +149,7 @@ public class MessageManager {
     }
 
     /**
-     * Creates a message hu.arheu.gds.message.header, based on the field values given.
+     * Creates a message header, based on the field values given.
      * Validates the format (types and constraints) and throws exception on any error found.
      *
      * @param userName      the name of the user
@@ -162,8 +163,8 @@ public class MessageManager {
      * @param fullDataSize  indicates the full data size in a  fragmented message. If {@code isFragmented} is false, should be {@code null}.
      * @param dataType      the type of the message body
      * @return the created {@link MessageHeaderBase} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (i.e. {@code userName} cannot be null)
      */
 
     public static MessageHeaderBase createMessageHeaderBase(
@@ -192,7 +193,7 @@ public class MessageManager {
     }
 
     /**
-     * Creates a message hu.arheu.gds.message.header, based on the field values given.
+     * Creates a message header, based on the field values given.
      * Validates the format (types and constraints) and throws exception on any error found.
      *
      * @param userName      the name of the user
@@ -204,8 +205,8 @@ public class MessageManager {
      * @param fullDataSize  indicates the full data size in a  fragmented message. If {@code isFragmented} is false, should be {@code null}.
      * @param dataType      the type of the message body
      * @return the created {@link MessageHeaderBase} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
-     *                             (ie. {@code userName} cannot be null)
+     * @throws ValidationException if the contents of the header violate the class invariant
+     *                             (i.e. {@code userName} cannot be null)
      */
     public static MessageHeaderBase createMessageHeaderBase(
             String userName,
@@ -352,7 +353,7 @@ public class MessageManager {
      * @param ackDataOk                the data containing the ACK values if the login is successful.
      * @param ackDataUnauthorizedItems the map containing the illegal values if the login is unsuccessful
      * @param globalStatus             the global status code for the ACK message.
-     * @param globalException          the global exception message (in plain, english text) if any hu.arheu.gds.message.errors happened.
+     * @param globalException          the global exception message (in plain, english text) if any errors happened.
      * @return The created {@link MessageData1ConnectionAck} instance
      * @throws ValidationException if the contents of message violate the class invariant
      */
@@ -420,7 +421,7 @@ public class MessageManager {
      *
      * @param eventResults    the list of the result holders
      * @param globalStatus    the global code of the ACK
-     * @param globalException the exception (as english text) if any hu.arheu.gds.message.errors were with the events.
+     * @param globalException the exception (as english text) if any errors were with the events.
      * @return The created {@link MessageData3EventAck} instance
      * @throws ValidationException if the contents of message violate the class invariant
      */
@@ -437,7 +438,7 @@ public class MessageManager {
 
     /**
      * Creates an attachment request message, raising any exception on invalid values.
-     * The request should contain the ID of the attachment in the WHERE condition otherwise the GDS will response
+     * The request should contain the ID of the attachment in the WHERE condition otherwise the GDS will respond
      * with an error message.
      *
      * @param request the String containing the request ID.
@@ -475,7 +476,7 @@ public class MessageManager {
      * @param result      the result holder containing the attachment
      * @param eventHolder the event holder of the message
      * @return The created {@link MessageData6AttachmentResponse} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData6AttachmentResponse createMessageData6AttachmentResponse(
             AttachmentResultHolder result,
@@ -492,7 +493,7 @@ public class MessageManager {
      * @param data            the data for the attachment response
      * @param globalException the error in string format (if any)
      * @return The created {@link MessageData7AttachmentResponseAck} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData7AttachmentResponseAck createMessageData7AttachmentResponseAck(
             AckStatus globalStatus,
@@ -510,7 +511,7 @@ public class MessageManager {
      * @param fieldHolders the field holder values
      * @param records      the records
      * @return The created {@link MessageData9EventDocumentAck} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData8EventDocument createMessageData8EventDocument(
             String tableName,
@@ -525,7 +526,7 @@ public class MessageManager {
      * @param records          the records
      * @param returningOptions the returning fields
      * @return The created {@link MessageData9EventDocumentAck} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData8EventDocument createMessageData8EventDocument(
             String tableName,
@@ -545,7 +546,7 @@ public class MessageManager {
      * @param result          the result of the event document request
      * @param globalException the error in string format (if any)
      * @return The created {@link MessageData9EventDocumentAck} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData9EventDocumentAck createMessageData9EventDocumentAck(
             AckStatus globalStatus,
@@ -563,7 +564,7 @@ public class MessageManager {
      * @param consistencyType the type of consistency used for the query
      * @param timeout         the timeout used in the GDS for the query
      * @return The created {@link MessageData10QueryRequest} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData10QueryRequest createMessageData10QueryRequest(
             String query,
@@ -583,7 +584,7 @@ public class MessageManager {
      * @param pageSize        the page size used for the query
      * @param queryType       the type of the query (scroll/page)
      * @return The created {@link MessageData10QueryRequest} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData10QueryRequest createMessageData10QueryRequest(
             String query,
@@ -606,7 +607,7 @@ public class MessageManager {
      *
      * @param globalStatus    the global status code for the ACK message.
      * @param queryResponse   the response data for the query
-     * @param globalException the global exception message (in plain, english text) if any hu.arheu.gds.message.errors happened.
+     * @param globalException the global exception message (in plain, english text) if any errors happened.
      * @return The created {@link MessageData11QueryRequestAck} instance
      * @throws ValidationException if the contents of message violate the class invariant
      */
@@ -625,7 +626,7 @@ public class MessageManager {
      * @param queryContextHolder the ContextHolder containing information about the current query status
      * @param timeout            the timeout used in the GDS for the query
      * @return The created {@link MessageData12NextQueryPage} instance
-     * @throws ValidationException if the contents of the headerviolate the class invariant
+     * @throws ValidationException if the contents of the header violate the class invariant
      */
     public static MessageData12NextQueryPage createMessageData12NextQueryPage(
             QueryContextHolder queryContextHolder,

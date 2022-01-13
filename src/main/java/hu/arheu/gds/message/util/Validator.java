@@ -9,6 +9,7 @@ import java.util.Map;
 /**
  * @author llacz
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public class Validator {
 
     private Validator() {

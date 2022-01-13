@@ -112,9 +112,9 @@ public class TableWindowThemeDefinition implements Theme {
 
                         @Override
                         public EnumSet<SGR> getSGRs() {
-                            EnumSet<SGR> sgrs = textGraphics.getActiveModifiers().clone();
-                            sgrs.add(SGR.BOLD);
-                            return sgrs;
+                            EnumSet<SGR> styles = textGraphics.getActiveModifiers().clone();
+                            styles.add(SGR.BOLD);
+                            return styles;
                         }
                     };
                 }

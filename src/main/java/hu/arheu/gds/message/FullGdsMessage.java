@@ -5,7 +5,6 @@ import hu.arheu.gds.message.data.impl.*;
 import hu.arheu.gds.message.errors.ReadException;
 import hu.arheu.gds.message.errors.ValidationException;
 import hu.arheu.gds.message.errors.WriteException;
-import hu.arheu.gds.message.header.MessageHeader;
 import hu.arheu.gds.message.header.MessageHeaderBase;
 import hu.arheu.gds.message.header.impl.MessageHeaderBaseImpl;
 import hu.arheu.gds.message.util.MessageManager;

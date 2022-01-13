@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+@SuppressWarnings({"unused", "UnusedReturnValue"}) //API class, not all methods are used across the project.
 public class ReaderHelper {
 
     public static int unpackArrayHeader(MessageUnpacker unpacker) throws ReadException {
@@ -43,7 +43,7 @@ public class ReaderHelper {
         } else {
             if (headerSize < expected) {
                 throw new ReadException(
-                        String.format("%s: Array headersize (%s) does not match the expected minimum value (%s). Array name: %s.",
+                        String.format("%s: Array header size (%s) does not match the expected minimum value (%s). Array name: %s.",
                                 className,
                                 headerSize,
                                 expected,
@@ -63,7 +63,7 @@ public class ReaderHelper {
         int headerSize = ReaderHelper.unpackArrayHeader(unpacker);
         if (headerSize != expected1 && headerSize != expected2) {
             throw new ReadException(
-                    String.format("%s: Array headersize (%s) does not match expected value (%s or %s). Array name: " +
+                    String.format("%s: Array header size (%s) does not match expected value (%s or %s). Array name: " +
                                     "%s.",
                             className,
                             headerSize,
@@ -86,7 +86,7 @@ public class ReaderHelper {
         } else {
             if (headerSize != expected) {
                 throw new ReadException(
-                        String.format("%s: Map headersize (%s) does not match expected value (%s). Map name: %s",
+                        String.format("%s: Map header size (%s) does not match expected value (%s). Map name: %s",
                                 className,
                                 headerSize,
                                 expected,
