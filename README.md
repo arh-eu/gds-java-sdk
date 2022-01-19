@@ -31,7 +31,7 @@ JitPack gives you a flexible, virtual maven repository which can work with GitHu
 
 The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
 project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
-can use the latest release of this - `2.1.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+can use the latest release of this - `2.2.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -43,7 +43,7 @@ following dependency after installation:
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -1473,6 +1473,9 @@ Received an additional 100 records.
 
 We're including the change logs since `2.x.y` in this file as well.
 
+ - `2.2.0`
+   - The async client was still not always properly closed if a IO (network) error happened on the WebSocket server. 
+     This could also lead to an unhandled `NullPointerException` while trying to close the client. 
  - `2.1.0`
    - If an exception was thrown in the client, the websocket connection was not always properly closed. This got fixed.  
    - Many typos and grammar mistakes throughout the documentation got fixed. 

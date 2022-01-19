@@ -1230,6 +1230,7 @@ public final class AsyncGDSClient implements AutoCloseable {
         }
 
         Channel channel;
+        private final Object lock = new Object();
 
         void connect() {
             try {
@@ -1278,13 +1279,14 @@ public final class AsyncGDSClient implements AutoCloseable {
         }
 
         void close() {
-            if (channel != null) {
-                channel.writeAndFlush(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
-                channel.close();
-                channel = null;
-            }
-            if (shutdownByClose) {
-                eventLoopGroup.shutdownGracefully();
+            synchronized (lock) {
+                if (channel != null) {
+                    channel.writeAndFlush(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
+                    channel = null;
+                }
+                if (shutdownByClose) {
+                    eventLoopGroup.shutdownGracefully();
+                }
             }
         }
 
@@ -1330,6 +1332,7 @@ public final class AsyncGDSClient implements AutoCloseable {
                 //login failed and the connection was closed from the GDS side
             } else if (getState() != ConnectionState.FAILED) {
                 log.warning("The state should be either FAILED or LOGGED_IN but found " + getState() + "!");
+                listener.onDisconnect(client.channel);
             }
 
             super.channelInactive(ctx);
@@ -1428,13 +1431,8 @@ public final class AsyncGDSClient implements AutoCloseable {
             }
             client.close();
 
-            if (getState() != ConnectionState.FAILED) {
-                if (getState() != ConnectionState.LOGGED_IN) {
-                    state.set(ConnectionState.FAILED);
-                    listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
-                }
-            }
-            throw new RuntimeException(cause);
+            state.set(ConnectionState.FAILED);
+            listener.onConnectionFailure(ctx.channel(), Either.fromLeft(cause));
         }
     }
 }

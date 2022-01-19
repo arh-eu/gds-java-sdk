@@ -39,9 +39,9 @@ public class ConsoleHandler {
                 argumentsHolder.getTimeout(),
                 AsyncGDSClient.createSSLContext(
                         argumentsHolder.getCert(),
-                        argumentsHolder.getSecret())
-        )) {
-            new ConsoleClient(argumentsHolder, client, logger).run();
+                        argumentsHolder.getSecret()));
+             ConsoleClient cc = new ConsoleClient(argumentsHolder, client, logger)) {
+            cc.run();
         } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException sslExc) {
             logger.severe(sslExc.toString());
         }

@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 import static hu.arheu.gds.console.MessageType.QUERY_ALL;
 
-public class ConsoleClient implements Runnable {
+public class ConsoleClient implements Runnable, AutoCloseable {
 
     private final ArgumentsHolder argumentsHolder;
     private final SyncGDSClient syncGDSClient;
@@ -187,5 +187,10 @@ public class ConsoleClient implements Runnable {
         } finally {
             syncGDSClient.close();
         }
+    }
+
+    @Override
+    public void close() {
+        syncGDSClient.close();
     }
 }

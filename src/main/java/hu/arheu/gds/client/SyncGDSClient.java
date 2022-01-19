@@ -199,6 +199,7 @@ public final class SyncGDSClient implements AutoCloseable {
             public void onConnectionFailure(Channel channel, Either<Throwable, Pair<MessageHeaderBase, MessageData1ConnectionAck>> reason) {
                 connectionFailureReason = reason;
                 connectLatch.countDown();
+                closeLatch.countDown();
             }
 
             @Override
@@ -298,7 +299,11 @@ public final class SyncGDSClient implements AutoCloseable {
                             + timeout + "ms! (Is the URI correct?)"));
                     return false;
                 }
-                return (asyncGDSClient.getState() == ConnectionState.LOGGED_IN);
+                boolean success = asyncGDSClient.getState() == ConnectionState.LOGGED_IN;
+                if (!success) {
+                    close();
+                }
+                return success;
             } catch (InterruptedException e) {
                 log.severe(e.getMessage());
                 throw new Error(e);
