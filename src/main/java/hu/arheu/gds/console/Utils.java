@@ -78,7 +78,7 @@ public class Utils {
         createExportsFolder();
         FileWriter out = new FileWriter(EXPORTS_FOLDER_NAME + "/" + messageId + "-" + counter + "-csv.csv");
         CSVPrinter printer = new CSVPrinter(out, CSVFormat.DEFAULT
-                .withHeader(Arrays.copyOf(headers.toArray(), headers.size(), String[].class)));
+                .builder().setHeader(Arrays.copyOf(headers.toArray(), headers.size(), String[].class)).build());
         printer.printRecords(records);
         printer.close();
         return EXPORTS_FOLDER_NAME + "/" + messageId + "-" + counter + "-csv.csv";
