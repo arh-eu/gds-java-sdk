@@ -810,6 +810,13 @@ public final class SyncGDSClient implements AutoCloseable {
     }
     // </editor-fold>
 
+    /**
+     * Sends a WebSocket Ping message to the GDS.
+     */
+    public void sendPingMessage() {
+        asyncGDSClient.sendPingMessage();
+    }
+
 
     /**
      * Creates a {@link CountDownLatch} for the given message, puts it into a cache by the specified message ID

@@ -1130,6 +1130,19 @@ public final class AsyncGDSClient implements AutoCloseable {
     //</editor-fold>
 
     /**
+     * Sends a WebSocket Ping message to the GDS.
+     *
+     * @return the {@link ChannelFuture} instance associated with the communication channel
+     */
+    public ChannelFuture sendPingMessage() {
+        ConnectionState state = getState();
+        if (state != ConnectionState.LOGGED_IN) {
+            throw new IllegalStateException("Could not send message! Expected client state 'LOGGED_IN' but got " + state);
+        }
+        return client.sendPingMessage();
+    }
+
+    /**
      * Sends the message without any further validation than checking the connection.
      * <p>
      * This should not be called by client code natively as it bypasses any message format checking
@@ -1296,6 +1309,10 @@ public final class AsyncGDSClient implements AutoCloseable {
             log.config("Sending BinaryWebSocketFrame..");
             log.fine("Message is " + message.length + " bytes");
             return channel.writeAndFlush(frame);
+        }
+
+        ChannelFuture sendPingMessage() {
+            return channel.writeAndFlush(new PingWebSocketFrame());
         }
     }
 
