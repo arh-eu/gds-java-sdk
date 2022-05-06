@@ -192,73 +192,49 @@ public class AttachmentResultHolderImpl extends MessagePart implements Attachmen
 
                 if (type == AttachmentResultHolder.Type.ATTACHMENT_RESPONSE_ACK) {
                     switch (Objects.requireNonNull(key)) {
-                        case "requestids":
-                            requestIds = ReaderHelper.unpackStringValues(unpacker, null, "requestids",
-                                    "request ids", AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "ownertable":
-                            ownerTable = ReaderHelper.unpackStringValue(unpacker, "owner table",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "attachmentid":
-                            attachmentId = ReaderHelper.unpackStringValue(unpacker, "attachment id",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        default:
-                            throw new ReadException(
-                                    String.format("Map key value [%s] does not match exptected value: " +
-                                                    "[%s]/[%s]/[%s]",
-                                            key,
-                                            "requestids",
-                                            "ownertable",
-                                            "attachmentid"));
+                        case "requestids" -> requestIds = ReaderHelper.unpackStringValues(unpacker, null, "requestids",
+                                "request ids", AttachmentResultHolderImpl.class.getSimpleName());
+                        case "ownertable" -> ownerTable = ReaderHelper.unpackStringValue(unpacker, "owner table",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "attachmentid" -> attachmentId = ReaderHelper.unpackStringValue(unpacker, "attachment id",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        default -> throw new ReadException(
+                                String.format("Map key value [%s] does not match exptected value: " +
+                                                "[%s]/[%s]/[%s]",
+                                        key,
+                                        "requestids",
+                                        "ownertable",
+                                        "attachmentid"));
                     }
                 } else {
                     switch (Objects.requireNonNull(key)) {
-                        case "requestids":
-                            requestIds = ReaderHelper.unpackStringValues(unpacker, null, "requestids",
-                                    "request ids", AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "ownertable":
-                            ownerTable = ReaderHelper.unpackStringValue(unpacker, "owner table",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "attachmentid":
-                            attachmentId = ReaderHelper.unpackStringValue(unpacker, "attachment id",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "ownerids":
-                            ownerIds = ReaderHelper.unpackStringValues(unpacker, null, "ownerids",
-                                    "owner ids", AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "meta":
-                            meta = ReaderHelper.unpackStringValue(unpacker, "meta",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "ttl":
-                            ttl = ReaderHelper.unpackLongValue(unpacker, "ttl",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "to_valid":
-                            toValid = ReaderHelper.unpackLongValue(unpacker, "to valid",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        case "attachment":
-                            attachment = ReaderHelper.unpackBinary(unpacker, "attachment",
-                                    AttachmentResultHolderImpl.class.getSimpleName());
-                            break;
-                        default:
-                            throw new ReadException(
-                                    String.format("Map key value [%s] does not match exptected value: " +
-                                                    "[%s]/[%s]/[%s]/[%s]/[%s]/[%s]/[%s]/[%s]", key,
-                                            "requestids",
-                                            "ownertable",
-                                            "attachmentid",
-                                            "ownerids",
-                                            "meta",
-                                            "ttl",
-                                            "to_valid",
-                                            "attachment"));
+                        case "requestids" -> requestIds = ReaderHelper.unpackStringValues(unpacker, null, "requestids",
+                                "request ids", AttachmentResultHolderImpl.class.getSimpleName());
+                        case "ownertable" -> ownerTable = ReaderHelper.unpackStringValue(unpacker, "owner table",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "attachmentid" -> attachmentId = ReaderHelper.unpackStringValue(unpacker, "attachment id",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "ownerids" -> ownerIds = ReaderHelper.unpackStringValues(unpacker, null, "ownerids",
+                                "owner ids", AttachmentResultHolderImpl.class.getSimpleName());
+                        case "meta" -> meta = ReaderHelper.unpackStringValue(unpacker, "meta",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "ttl" -> ttl = ReaderHelper.unpackLongValue(unpacker, "ttl",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "to_valid" -> toValid = ReaderHelper.unpackLongValue(unpacker, "to valid",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        case "attachment" -> attachment = ReaderHelper.unpackBinary(unpacker, "attachment",
+                                AttachmentResultHolderImpl.class.getSimpleName());
+                        default -> throw new ReadException(
+                                String.format("Map key value [%s] does not match exptected value: " +
+                                                "[%s]/[%s]/[%s]/[%s]/[%s]/[%s]/[%s]/[%s]", key,
+                                        "requestids",
+                                        "ownertable",
+                                        "attachmentid",
+                                        "ownerids",
+                                        "meta",
+                                        "ttl",
+                                        "to_valid",
+                                        "attachment"));
                     }
                 }
             }
@@ -272,8 +248,7 @@ public class AttachmentResultHolderImpl extends MessagePart implements Attachmen
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AttachmentResultHolderImpl)) return false;
-        AttachmentResultHolderImpl that = (AttachmentResultHolderImpl) o;
+        if (!(o instanceof AttachmentResultHolderImpl that)) return false;
         return Objects.equals(requestIds, that.requestIds) &&
                 Objects.equals(ownerTable, that.ownerTable) &&
                 Objects.equals(attachmentId, that.attachmentId) &&

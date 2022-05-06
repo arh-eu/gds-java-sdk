@@ -25,21 +25,21 @@ public class ConsoleHandler {
         }
 
         final Logger logger = Logger.getLogger("logging");
-        logger.setLevel(Level.SEVERE);
+        logger.setLevel(Level.ALL);
         SimpleFormatter fmt = new SimpleFormatter();
         StreamHandler sh = new StreamHandler(System.err, fmt);
         logger.addHandler(sh);
         logger.setUseParentHandlers(false);
 
         try (SyncGDSClient client = new SyncGDSClient(
-                argumentsHolder.getUrl(),
-                argumentsHolder.getUsername(),
-                argumentsHolder.getPassword(),
+                argumentsHolder.url(),
+                argumentsHolder.username(),
+                argumentsHolder.password(),
                 logger,
-                argumentsHolder.getTimeout(),
+                argumentsHolder.timeout(),
                 AsyncGDSClient.createSSLContext(
-                        argumentsHolder.getCert(),
-                        argumentsHolder.getSecret()));
+                        argumentsHolder.cert(),
+                        argumentsHolder.secret()));
              ConsoleClient cc = new ConsoleClient(argumentsHolder, client, logger)) {
             cc.run();
         } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException sslExc) {

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -244,11 +245,7 @@ public final class SyncGDSClient implements AutoCloseable {
 
         };
 
-        if (log == null) {
-            this.log = AsyncGDSClient.createDefaultLogger("SyncGDSClient");
-        } else {
-            this.log = log;
-        }
+        this.log = Objects.requireNonNullElseGet(log, () -> AsyncGDSClient.createDefaultLogger("SyncGDSClient"));
 
         this.asyncGDSClient = new AsyncGDSClient(uri, userName, userPassword, timeout, this.log, listener, sslContext, null, true, true);
         this.userName = userName;

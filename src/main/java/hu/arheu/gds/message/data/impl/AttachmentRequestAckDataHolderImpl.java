@@ -100,8 +100,7 @@ public class AttachmentRequestAckDataHolderImpl extends MessagePart implements A
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AttachmentRequestAckDataHolderImpl)) return false;
-        AttachmentRequestAckDataHolderImpl that = (AttachmentRequestAckDataHolderImpl) o;
+        if (!(o instanceof AttachmentRequestAckDataHolderImpl that)) return false;
         return status == that.status
                 && Objects.equals(result, that.result)
                 && Objects.equals(remainedWaitTimeMillis, that.remainedWaitTimeMillis);

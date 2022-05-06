@@ -283,11 +283,7 @@ public final class AsyncGDSClient implements AutoCloseable {
             this.shutdownByClose = shutdownByClose;
         }
 
-        if (log == null) {
-            this.log = createDefaultLogger("AsyncGDSClient");
-        } else {
-            this.log = log;
-        }
+        this.log = Objects.requireNonNullElseGet(log, () -> createDefaultLogger("AsyncGDSClient"));
         this.sslCtx = sslCtx;
 
         try {
@@ -1175,7 +1171,7 @@ public final class AsyncGDSClient implements AutoCloseable {
             log.config("Incoming message of type " + header.getDataType() + " with ID: " + header.getMessageId());
 
             switch (body.getMessageDataType()) {
-                case CONNECTION_ACK_1: {
+                case CONNECTION_ACK_1 -> {
                     countDownLatch.countDown();
                     MessageData1ConnectionAck connectionAck = body.asConnectionAckMessageData1();
                     if (connectionAck.getGlobalStatus() != AckStatus.OK) {
@@ -1200,34 +1196,22 @@ public final class AsyncGDSClient implements AutoCloseable {
                         this.listener.onConnectionSuccess(client.channel, header, connectionAck);
                     }
                 }
-                break;
-                case EVENT_ACK_3:
-                    listener.onEventAck3(header, body.asEventAckMessageData3());
-                    break;
-                case ATTACHMENT_REQUEST_4:
-                    listener.onAttachmentRequest4(header, body.asAttachmentRequestMessageData4());
-                    break;
-                case ATTACHMENT_REQUEST_ACK_5:
-                    listener.onAttachmentRequestAck5(header, body.asAttachmentRequestAckMessageData5());
-                    break;
-                case ATTACHMENT_RESPONSE_6:
-                    listener.onAttachmentResponse6(header, body.asAttachmentResponseMessageData6());
-                    break;
-                case ATTACHMENT_RESPONSE_ACK_7:
-                    listener.onAttachmentResponseAck7(header, body.asAttachmentResponseAckMessageData7());
-                    break;
-                case EVENT_DOCUMENT_8:
-                    listener.onEventDocument8(header, body.asEventDocumentMessageData8());
-                    break;
-                case EVENT_DOCUMENT_ACK_9:
-                    listener.onEventDocumentAck9(header, body.asEventDocumentAckMessageData9());
-                    break;
-                case QUERY_REQUEST_ACK_11:
-                    listener.onQueryRequestAck11(header, body.asQueryRequestAckMessageData11());
-                    break;
-                default:
-                    log.warning("Received a message from the GDS that should not be sent! Type: " + body.getMessageDataType());
-                    break;
+                case EVENT_ACK_3 -> listener.onEventAck3(header, body.asEventAckMessageData3());
+                case ATTACHMENT_REQUEST_4 ->
+                        listener.onAttachmentRequest4(header, body.asAttachmentRequestMessageData4());
+                case ATTACHMENT_REQUEST_ACK_5 ->
+                        listener.onAttachmentRequestAck5(header, body.asAttachmentRequestAckMessageData5());
+                case ATTACHMENT_RESPONSE_6 ->
+                        listener.onAttachmentResponse6(header, body.asAttachmentResponseMessageData6());
+                case ATTACHMENT_RESPONSE_ACK_7 ->
+                        listener.onAttachmentResponseAck7(header, body.asAttachmentResponseAckMessageData7());
+                case EVENT_DOCUMENT_8 -> listener.onEventDocument8(header, body.asEventDocumentMessageData8());
+                case EVENT_DOCUMENT_ACK_9 ->
+                        listener.onEventDocumentAck9(header, body.asEventDocumentAckMessageData9());
+                case QUERY_REQUEST_ACK_11 ->
+                        listener.onQueryRequestAck11(header, body.asQueryRequestAckMessageData11());
+                default ->
+                        log.warning("Received a message from the GDS that should not be sent! Type: " + body.getMessageDataType());
             }
         } catch (IOException | ValidationException e) {
             log.info("The format of the incoming binary message is invalid! " + e);
@@ -1405,8 +1389,7 @@ public final class AsyncGDSClient implements AutoCloseable {
                 return;
             }
 
-            if (msg instanceof FullHttpResponse) {
-                FullHttpResponse response = (FullHttpResponse) msg;
+            if (msg instanceof FullHttpResponse response) {
                 throw new IllegalStateException(
                         "Unexpected FullHttpResponse received! (getStatus=" + response.status() +
                                 ", content=" + response.content().toString(CharsetUtil.UTF_8) + ')');
@@ -1425,9 +1408,8 @@ public final class AsyncGDSClient implements AutoCloseable {
                 ch.writeAndFlush(new PongWebSocketFrame());
             } else if (frame instanceof PongWebSocketFrame) {
                 log.fine("WebSocketClient received pong");
-            } else if (frame instanceof CloseWebSocketFrame) {
+            } else if (frame instanceof CloseWebSocketFrame closeWebSocketFrame) {
                 log.config("WebSocketClient received closing frame..");
-                CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame) frame;
                 log.config("Close status: " + closeWebSocketFrame.statusCode() + ", reason: " + closeWebSocketFrame.reasonText());
                 if (getState() != ConnectionState.LOGGED_IN) {
                     state.set(ConnectionState.FAILED);

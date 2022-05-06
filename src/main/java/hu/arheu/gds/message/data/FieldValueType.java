@@ -268,11 +268,10 @@ public enum FieldValueType {
     STRING_MAP(14) {
         @Override
         public Value valueFromObject(Object o) {
-            if (!(o instanceof Map)) {
+            if (!(o instanceof Map<?, ?> map)) {
                 //also checks for null
                 return ImmutableNilValueImpl.get();
             }
-            Map<?, ?> map = (Map<?, ?>) o;
             Value[] data = new Value[map.size() * 2];
             int i = 0;
             for (Map.Entry<?, ?> entry : map.entrySet()) {

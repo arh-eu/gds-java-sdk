@@ -31,7 +31,7 @@ JitPack gives you a flexible, virtual maven repository which can work with GitHu
 
 The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
 project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
-can use the latest release of this - `2.2.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+can use the latest release of this - `3.0.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -43,11 +43,11 @@ following dependency after installation:
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>2.2.1</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
-(The library was made using [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation.)
+(The library was made using [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation using version `0.9.1`)
 
 # Usage
 

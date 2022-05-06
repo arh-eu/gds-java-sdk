@@ -99,29 +99,33 @@ public class Converters {
 
     public static List<Map<String, Value>> getRecordsToMpack(MessageData data) throws ValueConvertException {
         switch (data.getMessageDataType()) {
-            case QUERY_REQUEST_ACK_11:
+            case QUERY_REQUEST_ACK_11 -> {
                 MessageData11QueryRequestAck data11 = data.asQueryRequestAckMessageData11();
                 return getRecordsToMpack(data11.getQueryResponseHolder().getFieldHolders(),
                         data11.getQueryResponseHolder().getHits());
-            case EVENT_DOCUMENT_8:
+            }
+            case EVENT_DOCUMENT_8 -> {
                 MessageData8EventDocument data8 = data.asEventDocumentMessageData8();
                 return getRecordsToMpack(data8.getFieldHolders(), data8.getRecords());
-            default:
-                throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getMessageDataType()));
+            }
+            default ->
+                    throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getMessageDataType()));
         }
     }
 
     public static List<Map<String, Object>> getRecordsToObject(MessageData data) throws ValueConvertException {
         switch (data.getMessageDataType()) {
-            case QUERY_REQUEST_ACK_11:
+            case QUERY_REQUEST_ACK_11 -> {
                 MessageData11QueryRequestAck data11 = data.asQueryRequestAckMessageData11();
                 return getRecordsToObject(data11.getQueryResponseHolder().getFieldHolders(),
                         data11.getQueryResponseHolder().getHits());
-            case EVENT_DOCUMENT_8:
+            }
+            case EVENT_DOCUMENT_8 -> {
                 MessageData8EventDocument data8 = data.asEventDocumentMessageData8();
                 return getRecordsToObject(data8.getFieldHolders(), data8.getRecords());
-            default:
-                throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getMessageDataType()));
+            }
+            default ->
+                    throw new ValueConvertException(String.format("Converting from '%s' does not supported", data.getMessageDataType()));
         }
     }
 
@@ -171,8 +175,7 @@ public class Converters {
             return ImmutableNilValueImpl.get();
         }
 
-        if (object instanceof Object[]) {
-            Object[] objects = (Object[]) object;
+        if (object instanceof Object[] objects) {
             Value[] values = new Value[objects.length];
             for (int i = 0; i < objects.length; ++i) {
                 values[i] = convertObjectToValue(objects[i]);

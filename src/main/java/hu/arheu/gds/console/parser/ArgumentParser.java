@@ -39,8 +39,8 @@ public class ArgumentParser {
             return null;
         }
 
-        MessageType messageType = null;
-        String statement = null;
+        MessageType messageType;
+        String statement;
         if (eventCommand.event != null) {
             messageType = MessageType.EVENT;
             statement = eventCommand.event;

@@ -141,8 +141,7 @@ public class EventSubResultHolderImpl extends MessagePart implements EventSubRes
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof EventSubResultHolderImpl)) return false;
-        EventSubResultHolderImpl that = (EventSubResultHolderImpl) o;
+        if (!(o instanceof EventSubResultHolderImpl that)) return false;
         return subStatus == that.subStatus &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(tableName, that.tableName) &&

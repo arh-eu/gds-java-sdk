@@ -110,8 +110,7 @@ public class MessageData7AttachmentResponseAckImpl extends MessagePart implement
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MessageData7AttachmentResponseAckImpl)) return false;
-        MessageData7AttachmentResponseAckImpl that = (MessageData7AttachmentResponseAckImpl) o;
+        if (!(o instanceof MessageData7AttachmentResponseAckImpl that)) return false;
         return globalStatus == that.globalStatus &&
                 Objects.equals(data, that.data) &&
                 Objects.equals(globalException, that.globalException);

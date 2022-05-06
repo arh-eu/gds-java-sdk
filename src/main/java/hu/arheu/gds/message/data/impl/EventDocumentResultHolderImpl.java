@@ -108,8 +108,7 @@ public class EventDocumentResultHolderImpl extends MessagePart implements EventD
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof EventDocumentResultHolderImpl)) return false;
-        EventDocumentResultHolderImpl that = (EventDocumentResultHolderImpl) o;
+        if (!(o instanceof EventDocumentResultHolderImpl that)) return false;
         return status == that.status &&
                 Objects.equals(notification, that.notification) &&
                 Objects.equals(returnValues, that.returnValues);

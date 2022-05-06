@@ -111,8 +111,7 @@ public class PriorityLevelHolderImpl extends MessagePart implements PriorityLeve
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PriorityLevelHolderImpl)) return false;
-        PriorityLevelHolderImpl that = (PriorityLevelHolderImpl) o;
+        if (!(o instanceof PriorityLevelHolderImpl that)) return false;
         return Objects.equals(operations, that.operations);
     }
 

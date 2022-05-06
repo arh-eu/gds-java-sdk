@@ -82,8 +82,7 @@ public class AttachmentResponseAckResultHolderImpl extends MessagePart implement
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AttachmentResponseAckResultHolderImpl)) return false;
-        AttachmentResponseAckResultHolderImpl that = (AttachmentResponseAckResultHolderImpl) o;
+        if (!(o instanceof AttachmentResponseAckResultHolderImpl that)) return false;
         return status == that.status &&
                 Objects.equals(result, that.result);
     }

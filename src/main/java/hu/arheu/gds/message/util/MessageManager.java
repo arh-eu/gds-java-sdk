@@ -28,10 +28,10 @@ public class MessageManager {
     public static final int DATA_FIELD_COUNT = 1;
 
     private static byte[] packMessageWrapper(int arraySize) throws IOException {
-
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packArrayHeader(arraySize);
-        return packer.toByteArray();
+        try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+            packer.packArrayHeader(arraySize);
+            return packer.toByteArray();
+        }
     }
 
     /**
@@ -51,18 +51,13 @@ public class MessageManager {
 
         ByteArrayOutputStream binary = new ByteArrayOutputStream();
         switch (header.getMessageHeaderType()) {
-            case BASE:
-                binary.write(packMessageWrapper(
-                        (MessageHeaderBase.NUMBER_OF_FIELDS + DATA_FIELD_COUNT)));
-                break;
-            case EXTENDED:
-                binary.write(packMessageWrapper(
-                        (MessageHeaderBase.NUMBER_OF_FIELDS + MessageHeaderExtended.NUMBER_OF_FIELDS + DATA_FIELD_COUNT)));
-                break;
-            default:
-                throw new ValidationException(String.format("%s: Unknown message header type (%s)",
-                        MessageManager.class.getSimpleName(),
-                        header.getMessageHeaderType()));
+            case BASE -> binary.write(packMessageWrapper(
+                    (MessageHeaderBase.NUMBER_OF_FIELDS + DATA_FIELD_COUNT)));
+            case EXTENDED -> binary.write(packMessageWrapper(
+                    (MessageHeaderBase.NUMBER_OF_FIELDS + MessageHeaderExtended.NUMBER_OF_FIELDS + DATA_FIELD_COUNT)));
+            default -> throw new ValidationException(String.format("%s: Unknown message header type (%s)",
+                    MessageManager.class.getSimpleName(),
+                    header.getMessageHeaderType()));
         }
 
         binary.write(header.getBinary());

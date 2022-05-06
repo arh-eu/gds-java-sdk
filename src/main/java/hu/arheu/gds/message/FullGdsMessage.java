@@ -60,49 +60,22 @@ public class FullGdsMessage extends MessagePart {
         header.unpackContentFrom(unpacker);
 
         switch (header.getDataType()) {
-            case CONNECTION_0:
-                data = new MessageData0ConnectionImpl();
-                break;
-            case CONNECTION_ACK_1:
-                data = new MessageData1ConnectionAckImpl();
-                break;
-            case EVENT_2:
-                data = new MessageData2EventImpl();
-                break;
-            case EVENT_ACK_3:
-                data = new MessageData3EventAckImpl();
-                break;
-            case ATTACHMENT_REQUEST_4:
-                data = new MessageData4AttachmentRequestImpl();
-                break;
-            case ATTACHMENT_REQUEST_ACK_5:
-                data = new MessageData5AttachmentRequestAckImpl();
-                break;
-            case ATTACHMENT_RESPONSE_6:
-                data = new MessageData6AttachmentResponseImpl();
-                break;
-            case ATTACHMENT_RESPONSE_ACK_7:
-                data = new MessageData7AttachmentResponseAckImpl();
-                break;
-            case EVENT_DOCUMENT_8:
-                data = new MessageData8EventDocumentImpl();
-                break;
-            case EVENT_DOCUMENT_ACK_9:
-                data = new MessageData9EventDocumentAckImpl();
-                break;
-            case QUERY_REQUEST_10:
-                data = new MessageData10QueryRequestImpl();
-                break;
-            case QUERY_REQUEST_ACK_11:
-                data = new MessageData11QueryRequestAckImpl();
-                break;
-            case NEXT_QUERY_PAGE_12:
-                data = new MessageData12NextQueryPageImpl();
-                break;
-            default:
-                throw new ReadException(String.format("%s: Unknown message data type (%s)",
-                        MessageManager.class.getSimpleName(),
-                        header.getDataType()));
+            case CONNECTION_0 -> data = new MessageData0ConnectionImpl();
+            case CONNECTION_ACK_1 -> data = new MessageData1ConnectionAckImpl();
+            case EVENT_2 -> data = new MessageData2EventImpl();
+            case EVENT_ACK_3 -> data = new MessageData3EventAckImpl();
+            case ATTACHMENT_REQUEST_4 -> data = new MessageData4AttachmentRequestImpl();
+            case ATTACHMENT_REQUEST_ACK_5 -> data = new MessageData5AttachmentRequestAckImpl();
+            case ATTACHMENT_RESPONSE_6 -> data = new MessageData6AttachmentResponseImpl();
+            case ATTACHMENT_RESPONSE_ACK_7 -> data = new MessageData7AttachmentResponseAckImpl();
+            case EVENT_DOCUMENT_8 -> data = new MessageData8EventDocumentImpl();
+            case EVENT_DOCUMENT_ACK_9 -> data = new MessageData9EventDocumentAckImpl();
+            case QUERY_REQUEST_10 -> data = new MessageData10QueryRequestImpl();
+            case QUERY_REQUEST_ACK_11 -> data = new MessageData11QueryRequestAckImpl();
+            case NEXT_QUERY_PAGE_12 -> data = new MessageData12NextQueryPageImpl();
+            default -> throw new ReadException(String.format("%s: Unknown message data type (%s)",
+                    MessageManager.class.getSimpleName(),
+                    header.getDataType()));
         }
         data.unpackContentFrom(unpacker);
     }

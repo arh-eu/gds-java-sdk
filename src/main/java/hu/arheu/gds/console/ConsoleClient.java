@@ -66,7 +66,7 @@ public class ConsoleClient implements Runnable, AutoCloseable {
         System.out.println("Response message in JSON format:");
         System.out.println(json);
 
-        if (argumentsHolder.getExport()) {
+        if (argumentsHolder.export()) {
             try {
                 Utils.exportJson(header.getMessageId(), json);
             } catch (IOException e) {
@@ -78,8 +78,8 @@ public class ConsoleClient implements Runnable, AutoCloseable {
     private void sendEvent() {
         try {
             EventResponse eventResponse = syncGDSClient.sendEvent2(MessageManager.createMessageData2Event(
-                    argumentsHolder.getStatement(),
-                    loadAttachments(argumentsHolder.getFiles()),
+                    argumentsHolder.statement(),
+                    loadAttachments(argumentsHolder.files()),
                     new ArrayList<>()));
 
             exportResult(eventResponse.getHeader(), eventResponse.getData());
@@ -94,7 +94,7 @@ public class ConsoleClient implements Runnable, AutoCloseable {
         try {
             AttachmentResult attachmentResult =
                     syncGDSClient.sendAttachmentRequest4(MessageManager.createMessageData4AttachmentRequest(
-                            argumentsHolder.getStatement()
+                            argumentsHolder.statement()
                     ));
 
             MessageHeaderBase header = attachmentResult.getHeader();
@@ -123,18 +123,18 @@ public class ConsoleClient implements Runnable, AutoCloseable {
 
             int counter = 0;
             QueryResponse queryResponse = syncGDSClient.sendQueryRequest10(MessageManager.createMessageData10QueryRequest(
-                    argumentsHolder.getStatement(),
+                    argumentsHolder.statement(),
                     ConsistencyType.PAGES,
-                    Long.valueOf(argumentsHolder.getTimeout())
+                    Long.valueOf(argumentsHolder.timeout())
             ));
 
             exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
 
-            if (argumentsHolder.getMessageType().equals(QUERY_ALL)) {
+            if (argumentsHolder.messageType().equals(QUERY_ALL)) {
                 while (queryResponse.getData().getGlobalStatus() == AckStatus.OK &&
                         queryResponse.getData().getQueryResponseHolder().getMorePage()) {
                     queryResponse = syncGDSClient.sendNextQueryPage12(MessageManager.createMessageData12NextQueryPage(
-                            queryResponse.getData().getQueryResponseHolder().getQueryContextHolder(), Long.valueOf(argumentsHolder.getTimeout())));
+                            queryResponse.getData().getQueryResponseHolder().getQueryContextHolder(), Long.valueOf(argumentsHolder.timeout())));
 
                     exportAndDisplayOnGUIifNeeded(++counter, queryResponse);
                 }
@@ -149,7 +149,7 @@ public class ConsoleClient implements Runnable, AutoCloseable {
         MessageHeaderBase header = queryResponse.getHeader();
         MessageData11QueryRequestAck data = queryResponse.getData();
         exportResult(header, data);
-        if (!argumentsHolder.withNoGUI() && data.getGlobalStatus() == AckStatus.OK) {
+        if (!argumentsHolder.nogui() && data.getGlobalStatus() == AckStatus.OK) {
             try {
                 new ConsoleGUI(
                         counter,
@@ -165,17 +165,10 @@ public class ConsoleClient implements Runnable, AutoCloseable {
     public void run() {
         try {
             if (syncGDSClient.connect()) {
-                switch (argumentsHolder.getMessageType()) {
-                    case EVENT:
-                        sendEvent();
-                        break;
-                    case ATTACHMENT:
-                        sendAttachmentRequest();
-                        break;
-                    case QUERY:
-                    case QUERY_ALL:
-                        sendQuery();
-                        break;
+                switch (argumentsHolder.messageType()) {
+                    case EVENT -> sendEvent();
+                    case ATTACHMENT -> sendAttachmentRequest();
+                    case QUERY, QUERY_ALL -> sendQuery();
                 }
             } else {
                 if (syncGDSClient.hasConnectionFailed()) {
