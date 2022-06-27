@@ -844,83 +844,89 @@ a `static` method with a signature of `String stringToUTF8Hex(String)`.
 #### INSERT
 
 ```java
-MessageIdGenerator messageIdGenerator = new MessageIdGenerator("TEST", "yyMMddhhmmssSSS");
+MessageIdGenerator messageIdGenerator = new MessageIdGenerator();
 
 // you can create your binary any way you want.
-// this simply uses a series of predetermined bytes / pixels that will result 
+// this simply uses a series of predetermined bytes / pixels that will result
 // in a valid 9x9 PNG image
 
-int[] binaryData = {
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-        0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x09,
-        0x08, 0x06, 0x00, 0x00, 0x00, 0xe0, 0x91, 0x06, 0x10, 0x00, 0x00, 0x00,
-        0x01, 0x73, 0x52, 0x47, 0x42, 0x00, 0xae, 0xce, 0x1c, 0xe9, 0x00, 0x00,
-        0x00, 0x04, 0x67, 0x41, 0x4d, 0x41, 0x00, 0x00, 0xb1, 0x8f, 0x0b, 0xfc,
-        0x61, 0x05, 0x00, 0x00, 0x00, 0x09, 0x70, 0x48, 0x59, 0x73, 0x00, 0x00,
-        0x0e, 0xc3, 0x00, 0x00, 0x0e, 0xc3, 0x01, 0xc7, 0x6f, 0xa8, 0x64, 0x00,
-        0x00, 0x00, 0x2d, 0x49, 0x44, 0x41, 0x54, 0x28, 0x53, 0x63, 0xf8, 0x4f,
-        0x04, 0x20, 0x4d, 0xd1, 0x5b, 0x19, 0x15, 0x30, 0x46, 0x67, 0x83, 0x00,
-        0x69, 0x8a, 0xf0, 0x01, 0xe2, 0x15, 0x21, 0x1b, 0x8d, 0x0c, 0x60, 0xe2,
-        0x18, 0x6e, 0x42, 0xc6, 0x30, 0x40, 0x84, 0x75, 0xff, 0xff, 0x03, 0x00,
-        0x18, 0xd8, 0x27, 0x9c, 0x9f, 0xb7, 0xe9, 0xa0, 0x00, 0x00, 0x00, 0x00,
-        0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
-};
-ByteArrayOutputStream baos = new ByteArrayOutputStream();
-DataOutputStream dos = new DataOutputStream(baos);
-for (int pixel : binaryData) {
-    dos.writeByte(pixel);
-}
-byte[] byteArray = baos.toByteArray();
+        int[] binaryData = {
+                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+                0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x09,
+                0x08, 0x06, 0x00, 0x00, 0x00, 0xe0, 0x91, 0x06, 0x10, 0x00, 0x00, 0x00,
+                0x01, 0x73, 0x52, 0x47, 0x42, 0x00, 0xae, 0xce, 0x1c, 0xe9, 0x00, 0x00,
+                0x00, 0x04, 0x67, 0x41, 0x4d, 0x41, 0x00, 0x00, 0xb1, 0x8f, 0x0b, 0xfc,
+                0x61, 0x05, 0x00, 0x00, 0x00, 0x09, 0x70, 0x48, 0x59, 0x73, 0x00, 0x00,
+                0x0e, 0xc3, 0x00, 0x00, 0x0e, 0xc3, 0x01, 0xc7, 0x6f, 0xa8, 0x64, 0x00,
+                0x00, 0x00, 0x2d, 0x49, 0x44, 0x41, 0x54, 0x28, 0x53, 0x63, 0xf8, 0x4f,
+                0x04, 0x20, 0x4d, 0xd1, 0x5b, 0x19, 0x15, 0x30, 0x46, 0x67, 0x83, 0x00,
+                0x69, 0x8a, 0xf0, 0x01, 0xe2, 0x15, 0x21, 0x1b, 0x8d, 0x0c, 0x60, 0xe2,
+                0x18, 0x6e, 0x42, 0xc6, 0x30, 0x40, 0x84, 0x75, 0xff, 0xff, 0x03, 0x00,
+                0x18, 0xd8, 0x27, 0x9c, 0x9f, 0xb7, 0xe9, 0xa0, 0x00, 0x00, 0x00, 0x00,
+                0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
+        };
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        for (int pixel : binaryData) {
+            dos.writeByte(pixel);
+        }
+        byte[] byteArray = baos.toByteArray();
 
 
-Map<String, byte[]> attachments = new HashMap<>(3);
-//use different binary for different images 
+        Map<String, byte[]> attachments = new HashMap<>(3);
+//use different binary for different images
 
-attachments.put("firstImage", byteArray);
-attachments.put("secondImage", byteArray);
-attachments.put("thirdImage", byteArray);
+        attachments.put("firstImage", byteArray);
+        attachments.put("secondImage", byteArray);
+        attachments.put("thirdImage", byteArray);
 
-final String EVENT_TABLE = "multi_event";
-final String ATTACHMENT_TABLE = "\"multi_event-@attachment\"";
+        final String EVENT_TABLE = "multi_event";
+        final String ATTACHMENT_TABLE = "\"multi_event-@attachment\"";
 
-final String eventInsert = "INSERT INTO %1$s (id, speed, images) VALUES( '%2$s', 50, array('%3$s', '%4$s', '%5$s') )";
-final String attInsert = "INSERT INTO %1$s (id, meta, data) VALUES( '%2$s', 'image/png', %3$s )";
+        final String eventInsert = "INSERT INTO %1$s (id, speed, images) VALUES( '%2$s', 50, array('%3$s', '%4$s', '%5$s') )";
+        final String attInsert = "INSERT INTO %1$s (id, meta, data) VALUES( '%2$s', 'image/png', %3$s )";
 
-Function<String, String> convert = (String string) => {
-    byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
-    
-    StringBuilder sb = new StringBuilder(2 * bytes.length);
-    for (byte bb : bytes) {
-        sb.append(String.format("%1$02x", 0xff & bb));
-    }
-    return sb.toString();
-};
+        Function<String, String> convert = (String string) -> {
+            byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
 
-String firstHexID = convert.apply("firstImage");
-String secondHexID = convert.apply("secondImage");
-String thirdHexID = convert.apply("thirdImage");
+            StringBuilder sb = new StringBuilder(2 * bytes.length);
+            for (byte bb : bytes) {
+                sb.append(String.format("%1$02x", 0xff & bb));
+            }
+            return sb.toString();
+        };
 
-StringJoiner joiner = new StringJoiner(";");
-joiner.add(
-    eventInsert.formatted(EVENT_TABLE, eventID, firstAttID, secondAttID, thirdAttID)
-);
-joiner.add(
-    attInsert.formatted(ATTACHMENT_TABLE, firstAttID, firstHexID)
-);
-joiner.add(
-    attInsert.formatted(ATTACHMENT_TABLE, secondAttID, secondHexID)
-);
-joiner.add(
-    attInsert.formatted(ATTACHMENT_TABLE, thirdAttID, thirdHexID)
-);
+        String firstHexID = convert.apply("firstImage");
+        String secondHexID = convert.apply("secondImage");
+        String thirdHexID = convert.apply("thirdImage");
 
-MessageData2Event data = MessageManager.createMessageData2Event(
-    joiner.toString(),
-    attachments,
-    Collections.emptyList()
-);
+        String eventID = messageIdGenerator.nextId();
 
-client.sendEvent2(data);
+        String firstAttID = messageIdGenerator.nextId();
+        String secondAttID = messageIdGenerator.nextId();
+        String thirdAttID = messageIdGenerator.nextId();
+
+        StringJoiner joiner = new StringJoiner(";");
+        joiner.add(
+                eventInsert.formatted(EVENT_TABLE, eventID, firstAttID, secondAttID, thirdAttID)
+        );
+        joiner.add(
+                attInsert.formatted(ATTACHMENT_TABLE, firstAttID, firstHexID)
+        );
+        joiner.add(
+                attInsert.formatted(ATTACHMENT_TABLE, secondAttID, secondHexID)
+        );
+        joiner.add(
+                attInsert.formatted(ATTACHMENT_TABLE, thirdAttID, thirdHexID)
+        );
+
+        MessageData2Event data = MessageManager.createMessageData2Event(
+                joiner.toString(),
+                attachments,
+                Collections.emptyList()
+        );
+
+        client.sendEvent2(data);
 ```
 
 #### UPDATE
