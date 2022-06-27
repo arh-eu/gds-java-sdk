@@ -845,9 +845,6 @@ a `static` method with a signature of `String stringToUTF8Hex(String)`.
 
 ```java
 MessageIdGenerator messageIdGenerator = new MessageIdGenerator("TEST", "yyMMddhhmmssSSS");
-String eventId = messageIdGenerator.nextId();
-String attachmentId = messageIdGenerator.nextId();
-
 
 // you can create your binary any way you want.
 // this simply uses a series of predetermined bytes / pixels that will result 
@@ -875,15 +872,54 @@ for (int pixel : binaryData) {
 }
 byte[] byteArray = baos.toByteArray();
 
+
+Map<String, byte[]> attachments = new HashMap<>(3);
+//use different binary for different images 
+
+attachments.put("firstImage", byteArray);
+attachments.put("secondImage", byteArray);
+attachments.put("thirdImage", byteArray);
+
+final String EVENT_TABLE = "multi_event";
+final String ATTACHMENT_TABLE = "\"multi_event-@attachment\"";
+
+final String eventInsert = "INSERT INTO %1$s (id, speed, images) VALUES( '%2$s', 50, array('%3$s', '%4$s', '%5$s') )";
+final String attInsert = "INSERT INTO %1$s (id, meta, data) VALUES( '%2$s', 'image/png', %3$s )";
+
+Function<String, String> convert = (String string) => {
+    byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+    
+    StringBuilder sb = new StringBuilder(2 * bytes.length);
+    for (byte bb : bytes) {
+        sb.append(String.format("%1$02x", 0xff & bb));
+    }
+    return sb.toString();
+};
+
+String firstHexID = convert.apply("firstImage");
+String secondHexID = convert.apply("secondImage");
+String thirdHexID = convert.apply("thirdImage");
+
+StringJoiner joiner = new StringJoiner(";");
+joiner.add(
+    eventInsert.formatted(EVENT_TABLE, eventID, firstAttID, secondAttID, thirdAttID)
+);
+joiner.add(
+    attInsert.formatted(ATTACHMENT_TABLE, firstAttID, firstHexID)
+);
+joiner.add(
+    attInsert.formatted(ATTACHMENT_TABLE, secondAttID, secondHexID)
+);
+joiner.add(
+    attInsert.formatted(ATTACHMENT_TABLE, thirdAttID, thirdHexID)
+);
+
 MessageData2Event data = MessageManager.createMessageData2Event(
-        new ArrayList<String>() {{
-            add("INSERT INTO multi_event (id, plate, speed, images) VALUES('" + eventId + "', 'ABC123', 90, array('" + attachmentId +"'))");
-            add("INSERT INTO \"multi_event-@attachment\" (id, meta, data) VALUES('" + attachmentId + "', 'some_meta', 0x62696e6172795f6964315f6578616d706c65)");
-        }},
-        new HashMap<String, byte[]>() {{
-            put("binary_id1_example", byteArray);
-        }},
-        new ArrayList<>());
+    joiner.toString(),
+    attachments,
+    Collections.emptyList()
+);
+
 client.sendEvent2(data);
 ```
 
@@ -891,11 +927,12 @@ client.sendEvent2(data);
 
 ```java
 MessageData2Event data = MessageManager.createMessageData2Event(
-        new ArrayList<String>() {{
-            add("UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'");
-        }},
-        new HashMap<>(),
-        new ArrayList<>());
+        List.of(
+            "UPDATE multi_event SET speed = 100 WHERE id = 'TEST2006301005294810'"
+        ),
+        Collections.emptyMap(),
+        Collections.emptyList()
+    );
 
 client.sendEvent2(data);
 
@@ -905,14 +942,14 @@ client.sendEvent2(data);
 
 ```java
 MessageData2Event data = MessageManager.createMessageData2Event(
-        new ArrayList<String>() {{
-            add("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
+        List.of("MERGE INTO multi_event USING (SELECT 'TEST2006301005294810' as id, 'ABC123' as plate, 100 as speed) I " +
                     "ON (multi_event.id = I.id) " +
                     "WHEN MATCHED THEN UPDATE SET multi_event.speed = I.speed " +
-                    "WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)");
-        }},
-        new HashMap<>(),
-        new ArrayList<>());
+                    "WHEN NOT MATCHED THEN INSERT (id, plate) VALUES (I.id, I.plate)"
+        ), 
+        Collections.emptyMap(),
+        Collections.emptyList()
+        );
 
 client.sendEvent2(data);
     
