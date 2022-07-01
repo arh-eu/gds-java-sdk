@@ -1083,6 +1083,10 @@ A user may be interested in data or changes in specific data. The criteria syste
 interest to the user, is included in the configuration of the delivered system. This data is sent automatically by the
 GDS. For these, you should also send an ACK back for the same reason.
 
+The original connection message contains a field for `serve_on_the_same_connection` (*SotSC*). If this is set to `false` (regardless of the connection mode), the app can receive push messages once connected to the GDS, and the GDS can receive them from the app. Otherwise the PUSH messages will not be sent to your client.
+
+&#x26A0; The default value for the `SotSC` flag in the clients is `true`. If you are not receiving PUSH messages, please check if you have created your client with the flag set to `false` (in the builder/constructor). The ACKs you send to the PUSH messages **must** use the same message ID as the PUSH messages otherwise the GDS cannot make the connection between an ACK and the message it has sent previously.
+
 ```java
 GDSMessageListener listener = new GDSMessageListener() {
 
@@ -1107,7 +1111,7 @@ GDSMessageListener listener = new GDSMessageListener() {
                 }},
                 null
         );
-        clientReference.get().sendEventDocumentAck9(eventDocumentAckData);
+        clientReference.get().sendEventDocumentAck9(header, eventDocumentAckData);
          } catch (IOException | ValidationException e) {
              //this should not happen as the message creation only contains valid values above.
          }
