@@ -1100,15 +1100,14 @@ GDSMessageListener listener = new GDSMessageListener() {
      @Override
      public void onEventDocument8(MessageHeaderBase header, MessageData8EventDocument eventDocument) {
         try {
-            MessageData9EventDocumentAck eventDocumentAckData = MessageManager.createMessageMessageData9EventDocumentAck(
+            MessageData9EventDocumentAck eventDocumentAckData = MessageManager.createMessageData9EventDocumentAck(
                 AckStatus.OK,
-                new ArrayList<EventDocumentResultHolder>(){{
-                    add(new EventDocumentResultHolderImpl(
+                Collections.singletonList(
+                new EventDocumentResultHolderImpl(
                             AckStatus.CREATED,
                             null,
-                            new HashMap<>()
-                    ));
-                }},
+                            Collections.emptyMap()
+                    )),
                 null
         );
         clientReference.get().sendEventDocumentAck9(header, eventDocumentAckData);
