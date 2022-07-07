@@ -1110,7 +1110,12 @@ GDSMessageListener listener = new GDSMessageListener() {
                     )),
                 null
         );
-        clientReference.get().sendEventDocumentAck9(header, eventDocumentAckData);
+        clientReference.get().sendEventDocumentAck9(
+            MessageManager.createMessageHeaderBase(
+                header.getUserName(),
+                header.getMessageId(),
+                MessageDataType.EVENT_DOCUMENT_ACK_9),
+            eventDocumentAckData);
          } catch (IOException | ValidationException e) {
              //this should not happen as the message creation only contains valid values above.
          }
