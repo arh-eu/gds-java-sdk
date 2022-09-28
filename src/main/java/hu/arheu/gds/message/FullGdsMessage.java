@@ -111,4 +111,12 @@ public class FullGdsMessage extends MessagePart {
     public int hashCode() {
         return Objects.hash(header, data);
     }
+
+    @Override
+    public String toString() {
+        return "FullGdsMessage{" +
+                "header=" + header +
+                ", data=" + data +
+                '}';
+    }
 }

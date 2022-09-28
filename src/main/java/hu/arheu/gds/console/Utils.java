@@ -1,6 +1,10 @@
 package hu.arheu.gds.console;
 
-import com.google.gson.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import hu.arheu.gds.message.FullGdsMessage;
 import hu.arheu.gds.message.data.MessageData;
 import hu.arheu.gds.message.header.MessageHeaderBase;
@@ -9,18 +13,18 @@ import org.apache.commons.csv.CSVPrinter;
 import org.msgpack.value.Value;
 
 import java.io.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Utils {
     private static final String EXPORTS_FOLDER_NAME = "exports";
     private static final String ATTACHMENTS_FOLDER_NAME = "attachments";
 
-    private static final Gson gson;
+    private static final ObjectMapper OBJECT_MAPPER;
 
     private static final Map<String, String> mimeExtensions = new HashMap<>();
-
-    private static final Set<String> skippedAttributes = new HashSet<>();
-    private static final Set<Class<?>> skippedClasses = new HashSet<>();
 
     static {
 
@@ -29,33 +33,37 @@ public class Utils {
         mimeExtensions.put("image/jpg", "jpg");
         mimeExtensions.put("image/jpeg", "jpg");
 
-        skippedAttributes.add("binary");
-        skippedAttributes.add("cache");
-        skippedAttributes.add("messageSize");
+        OBJECT_MAPPER = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+                .configure(MapperFeature.AUTO_DETECT_IS_GETTERS, false)
+                .build();
+        SimpleModule simpleModule = new SimpleModule()
+                .addSerializer(Value.class,
+                        new JsonSerializer<>() {
+                            @Override
+                            public void serialize(Value value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+                                if (value.isNilValue()) {
+                                    jsonGenerator.writeNull();
+                                } else {
+                                    jsonGenerator.writeRaw(value.toJson());
+                                }
+                            }
+                        })
+                .addSerializer(byte[].class,
+                        new JsonSerializer<>() {
+                            @Override
+                            public void serialize(byte[] value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+                                if (value == null) {
+                                    jsonGenerator.writeNull();
+                                } else {
+                                    jsonGenerator.writeString("<" + value.length + " bytes>");
+                                }
+                            }
+                        });
 
 
-        GsonBuilder gsonBuilder = new GsonBuilder().setLenient();
-        JsonSerializer<Value> valueJsonSerializer = (value, type, jsonSerializationContext) ->
-                JsonParser.parseString(value.toJson());
-        JsonSerializer<byte[]> binaryJsonSerializer = (value, type, jsonSerializationContext) ->
-                JsonParser.parseString(value == null ? "null" : "'" + value.length + " bytes'");
-
-        gsonBuilder.registerTypeAdapter(Value.class, valueJsonSerializer);
-        gsonBuilder.registerTypeAdapter(byte[].class, binaryJsonSerializer);
-
-        ExclusionStrategy strategy = new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                return skippedAttributes.contains(fieldAttributes.getName());
-            }
-
-            @Override
-            public boolean shouldSkipClass(Class<?> aClass) {
-                return skippedClasses.contains(aClass);
-            }
-        };
-
-        gson = gsonBuilder.setExclusionStrategies(strategy).setPrettyPrinting().serializeNulls().create();
+        OBJECT_MAPPER.registerModule(simpleModule);
     }
 
     private static void createFolder(String name) {
@@ -85,7 +93,11 @@ public class Utils {
     }
 
     public static String getJsonFromMessage(MessageHeaderBase header, MessageData data) {
-        return gson.toJson(new FullGdsMessage(header, data));
+        try {
+            return OBJECT_MAPPER.writeValueAsString(new FullGdsMessage(header, data));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void exportJson(String messageId, String json) throws IOException {
