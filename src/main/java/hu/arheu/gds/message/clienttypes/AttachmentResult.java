@@ -15,7 +15,7 @@ import java.io.Externalizable;
 
 /**
  * Represents the result for an Attachment Request.
- * Since the reply can arrive in either a type 5 or a type 6 message, the data part is an either object.
+ * Since the reply can arrive in either a type 5 or a type 6 message, the data part is an "Either" object.
  */
 public class AttachmentResult {
     private MessageHeaderBase header;

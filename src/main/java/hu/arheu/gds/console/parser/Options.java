@@ -4,6 +4,7 @@ import com.beust.jcommander.Parameter;
 
 import java.util.List;
 
+@SuppressWarnings("CanBeFinal")
 public class Options {
 
     @Parameter(names = {"-h", "-help"}, help = true, order = 0)

@@ -31,7 +31,7 @@ JitPack gives you a flexible, virtual maven repository which can work with GitHu
 
 The `<groupId>` stands for the GitHub user (in this case, that is `arh-eu`), the `<artifactId>` gives the required
 project (`gds-java-sdk`), while the `<version>` will indicate which release tag or commit-state that will be used. You
-can use the latest release of this - `3.1.0` (or if you want to keep up with the updates - `master-SNAPSHOT`).
+can use the latest release of this - `3.1.1` (or if you want to keep up with the updates - `master-SNAPSHOT`).
 
 However, if you need to use an earlier version, you can specify them as well - see releases for more info.
 
@@ -43,11 +43,11 @@ following dependency after installation:
 <dependency>
     <groupId>com.arh-eu</groupId>
     <artifactId>gds-java-sdk</artifactId>
-    <version>3.1.0</version>
+    <version>3.1.1</version>
 </dependency>
 ```
 
-(The library was made using [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation using version `0.9.1`)
+(The library was made using [this](https://github.com/msgpack/msgpack-java) MessagePack Java implementation using version `0.9.3`)
 
 # Usage
 
@@ -1083,7 +1083,7 @@ A user may be interested in data or changes in specific data. The criteria syste
 interest to the user, is included in the configuration of the delivered system. This data is sent automatically by the
 GDS. For these, you should also send an ACK back for the same reason.
 
-The original connection message contains a field for `serve_on_the_same_connection` (*SotSC*). If this is set to `false` (regardless of the connection mode), the app can receive push messages once connected to the GDS, and the GDS can receive them from the app. Otherwise the PUSH messages will not be sent to your client.
+The original connection message contains a field for `serve_on_the_same_connection` (*SotSC*). If this is set to `false` (regardless of the connection mode), the app can receive push messages once connected to the GDS, and the GDS can receive them from the app. Otherwise, the PUSH messages will not be sent to your client.
 
 &#x26A0; The default value for the `SotSC` flag in the clients is `true`. If you are not receiving PUSH messages, please check if you have created your client with the flag set to `false` (in the builder/constructor). The ACKs you send to the PUSH messages **must** use the same message ID as the PUSH messages otherwise the GDS cannot make the connection between an ACK and the message it has sent previously.
 
@@ -1361,7 +1361,7 @@ The generic type `T` is substituted for each subclass as the following:
 - `EventDocumentResponse -> MessageData9EventDocumentAck`
 - `QueryResponse -> MessageData11QueryRequestAck`
 
-As the type of the message the attachment result arrives in is not predetermined, it returns an _either_ object. To make
+As the type of the message the attachment result arrives in is not predetermined, it returns an "_either_" object. To make
 things easier the `AttachmentResult` class has additional methods to check for the proper type:
 
 The `isAttachmentRequestAck()` and the `isAttachmentResponse()` will return boolean values to indicate the message

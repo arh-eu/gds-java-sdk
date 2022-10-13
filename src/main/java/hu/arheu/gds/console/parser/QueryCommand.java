@@ -3,6 +3,7 @@ package hu.arheu.gds.console.parser;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
+@SuppressWarnings("CanBeFinal")
 @Parameters(separators = "=", commandDescription = "a request for querying a GDS user table")
 public class QueryCommand {
 

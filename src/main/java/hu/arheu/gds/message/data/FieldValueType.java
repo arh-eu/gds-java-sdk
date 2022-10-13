@@ -376,7 +376,7 @@ public enum FieldValueType {
     public abstract Value valueFromObject(Object o);
 
     /**
-     * Returns the base type of a type (e.g. TEXT_ARRAY ~> TEXT, INTEGER ~> INTEGER).
+     * Returns the base type of the given type (e.g. TEXT_ARRAY ~> TEXT, INTEGER ~> INTEGER).
      *
      * @return The base type.
      */
