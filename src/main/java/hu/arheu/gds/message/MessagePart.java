@@ -1,5 +1,6 @@
 package hu.arheu.gds.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import hu.arheu.gds.message.errors.ReadException;
 import hu.arheu.gds.message.errors.ValidationException;
 import hu.arheu.gds.message.errors.WriteException;
@@ -37,6 +38,7 @@ public abstract class MessagePart implements GdsMessagePart {
     private byte[] binary;
 
     @Override
+    @JsonIgnore
     public final byte[] getBinary() {
         if (this.binary == null) {
             return serialize();
