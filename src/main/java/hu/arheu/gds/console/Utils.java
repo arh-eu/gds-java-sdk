@@ -35,8 +35,9 @@ public class Utils {
 
         OBJECT_MAPPER = JsonMapper.builder()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
-                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
                 .configure(MapperFeature.AUTO_DETECT_IS_GETTERS, false)
+                .configure(SerializationFeature.INDENT_OUTPUT, true)
+                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
                 .build();
         SimpleModule simpleModule = new SimpleModule()
                 .addSerializer(Value.class,
@@ -114,9 +115,7 @@ public class Utils {
 
     public static void saveAttachment(String messageId, byte[] attachment, String meta) throws IOException {
         createAttachmentsFolder();
-        String extension;
-//        extension = mimeExtensions.getOrDefault(meta, "unknown");
-        extension = "unknown";
+        String extension = "unknown";
         for (String entries : mimeExtensions.keySet()) {
             if (meta != null && meta.contains(entries)) {
                 extension = mimeExtensions.get(entries);
